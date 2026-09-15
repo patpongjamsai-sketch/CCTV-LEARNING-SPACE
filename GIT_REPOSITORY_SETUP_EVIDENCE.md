@@ -20,7 +20,7 @@ git add .
 git commit -m "chore: initialize CCTV learning center repository"
 ```
 
-ตัวตน Git นี้กำหนดเฉพาะ Repository เนื่องจากเครื่องยังไม่มี `user.name` และ `user.email` ระดับ Global จึงไม่มีการคาดเดาอีเมลส่วนตัวของเจ้าของโครงการ
+ขณะสร้าง Initial Commit เครื่องยังไม่มี `user.name` และ `user.email` ระดับ Global จึงใช้ตัวตนชั่วคราวเฉพาะ Repository โดยไม่คาดเดาอีเมลส่วนตัวของเจ้าของโครงการ
 
 ## ผลการตรวจสอบก่อน Commit
 
@@ -54,6 +54,16 @@ git commit -m "chore: initialize CCTV learning center repository"
 ## ผลลัพธ์
 
 โครงการมีประวัติ Git จุดเริ่มต้นที่ตรวจสอบย้อนกลับได้แล้ว และพร้อมสำหรับขั้นต่อไป ได้แก่ การตั้งค่า GitHub Remote, Push Repository และเชื่อม Vercel โดยต้องใช้บัญชีและ Repository ปลายทางจากเจ้าของโครงการ
+
+## การตั้งค่าตัวตนเจ้าของโครงการ
+
+อัปเดตวันที่ 15 กันยายน 2569:
+
+- `user.name`: `Patpong Jamsai`
+- `user.email`: `patpong.jamsai@gmail.com`
+- ขอบเขต: ตั้งค่าทั้งระดับ Global และ Repository ปัจจุบัน
+- ผลตรวจสอบ: ค่าที่ Git ใช้งานจริงตรงกับข้อมูลข้างต้น
+- ผลกระทบ: Commit ตั้งแต่รายการอัปเดตนี้เป็นต้นไปจะใช้ตัวตนใหม่ ส่วน Commit ก่อนหน้าเก็บ Author เดิมไว้เพื่อไม่แก้ประวัติย้อนหลัง
 
 ## การเชื่อม GitHub Remote
 
