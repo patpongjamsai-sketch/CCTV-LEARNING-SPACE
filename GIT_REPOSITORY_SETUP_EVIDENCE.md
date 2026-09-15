@@ -54,3 +54,17 @@ git commit -m "chore: initialize CCTV learning center repository"
 ## ผลลัพธ์
 
 โครงการมีประวัติ Git จุดเริ่มต้นที่ตรวจสอบย้อนกลับได้แล้ว และพร้อมสำหรับขั้นต่อไป ได้แก่ การตั้งค่า GitHub Remote, Push Repository และเชื่อม Vercel โดยต้องใช้บัญชีและ Repository ปลายทางจากเจ้าของโครงการ
+
+## การเชื่อม GitHub Remote
+
+วันที่ตรวจสอบ: 15 กันยายน 2569
+
+- Remote: `origin`
+- URL: `git@github.com:patpongjamsai-sketch/CCTV-LEARNING-SPACE.git`
+- รูปแบบการเชื่อมต่อ: SSH
+- Host Key: ตรวจสอบและบันทึก ED25519 Key ของ `github.com` ตามลายนิ้วมือที่ GitHub ประกาศ
+- ผลการยืนยันตัวตน: `Permission denied (publickey)`
+- สาเหตุ: ไม่พบ SSH Public Key และไม่พบ GitHub CLI ที่เข้าสู่ระบบอยู่บนเครื่อง
+- สถานะ Push: ยังไม่ดำเนินการ เพราะ GitHub ยังไม่สามารถยืนยันตัวตนของเครื่องนี้
+
+การดำเนินการขั้นถัดไปต้องสร้าง SSH Key สำหรับโครงการ แล้วเพิ่ม Public Key เข้า GitHub Account ของ `patpongjamsai-sketch` ก่อนสั่ง `git push -u origin main`
