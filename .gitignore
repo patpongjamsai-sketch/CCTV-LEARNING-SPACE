@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+.vercel/
+.vite/
+.playwright-cli/
+coverage/
+output/playwright/
+*.log
+*.tsbuildinfo
+
+# เก็บค่าเชื่อมต่อ Supabase และ Secret ไว้เฉพาะเครื่องผู้พัฒนา
+.env
+.env.*
+!.env.example
