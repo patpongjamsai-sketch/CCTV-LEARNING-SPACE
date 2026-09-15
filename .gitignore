@@ -1,15 +1,34 @@
+# Dependencies
 node_modules/
-dist/
+
+# Next.js
 .next/
-.vercel/
+out/
+
+# Vite
+dist/
 .vite/
-.playwright-cli/
+
+# Vercel
+.vercel/
+
+# Test and coverage
 coverage/
+.playwright-cli/
 output/playwright/
-*.log
+
+# TypeScript
 *.tsbuildinfo
 
-# เก็บค่าเชื่อมต่อ Supabase และ Secret ไว้เฉพาะเครื่องผู้พัฒนา
+# Log
+*.log
+npm-debug.log*
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
+
+# Windows
+Thumbs.db
+Desktop.ini
