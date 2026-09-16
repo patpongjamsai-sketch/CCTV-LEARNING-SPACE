@@ -49,6 +49,7 @@
 | --- | --- | --- | --- | --- | --- |
 | WEB-0 | Ledger only | Existing shell, game boundary, and Next.js guidance inspected | Node runtime; proxy refresh only; DAL reauthorizes every operation | Implementation not started | checkpoint-ready |
 | WEB-1 | `src/proxy.ts`, `src/app/login/**`, `src/app/forgot-password/**`, `src/app/set-password/**`, `src/app/auth/**`, `src/tests/auth.pages.test.tsx`, `src/tests/proxy.test.ts` | Next.js 16 build passing (Turbopack, 9 routes including Proxy); Vitest 25 files / 89 tests passing; typecheck passing | Cookie refresh via Next.js 16 proxy; generic forgot-password response; claim-gated set-password; invite-only model | Class management UI & game session API routes pending Phase 5 | checkpoint-ready |
+| WEB-2 | `src/server/services/gameService.ts`, `src/server/services/classService.ts`, `src/app/api/game/**`, `src/app/api/classes/**`, `src/tests/apiRoutes.test.ts` | Next.js 16 build passing (Turbopack, 14 routes compiled); Vitest 26 files / 95 tests passing; `npx tsc --noEmit` 0 errors | Untrusted client events route vs. Trusted PostgreSQL transactions via Supavisor (port 6543); server-authoritative score re-evaluation; teacher override audit; 401 unauthenticated check | Phase 5 UI wiring (DashboardShell live data & game session integration) | checkpoint-ready |
 
 ## Review state
 
