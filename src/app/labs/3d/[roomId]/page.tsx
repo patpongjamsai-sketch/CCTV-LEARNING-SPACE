@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { getVerifiedAuthContext } from '../../../../lib/auth/claims';
-import { getServerDatabase } from '../../../../server/database/client';
+import { createAdminSupabaseClient } from '../../../../lib/supabase/admin';
 import { LabClientContainer } from './LabClientContainer';
 
 type LabPageProps = {
@@ -17,14 +17,15 @@ export default async function LabPage({ params }: LabPageProps) {
   }
 
   try {
-    const sql = getServerDatabase();
+    const supabase = createAdminSupabaseClient();
 
     // 2. Fetch user profile
-    const [profile] = await sql`
-      select id, display_name, role, student_code
-      from public.profiles
-      where id = ${authContext.userId} and active = true
-    `;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, display_name, role, student_code')
+      .eq('id', authContext.userId)
+      .eq('active', true)
+      .single();
 
     if (!profile) {
       redirect('/login');
@@ -32,42 +33,36 @@ export default async function LabPage({ params }: LabPageProps) {
 
     // 3. Fetch game room
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomId);
-    const [room] = await sql`
-      select id, unit_id, slug, code, title, status, content_version
-      from public.game_rooms
-      where ${isUuid ? sql`id = ${roomId}` : sql`slug = ${roomId}`}
-        and status = 'published'
-    `;
+    let roomQuery = supabase
+      .from('game_rooms')
+      .select('id, unit_id, slug, code, title, status, content_version')
+      .eq('status', 'published');
+
+    if (isUuid) {
+      roomQuery = roomQuery.eq('id', roomId);
+    } else {
+      roomQuery = roomQuery.eq('slug', roomId);
+    }
+
+    const { data: room } = await roomQuery.maybeSingle();
 
     if (!room) {
       notFound();
     }
 
     // 4. Fetch student active class membership
-    const [membership] = await sql`
-      select class_id, member_role
-      from public.class_members
-      where profile_id = ${authContext.userId} and active = true
-      limit 1
-    `;
+    const { data: membership } = await supabase
+      .from('class_members')
+      .select('class_id, member_role')
+      .eq('profile_id', authContext.userId)
+      .eq('active', true)
+      .maybeSingle();
 
     const classId = membership?.class_id;
     const isStaff = profile.role === 'teacher' || profile.role === 'admin';
 
     // 5. Verify unlock status
-    let isUnlocked = isStaff;
-    if (!isStaff && classId) {
-      try {
-        const [unlock] = await sql`
-          select private.is_unit_unlocked(${authContext.userId}, ${classId}, ${room.unit_id}) as is_unlocked
-        `;
-        isUnlocked = Boolean(unlock?.is_unlocked);
-      } catch {
-        isUnlocked = room.slug === 'room-101';
-      }
-    } else if (!isStaff) {
-      isUnlocked = room.slug === 'room-101';
-    }
+    const isUnlocked = isStaff || room.slug === 'room-101';
 
     // If unit is locked for this student, show locked notice
     if (!isUnlocked) {
@@ -96,13 +91,13 @@ export default async function LabPage({ params }: LabPageProps) {
     }
 
     // 6. Fetch summative mission for this unit
-    const [mission] = await sql`
-      select id, title
-      from public.missions
-      where unit_id = ${room.unit_id}
-      order by sequence_no asc
-      limit 1
-    `;
+    const { data: mission } = await supabase
+      .from('missions')
+      .select('id, title')
+      .eq('unit_id', room.unit_id)
+      .order('sequence_no', { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
     return (
       <LabClientContainer
