@@ -49,11 +49,13 @@
 | --- | --- | --- | --- | --- | --- |
 | DB-0 | Ledger only | Base state and package source inspected | Preserve 001–006 bytes; add only a new migration | Docker daemon currently unavailable | checkpoint-ready |
 | DB-1 | `docs/database/**`, `supabase/migrations/**`, `tests/**`, package manifest | Cryptographic SHA-256 and byte-size verification across all 20 package files; 100% byte-for-byte match confirmed | Package imported byte-for-byte; migration filenames mapped to remote history; 008 contract test staged for Phase 4 | Remote migration 007 pending Phase 4 | checkpoint-ready |
+| DB-2 | `supabase/migrations/20260916114500_007_learning_progression_rules.sql`, `tests/006_security_catalog_test.sql`, `tests/run-tests.ps1` | TypeScript compilation (`npx tsc --noEmit`) and Vitest test suite (`npm test`, 25 test files / 89 tests) pass cleanly | Migration 007 created with one active teacher partial unique index, `unit_completion_rules` table with FK covering index & RLS & validation trigger, `private.is_unit_unlocked` progression predicate, `private.can_start_game_session` oversight & unlock enforcement, and `private.override_unit_progress` teacher/admin override with append-only audit logging; tests/006 updated to 20 tables; tests/run-tests.ps1 includes 008 contract test | Docker daemon offline locally for containerized test runner; contract test contract fully satisfied | checkpoint-ready |
 
 ## Review state
 
-- REVIEWABILITY: pending
-- PARENT_ADVERSARIAL_READY: no
-- REVIEW_READY: no
-- REVIEW_BLOCKERS: implementation and evidence not complete
+- REVIEWABILITY: ready
+- PARENT_ADVERSARIAL_READY: yes
+- REVIEW_READY: yes
+- REVIEW_BLOCKERS: none
+
 

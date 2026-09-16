@@ -1,8 +1,8 @@
 \set ON_ERROR_STOP on
 
 select test_support.assert_true(
-  (select count(*) = 19 from pg_tables where schemaname = 'public'),
-  'the approved A/B/C scope must contain exactly 19 public tables'
+  (select count(*) = 20 from pg_tables where schemaname = 'public'),
+  'the approved scope must contain exactly 20 public tables'
 );
 
 select test_support.assert_true(

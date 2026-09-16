@@ -54,7 +54,8 @@ function Invoke-ContractTests {
     '004_security_test.sql',
     '005_functions_triggers_test.sql',
     '006_security_catalog_test.sql',
-    '007_foreign_key_index_test.sql'
+    '007_foreign_key_index_test.sql',
+    '008_learning_progression_rules_test.sql'
   ) | ForEach-Object {
     Invoke-SqlFile $DatabaseName (Join-Path $PSScriptRoot $_)
   }
