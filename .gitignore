@@ -12,6 +12,9 @@ dist/
 # Vercel
 .vercel/
 
+# Supabase CLI local state (project migrations remain tracked)
+supabase/.temp/
+
 # Test and coverage
 coverage/
 .playwright-cli/
