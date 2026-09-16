@@ -7,13 +7,47 @@ const navigationItems = [
   { label: 'ผลการเรียนของฉัน', href: '/progress' },
 ];
 
-const learningUnits = [
-  ['01', 'พื้นฐานและองค์ประกอบระบบ CCTV', 'พร้อมเรียน', '/labs/3d/room-101'],
-  ['02', 'กล้อง การเลือกใช้ และตำแหน่งติดตั้ง', 'กำลังพัฒนา', '/courses/21909-2020'],
-  ['03', 'ระบบสาย การเชื่อมต่อ และการติดตั้ง', 'รอเปิด', '/courses/21909-2020'],
+import { TeacherManagementPanel } from './TeacherManagementPanel';
+
+export type DashboardUnit = {
+  id: string;
+  sequenceNo: number;
+  title: string;
+  statusLabel: string;
+  href: string;
+  unlocked: boolean;
+};
+
+export type DashboardShellProps = {
+  learner?: {
+    displayName: string;
+    role: 'student' | 'teacher' | 'admin';
+  };
+  summary?: {
+    completedUnits: number;
+    totalUnits: number;
+    passedMissions: number;
+    bestScore: number;
+  };
+  units?: DashboardUnit[];
+  classId?: string;
+};
+
+const fallbackUnits: DashboardUnit[] = [
+  { id: '01', sequenceNo: 1, title: 'พื้นฐานและองค์ประกอบระบบ CCTV', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-101', unlocked: true },
+  { id: '02', sequenceNo: 2, title: 'กล้อง การเลือกใช้ และตำแหน่งติดตั้ง', statusLabel: 'กำลังพัฒนา', href: '/courses/21909-2020', unlocked: true },
+  { id: '03', sequenceNo: 3, title: 'ระบบสาย การเชื่อมต่อ และการติดตั้ง', statusLabel: 'รอเปิด', href: '/courses/21909-2020', unlocked: false },
 ];
 
-export function DashboardShell() {
+export function DashboardShell({
+  learner = { displayName: 'ผู้เรียน', role: 'student' },
+  summary = { completedUnits: 0, totalUnits: 8, passedMissions: 0, bestScore: 0 },
+  units = fallbackUnits,
+  classId,
+}: DashboardShellProps = {}) {
+  const experiencePoints = summary.completedUnits * 100 + summary.passedMissions * 25;
+  const isTeacherOrAdmin = learner.role === 'teacher' || learner.role === 'admin';
+
   return (
     <div className="portal-shell">
       <aside className="portal-sidebar" aria-label="เมนูหลัก">
@@ -50,10 +84,17 @@ export function DashboardShell() {
             <span>Workspace</span>
             <strong>ภาพรวมการเรียนรู้</strong>
           </div>
-          <div className="portal-profile" aria-label="ข้อมูลผู้เรียนตัวอย่าง">
-            <span>0 XP</span>
-            <span className="portal-avatar" aria-hidden="true">ผ</span>
-            <span>ผู้เรียน</span>
+          <div className="portal-profile flex items-center gap-3" aria-label="ข้อมูลผู้ใช้งาน">
+            <span>{experiencePoints} XP</span>
+            <span className="portal-avatar" aria-hidden="true">{learner.displayName.slice(0, 1)}</span>
+            <span>{learner.displayName}</span>
+            <a
+              href="/auth/logout"
+              className="text-xs text-slate-400 hover:text-rose-400 ml-2 transition-colors"
+              title="ออกจากระบบ"
+            >
+              ออกจากระบบ
+            </a>
           </div>
         </header>
 
@@ -83,10 +124,10 @@ export function DashboardShell() {
           </div>
 
           <div className="portal-stats" aria-label="สรุปความก้าวหน้า">
-            <article><span>บทเรียนที่เรียนแล้ว</span><strong>0 / 8</strong></article>
-            <article><span>ภารกิจที่พิชิต</span><strong>0 / 5</strong></article>
-            <article><span>คะแนนสูงสุด</span><strong>0 / 100</strong></article>
-            <article><span>ประสบการณ์สะสม</span><strong>0 XP</strong></article>
+            <article><span>บทเรียนที่เรียนแล้ว</span><strong>{summary.completedUnits} / {summary.totalUnits}</strong></article>
+            <article><span>ภารกิจที่พิชิต</span><strong>{summary.passedMissions} / 5</strong></article>
+            <article><span>คะแนนสูงสุด</span><strong>{summary.bestScore} / 100</strong></article>
+            <article><span>ประสบการณ์สะสม</span><strong>{experiencePoints} XP</strong></article>
           </div>
 
           <section className="portal-learning-path" aria-labelledby="learning-path-title">
@@ -99,15 +140,27 @@ export function DashboardShell() {
             </div>
 
             <div className="portal-module-grid">
-              {learningUnits.map(([number, title, status, href]) => (
-                <a className="portal-module-card" href={href} key={number}>
-                  <span className="portal-module-number">MODULE {number}</span>
-                  <h3>{title}</h3>
-                  <span>{status}</span>
-                </a>
-              ))}
+              {units.map((unit) => {
+                const content = (
+                  <>
+                    <span className="portal-module-number">MODULE {String(unit.sequenceNo).padStart(2, '0')}</span>
+                    <h3>{unit.title}</h3>
+                    <span>{unit.statusLabel}</span>
+                  </>
+                );
+
+                return unit.unlocked ? (
+                  <a className="portal-module-card" href={unit.href} key={unit.id}>{content}</a>
+                ) : (
+                  <div className="portal-module-card" aria-disabled="true" key={unit.id}>{content}</div>
+                );
+              })}
             </div>
           </section>
+
+          {isTeacherOrAdmin && (
+            <TeacherManagementPanel classId={classId} />
+          )}
         </section>
       </main>
     </div>

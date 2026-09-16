@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client';
+
+import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useRoleplayStore } from './store/useRoleplayStore';
 import { SmartMartStore } from './components/scene/SmartMartStore';
@@ -14,15 +16,54 @@ import { InteractionPrompt } from './components/hud/InteractionPrompt';
 import { NpcDialogue } from './components/learning/NpcDialogue';
 import { FieldNotebook } from './components/hud/FieldNotebook';
 import { SettingsModal } from './components/hud/SettingsModal';
-import { LESSON_META } from './data/unit1RoleplayContent';
+import { GameStartScreen } from './components/game/GameStartScreen';
+import { createUnit1Submission } from './client/game/createUnit1Submission';
 
-export const App: React.FC = () => {
+export type GameLearner = {
+  id: string;
+  displayName: string;
+  studentCode?: string | null;
+};
+
+export type AppProps = {
+  learner?: GameLearner;
+  onSessionStart?: () => Promise<void>;
+  onCompleted?: (submission: ReturnType<typeof createUnit1Submission>) => Promise<void> | void;
+};
+
+export const App: React.FC<AppProps> = ({
+  learner = { id: 'legacy-preview', displayName: 'ผู้เรียน' },
+  onSessionStart,
+  onCompleted,
+}) => {
   const isStarted = useRoleplayStore((s) => s.isStarted);
   const startSession = useRoleplayStore((s) => s.startSession);
   const openStationDialogue = useRoleplayStore((s) => s.openStationDialogue);
   const graphicsQuality = useRoleplayStore((s) => s.graphicsQuality);
 
-  const [inputName, setInputName] = useState('นักเรียนช่างฝึกหัด CCTV');
+  const isCompleted = useRoleplayStore((s) => s.isCompleted);
+  const [isLaunching, setIsLaunching] = React.useState(false);
+  const [launchError, setLaunchError] = React.useState<string | null>(null);
+  const completionSentRef = React.useRef(false);
+
+  const beginSession = React.useCallback(async () => {
+    setIsLaunching(true);
+    setLaunchError(null);
+    try {
+      await onSessionStart?.();
+      startSession(learner.displayName);
+    } catch (error) {
+      setLaunchError(error instanceof Error ? error.message : 'ไม่สามารถเริ่ม Session ได้');
+    } finally {
+      setIsLaunching(false);
+    }
+  }, [learner.displayName, onSessionStart, startSession]);
+
+  React.useEffect(() => {
+    if (!isCompleted || completionSentRef.current || !onCompleted) return;
+    completionSentRef.current = true;
+    void onCompleted(createUnit1Submission(useRoleplayStore.getState()));
+  }, [isCompleted, onCompleted]);
 
   React.useEffect(() => {
     const handler = () => {
@@ -62,54 +103,13 @@ export const App: React.FC = () => {
     <div className="relative w-full h-screen overflow-hidden bg-slate-950 font-sans">
       {/* Start / Briefing Overlay Screen */}
       {!isStarted && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-3xl p-7 shadow-2xl text-slate-100 flex flex-col gap-4 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/20 text-sky-400 mx-auto text-3xl border border-sky-500/30">
-              📹
-            </div>
-            <div>
-              <span className="text-xs font-mono font-bold tracking-wider text-sky-400 uppercase">
-                {LESSON_META.courseCode} · ปวช. พ.ศ. 2567
-              </span>
-              <h1 className="text-2xl font-extrabold text-white mt-1">
-                Unit 1: IP CCTV Fundamentals
-              </h1>
-              <h2 className="text-sm font-semibold text-slate-400">
-                Block-Style Role-Play · Smart Mart Convenience Store
-              </h2>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed text-left bg-slate-950/60 p-3 rounded-xl border border-slate-800">
-              รับบทเป็น “ช่างฝึกหัด CCTV” เดินสำรวจร้าน Smart Mart พบผู้จัดการร้านและช่างผู้เชี่ยวชาญ รวบรวมการ์ดความรู้ ติดตั้งอุปกรณ์เสมือนจริง และต่อสายสัญญาณ Cat6/HDMI จนระบบออนไลน์และมีภาพ Live View ก่อนร้านเปิด!
-            </p>
-
-            <div className="text-left space-y-1">
-              <label className="text-xs text-slate-400 font-medium">ชื่อผู้รับการฝึก / รหัสประจำตัว:</label>
-              <input
-                type="text"
-                value={inputName}
-                onChange={(e) => setInputName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 outline-none focus:border-sky-500"
-                placeholder="ระบุชื่อ-นามสกุล หรือ รหัสนักศึกษา"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-left text-[11px] text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80">
-              <div><kbd className="bg-slate-800 px-1 py-0.5 rounded text-slate-200">WASD</kbd> เดิน / วิ่ง (Shift)</div>
-              <div><kbd className="bg-slate-800 px-1 py-0.5 rounded text-slate-200">Mouse</kbd> หมุนมุมกล้อง</div>
-              <div><kbd className="bg-slate-800 px-1 py-0.5 rounded text-slate-200">E / F</kbd> พูดคุย / หยิบ / วาง</div>
-              <div><kbd className="bg-slate-800 px-1 py-0.5 rounded text-slate-200">Tab</kbd> Checklist / แผนผัง</div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => startSession(inputName)}
-              className="w-full py-3 bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-white font-bold rounded-2xl cursor-pointer shadow-lg shadow-sky-500/25 transition-all text-sm"
-            >
-              เข้าสู่ Smart Mart และเริ่มภารกิจ
-            </button>
-          </div>
-        </div>
+        <GameStartScreen
+          displayName={learner.displayName}
+          studentCode={learner.studentCode}
+          onStart={() => void beginSession()}
+          isStarting={isLaunching}
+          errorMessage={launchError}
+        />
       )}
 
       {/* 3D WebGL Canvas */}

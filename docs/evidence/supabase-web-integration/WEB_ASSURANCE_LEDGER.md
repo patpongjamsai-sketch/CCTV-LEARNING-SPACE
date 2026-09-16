@@ -6,7 +6,7 @@
 - REOPEN_GENERATION: `0`
 - LEDGER_LOCATION: `docs/evidence/supabase-web-integration/WEB_ASSURANCE_LEDGER.md`
 - ATTEMPT_COORDINATION_LOCATION: Git common directory `.git/codex-assurance/cctv-web-auth-game/attempts.jsonl` with atomic `New-Item -ItemType Directory` lock at `.git/codex-assurance/cctv-web-auth-game/review.lock`
-- UNIT_STATUS: `open`
+- UNIT_STATUS: `complete`
 
 ## Authority and boundary
 
@@ -50,11 +50,13 @@
 | WEB-0 | Ledger only | Existing shell, game boundary, and Next.js guidance inspected | Node runtime; proxy refresh only; DAL reauthorizes every operation | Implementation not started | checkpoint-ready |
 | WEB-1 | `src/proxy.ts`, `src/app/login/**`, `src/app/forgot-password/**`, `src/app/set-password/**`, `src/app/auth/**`, `src/tests/auth.pages.test.tsx`, `src/tests/proxy.test.ts` | Next.js 16 build passing (Turbopack, 9 routes including Proxy); Vitest 25 files / 89 tests passing; typecheck passing | Cookie refresh via Next.js 16 proxy; generic forgot-password response; claim-gated set-password; invite-only model | Class management UI & game session API routes pending Phase 5 | checkpoint-ready |
 | WEB-2 | `src/server/services/gameService.ts`, `src/server/services/classService.ts`, `src/app/api/game/**`, `src/app/api/classes/**`, `src/tests/apiRoutes.test.ts` | Next.js 16 build passing (Turbopack, 14 routes compiled); Vitest 26 files / 95 tests passing; `npx tsc --noEmit` 0 errors | Untrusted client events route vs. Trusted PostgreSQL transactions via Supavisor (port 6543); server-authoritative score re-evaluation; teacher override audit; 401 unauthenticated check | Phase 5 UI wiring (DashboardShell live data & game session integration) | checkpoint-ready |
+| WEB-3 | `src/app/page.tsx`, `src/components/portal/**`, `src/app/labs/3d/[roomId]/**`, `src/App.tsx`, `src/tests/labPage.test.tsx`, `src/tests/labClientContainer.test.tsx`, `src/tests/nextShell.test.tsx` | Next.js 16 build passing (Turbopack, 14 routes compiled); Vitest 28 files / 99 tests passing; `npx tsc --noEmit` 0 errors | Three.js dynamically loaded via `ssr: false`; server-side unlock gate in LabPage; live dashboard queries user profile and unit progress; teacher panel for CSV import and progress override | Phase 6 (Private storage `lab-evidence` deferred) | checkpoint-ready |
 
 ## Review state
 
-- REVIEWABILITY: pending
-- PARENT_ADVERSARIAL_READY: no
-- REVIEW_READY: no
-- REVIEW_BLOCKERS: implementation and evidence not complete
+- REVIEWABILITY: complete
+- PARENT_ADVERSARIAL_READY: yes
+- REVIEW_READY: yes
+- REVIEW_BLOCKERS: none (Phase 1, 2, 4, 3, 5 complete; Phase 6 deferred by charter)
+
 

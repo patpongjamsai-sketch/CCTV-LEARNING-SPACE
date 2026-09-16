@@ -13,4 +13,58 @@ describe('Next.js learning portal shell', () => {
     expect(html).toContain('ห้องปฏิบัติการ 3D');
     expect(html).toContain('href="/labs/3d/room-101"');
   });
+
+  it('renders the authenticated learner and backend-approved progress', async () => {
+    const componentUrl = new URL('../components/portal/DashboardShell.tsx', import.meta.url).href;
+    const { DashboardShell } = await import(/* @vite-ignore */ componentUrl);
+
+    const html = renderToStaticMarkup(
+      <DashboardShell
+        learner={{ displayName: 'สมชาย ใจดี', role: 'student' }}
+        summary={{ completedUnits: 2, totalUnits: 8, passedMissions: 3, bestScore: 88 }}
+        units={[
+          {
+            id: 'unit-1',
+            sequenceNo: 1,
+            title: 'พื้นฐานระบบกล้อง IP',
+            statusLabel: 'ผ่านแล้ว',
+            href: '/labs/3d/room-101',
+            unlocked: true,
+          },
+          {
+            id: 'unit-2',
+            sequenceNo: 2,
+            title: 'การเลือกตำแหน่งกล้อง',
+            statusLabel: 'รอเปิด',
+            href: '/courses/21909-2020',
+            unlocked: false,
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain('สมชาย ใจดี');
+    expect(html).toContain('2 / 8');
+    expect(html).toContain('3 / 5');
+    expect(html).toContain('88 / 100');
+    expect(html).toContain('พื้นฐานระบบกล้อง IP');
+    expect(html).not.toContain('href="/labs/3d/room-102"');
+  });
+
+  it('renders the Teacher & Admin Management panel when user is a teacher', async () => {
+    const componentUrl = new URL('../components/portal/DashboardShell.tsx', import.meta.url).href;
+    const { DashboardShell } = await import(/* @vite-ignore */ componentUrl);
+
+    const html = renderToStaticMarkup(
+      <DashboardShell
+        learner={{ displayName: 'อาจารย์สมศักดิ์', role: 'teacher' }}
+        classId="class-101"
+      />,
+    );
+
+    expect(html).toContain('อาจารย์สมศักดิ์');
+    expect(html).toContain('Teacher &amp; Admin Center');
+    expect(html).toContain('นำเข้านักเรียน (CSV)');
+    expect(html).toContain('ปรับปรุงผลการเรียน (Override)');
+  });
 });
