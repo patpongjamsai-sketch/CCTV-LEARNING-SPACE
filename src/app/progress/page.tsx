@@ -1,5 +1,5 @@
 import { getVerifiedAuthContext } from '../../lib/auth/claims';
-import { getServerDatabase } from '../../server/database/client';
+import { createAdminSupabaseClient } from '../../lib/supabase/admin';
 
 export default async function ProgressPage() {
   let learnerName = 'ผู้เรียน';
@@ -8,29 +8,43 @@ export default async function ProgressPage() {
   try {
     const auth = await getVerifiedAuthContext();
     if (auth) {
-      const sql = getServerDatabase();
-      const [profile] = await sql`
-        select display_name from public.profiles where id = ${auth.userId}
-      `;
+      const supabase = createAdminSupabaseClient();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', auth.userId)
+        .maybeSingle();
+
       if (profile?.display_name) {
         learnerName = profile.display_name;
       }
 
-      unitRows = await sql`
-        select
-          u.id,
-          u.sequence_no,
-          u.title,
-          coalesce(up.highest_score, 0) as score,
-          coalesce(up.passed, false) as passed
-        from public.units as u
-        left join public.unit_progress as up
-          on up.unit_id = u.id and up.student_id = ${auth.userId}
-        where u.status = 'published'
-        order by u.sequence_no asc
-      `;
+      const { data: units } = await supabase
+        .from('units')
+        .select('id, sequence_no, title')
+        .eq('status', 'published')
+        .order('sequence_no', { ascending: true });
+
+      const { data: progressList } = await supabase
+        .from('unit_progress')
+        .select('unit_id, highest_score, passed')
+        .eq('student_id', auth.userId);
+
+      const progMap = new Map((progressList || []).map((p: any) => [p.unit_id, p]));
+
+      unitRows = (units || []).map((u: any) => {
+        const p = progMap.get(u.id);
+        return {
+          id: u.id,
+          sequence_no: u.sequence_no,
+          title: u.title,
+          score: Number(p?.highest_score || 0),
+          passed: Boolean(p?.passed),
+        };
+      });
     }
-  } catch {
+  } catch (err) {
+    console.error('Progress page error:', err);
     // fallback preview
   }
 
