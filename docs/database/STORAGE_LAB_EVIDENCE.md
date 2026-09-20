@@ -1,6 +1,8 @@
 # แนวทาง Supabase Storage: `lab-evidence`
 
-รอบนี้สร้างตาราง `public.evidence_files` และสิทธิ์ฐานข้อมูลที่รองรับหลักฐาน LAB แล้ว แต่ยังไม่สร้าง Bucket หรือแก้ `storage.objects` เพื่อไม่ขยายขอบเขตเกิน Database + Security ที่อนุมัติ
+ตอนนี้สร้างตาราง `public.evidence_files` และ Bucket ส่วนตัว `lab-evidence` แล้ว โดย migration `20260916130000_008_lab_evidence_storage.sql` กำหนดขนาดและ MIME type ที่อนุญาตให้ตรงกับฐานข้อมูล
+
+การอัปโหลดใช้ Server API ที่ตรวจสอบตัวตน การเป็นสมาชิกชั้นเรียน และเจ้าของ LAB ก่อนเรียก Supabase Storage ด้วย service-role client ฝั่ง server จึงไม่เปิด public URL และไม่ให้ browser เขียน metadata ที่เชื่อถือได้โดยตรง
 
 ## ค่าที่ควรใช้เมื่อเปิด Storage ในรอบถัดไป
 
@@ -25,9 +27,9 @@
     evidence.pdf
 ```
 
-## Policy ที่ต้องติดตั้งเมื่อสร้าง Bucket
+## Policy ของ Storage
 
-ให้สร้าง helper ใน schema `private` เพื่อแปลง UUID จาก path อย่างปลอดภัย แล้วกำหนด Policy บน `storage.objects` ดังนี้:
+เส้นทางปัจจุบันไม่เปิด direct browser upload จึงใช้ server-only upload route เป็น trust boundary หลัก ส่วน policy บน `storage.objects` ยังควรเพิ่มในรอบ hardening หากต้องการเปิด signed upload จาก browser โดยตรง:
 
 1. นักเรียน `INSERT` ได้เฉพาะ Bucket `lab-evidence`, โฟลเดอร์แรกต้องเท่ากับ `auth.uid()` และโฟลเดอร์ที่สองต้องเป็น Submission ของตนที่อยู่ในสถานะ `draft`, `submitted` หรือ `revision_required`
 2. นักเรียน `SELECT` ได้เฉพาะหลักฐานของ Submission ตนเอง
@@ -38,7 +40,7 @@
 
 Supabase Storage ต้องมีทั้ง `INSERT + SELECT + UPDATE` policy หากต้องการใช้ upsert ส่วนการดาวน์โหลดจาก Private Bucket จะผ่าน RLS ทุกครั้ง
 
-## ลำดับธุรกรรมที่แนะนำ
+## ลำดับธุรกรรมที่ระบบใช้อยู่
 
 1. สร้าง `lab_submissions` ก่อน เพื่อให้ได้ UUID
 2. Upload ไฟล์ด้วย path ตามรูปแบบด้านบน
@@ -47,4 +49,3 @@ Supabase Storage ต้องมีทั้ง `INSERT + SELECT + UPDATE` polic
 5. เมื่อครูเปิดหลักฐาน ให้ Server สร้าง signed URL อายุสั้นและบันทึก Audit เมื่อเป็นเหตุการณ์สำคัญ
 
 ห้ามเก็บรหัสผ่านกล้อง, Service Role Key หรือ secret ใด ๆ ในชื่อไฟล์, path, metadata หรือ `student_notes`
-
