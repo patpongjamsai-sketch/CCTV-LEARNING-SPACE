@@ -6,6 +6,7 @@ import {
     saveTeacherApprovals,
     getSubjectiveSubmissions,
     gradeSubjectiveSubmission,
+    DEFAULT_TEACHER_APPROVALS,
     type TeacherApprovals,
     type SubjectiveSubmission,
 } from '../../lib/progressionState';
@@ -19,8 +20,8 @@ type ActiveTab = 'approvals' | 'students' | 'grading' | 'csv' | 'override';
 
 export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherApprovalDashboardProps) {
     const [activeTab, setActiveTab] = useState<ActiveTab>('approvals');
-    const [approvals, setApprovals] = useState<TeacherApprovals>(getTeacherApprovals);
-    const [submissions, setSubmissions] = useState<SubjectiveSubmission[]>(getSubjectiveSubmissions);
+    const [approvals, setApprovals] = useState<TeacherApprovals>(DEFAULT_TEACHER_APPROVALS);
+    const [submissions, setSubmissions] = useState<SubjectiveSubmission[]>([]);
     const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
 
     // Grading modal/form state
@@ -40,8 +41,11 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [overridePercent, setOverridePercent] = useState('100');
     const [overrideReason, setOverrideReason] = useState('');
 
-    // Reload state when events fire
+    // Rehydrate and reload state when events fire
     useEffect(() => {
+        setApprovals(getTeacherApprovals());
+        setSubmissions(getSubjectiveSubmissions());
+
         const updateState = () => {
             setApprovals(getTeacherApprovals());
             setSubmissions(getSubjectiveSubmissions());

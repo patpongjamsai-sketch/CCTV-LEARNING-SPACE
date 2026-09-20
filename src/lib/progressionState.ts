@@ -37,7 +37,7 @@ const STORAGE_KEY_TEACHER_APPROVALS = 'cctv_teacher_approvals';
 const STORAGE_KEY_SUBJECTIVE_SUBMISSIONS = 'cctv_subjective_submissions';
 
 // Initial default teacher approvals: Unit 1 unlocked by default for orientation
-const DEFAULT_TEACHER_APPROVALS: TeacherApprovals = {
+export const DEFAULT_TEACHER_APPROVALS: TeacherApprovals = {
     unlockedUnits: {
         U01: true,
         U02: false,
