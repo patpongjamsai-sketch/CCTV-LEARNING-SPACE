@@ -71,6 +71,20 @@ export function LoginForm({ nextPath = '/', errorMessage }: LoginFormProps) {
             ← หน้าหลัก
           </a>
         </div>
+
+        {/* Quick Demo Access for 3D Labs */}
+        <div className="pt-4 mt-2 border-t border-slate-800 text-center">
+          <a
+            href={
+              nextPath.startsWith('/labs/3d')
+                ? `${nextPath}${nextPath.includes('?') ? '&' : '?'}student_code=DEMO-TRAINEE&student_name=${encodeURIComponent('ผู้ทดลองเรียน (Trainee)')}`
+                : '/labs/3d/room-101?student_code=DEMO-TRAINEE&student_name=' + encodeURIComponent('ผู้ทดลองเรียน (Trainee)')
+            }
+            className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold border border-slate-700 transition-colors"
+          >
+            <span>🎮 เข้าสู่ห้องปฏิบัติการ 3D (โหมดทดลองเรียน / Guest Access)</span>
+          </a>
+        </div>
       </div>
     </div>
   );
