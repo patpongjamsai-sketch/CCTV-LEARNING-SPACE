@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRoleplayStore } from '../../store/useRoleplayStore';
+import { useCctvTrainingStore } from '../../store/useCctvTrainingStore';
 import { ConceptId, DeviceId } from '../../shared/domain/roleplayTypes';
 import { LESSON_META } from '../../data/unit1RoleplayContent';
 
@@ -16,6 +17,7 @@ export const FieldNotebook: React.FC = () => {
   const placeComparisonCard = useRoleplayStore((s) => s.placeComparisonCard);
   const learningEvidence = useRoleplayStore((s) => s.learningEvidence);
   const traineeName = useRoleplayStore((s) => s.traineeName);
+  const setActiveStation101Modal = useCctvTrainingStore((s) => s.setActiveStation101Modal);
 
   const [activeTab, setActiveTab] = useState<'checklist' | 'minimap' | 'workbenches' | 'diagnostics' | 'certificate'>('checklist');
 
@@ -161,6 +163,30 @@ export const FieldNotebook: React.FC = () => {
                         💬 {m.lastFeedbackTh}
                       </div>
                     )}
+
+                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-800/80">
+                      <span className="text-[11px] text-slate-400">
+                        {m.isCompleted ? '✓ ปฏิบัติสำเร็จแล้ว' : 'ยังไม่ผ่านเกณฑ์'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const numMap: Record<string, 1 | 2 | 3 | 4 | 5> = {
+                            M1: 1,
+                            M2: 2,
+                            M3: 3,
+                            M4: 4,
+                            M5: 5,
+                          };
+                          const stNum = numMap[m.missionId] || 1;
+                          setNotebookOpen(false);
+                          setActiveStation101Modal(stNum);
+                        }}
+                        className="px-3 py-1 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 active:scale-95 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>ทำภารกิจนี้ ➜</span>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -12,6 +12,7 @@ import {
 import {
   INITIAL_MISSION_1_SLOTS,
   INITIAL_MISSION_2_SLOTS,
+  KNOWLEDGE_CARDS,
   KNOWLEDGE_STATIONS,
 } from '../data/unit1RoleplayContent';
 import { evaluateSystemTopology, TopologyEvaluationResult } from '../shared/domain/connectionRules';
@@ -103,9 +104,13 @@ export interface RoleplayStoreState {
 
   // Mission 1 Actions
   placeCardOnMission1Slot: (slotIndex: number) => void;
+  setMission1SlotCardDirect: (slotIndex: number, cardId: string | null) => void;
+  resetMission1Slots: () => void;
 
   // Mission 2 Actions
   placeCardOnMission2Slot: (slotIndex: number) => void;
+  setMission2SlotCardDirect: (slotIndex: number, cardId: string | null) => void;
+  resetMission2Slots: () => void;
 
   // Mission 3 Actions
   matchDeviceFunction: (deviceId: DeviceId, conceptId: ConceptId) => void;
@@ -114,6 +119,8 @@ export interface RoleplayStoreState {
   placeComparisonCard: (conceptId: ConceptId, targetSide: 'ANALOG' | 'IP') => void;
 
   // Mission 5 & Hardware Actions
+  ensureM5DevicesReady: () => void;
+  resetM5Connections: () => void;
   placeDeviceOnRackOrDesk: (deviceId: DeviceId) => void;
   toggleDevicePower: (deviceId: DeviceId) => void;
   connectCable: (
@@ -463,6 +470,72 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
     }
   },
 
+  setMission1SlotCardDirect: (slotIndex, cardId) => {
+    const { mission1Slots, missions } = get();
+    const updatedSlots = [...mission1Slots];
+    const slot = updatedSlots[slotIndex];
+    if (!slot) return;
+
+    if (!cardId) {
+      updatedSlots[slotIndex] = {
+        ...slot,
+        currentPlacedItem: undefined,
+        status: 'IDLE',
+      };
+    } else {
+      const card = KNOWLEDGE_CARDS[cardId];
+      if (!card) return;
+      const isCorrect = card.conceptId === slot.acceptedConceptId;
+      const isWrongOrder = !isCorrect && updatedSlots.some((s) => s.acceptedConceptId === card.conceptId);
+      updatedSlots[slotIndex] = {
+        ...slot,
+        currentPlacedItem: card,
+        status: isCorrect ? 'CORRECT' : isWrongOrder ? 'WRONG_ORDER' : 'WRONG_TYPE',
+      };
+    }
+
+    const completion = checkMission1Complete(updatedSlots);
+    const updatedMissions = {
+      ...missions,
+      M1: {
+        ...missions.M1,
+        score: completion.score,
+        isCompleted: completion.isComplete,
+        lastFeedbackTh: completion.feedbackTh,
+      },
+    };
+
+    if (completion.isComplete && !missions.M1.isCompleted) {
+      updatedMissions.M2.isUnlocked = true;
+      set({ activeMissionId: 'M2' });
+      get().notify(completion.feedbackTh, 'success');
+    }
+
+    set({
+      mission1Slots: updatedSlots,
+      missions: updatedMissions,
+    });
+    get().recomputeRubric();
+  },
+
+  resetMission1Slots: () => {
+    const { missions } = get();
+    const resetSlots = INITIAL_MISSION_1_SLOTS.map((s) => ({ ...s, status: 'IDLE' as const, currentPlacedItem: undefined }));
+    set({
+      mission1Slots: resetSlots,
+      missions: {
+        ...missions,
+        M1: {
+          ...missions.M1,
+          score: 0,
+          isCompleted: false,
+          lastFeedbackTh: 'รีเซ็ตกระบวนการสร้างภาพดิจิทัลเรียบร้อย',
+        },
+      },
+    });
+    get().recomputeRubric();
+  },
+
   placeCardOnMission2Slot: (slotIndex) => {
     const { carriedItem, mission2Slots, missions } = get();
     if (!carriedItem) {
@@ -518,6 +591,91 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
       set((s) => ({ totalMistakes: s.totalMistakes + 1 }));
       get().notify(validation.feedbackTh, 'error');
     }
+  },
+
+  setMission2SlotCardDirect: (slotIndex, cardId) => {
+    const { mission2Slots, missions } = get();
+    const updatedSlots = [...mission2Slots];
+    const slot = updatedSlots[slotIndex];
+    if (!slot) return;
+
+    if (!cardId) {
+      updatedSlots[slotIndex] = {
+        ...slot,
+        currentPlacedItem: undefined,
+        status: 'IDLE',
+      };
+    } else {
+      const card = KNOWLEDGE_CARDS[cardId];
+      if (!card) return;
+      const isCorrect = card.conceptId === slot.acceptedConceptId;
+      const isWrongOrder = !isCorrect && updatedSlots.some((s) => s.acceptedConceptId === card.conceptId);
+      updatedSlots[slotIndex] = {
+        ...slot,
+        currentPlacedItem: card,
+        status: isCorrect ? 'CORRECT' : isWrongOrder ? 'WRONG_ORDER' : 'WRONG_TYPE',
+      };
+    }
+
+    const completion = checkMission2Complete(updatedSlots);
+    const updatedMissions = {
+      ...missions,
+      M2: {
+        ...missions.M2,
+        score: completion.score,
+        isCompleted: completion.isComplete,
+        lastFeedbackTh: completion.feedbackTh,
+      },
+    };
+
+    if (completion.isComplete && !missions.M2.isCompleted) {
+      updatedMissions.M3.isUnlocked = true;
+      set({ activeMissionId: 'M3' });
+      get().notify(completion.feedbackTh, 'success');
+    }
+
+    set({
+      mission2Slots: updatedSlots,
+      missions: updatedMissions,
+    });
+    get().recomputeRubric();
+  },
+
+  resetMission2Slots: () => {
+    const { missions } = get();
+    const resetSlots = INITIAL_MISSION_2_SLOTS.map((s) => ({ ...s, status: 'IDLE' as const, currentPlacedItem: undefined }));
+    set({
+      mission2Slots: resetSlots,
+      missions: {
+        ...missions,
+        M2: {
+          ...missions.M2,
+          score: 0,
+          isCompleted: false,
+          lastFeedbackTh: 'รีเซ็ตเส้นทาง Data Flow เรียบร้อย',
+        },
+      },
+    });
+    get().recomputeRubric();
+  },
+
+  ensureM5DevicesReady: () => {
+    const readyDevices: Partial<Record<DeviceId, boolean>> = {
+      ...get().placedDevices,
+      CAMERA_BULLET: true,
+      POE_SWITCH_8P: true,
+      NVR_8CH: true,
+      MONITOR: true,
+      CLIENT_PC: true,
+    };
+    set({ placedDevices: readyDevices });
+    get().recomputeRubric();
+  },
+
+  resetM5Connections: () => {
+    set({ connections: [], poweredDevices: {} });
+    get().notify('รีเซ็ตการเชื่อมต่อสายและสถานะไฟทั้งหมดเรียบร้อย', 'info');
+    get().recomputeRubric();
   },
 
   matchDeviceFunction: (deviceId, conceptId) => {

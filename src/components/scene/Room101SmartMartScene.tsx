@@ -4,6 +4,8 @@ import React, { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import { useCctvTrainingStore } from '../../store/useCctvTrainingStore';
+import { useRoleplayStore } from '../../store/useRoleplayStore';
 
 export interface Room101SmartMartSceneProps {
   isRoom102Unlocked?: boolean;
@@ -132,6 +134,12 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
   isRoom102Unlocked = false,
   onEnterRoom102,
 }) => {
+  const setActiveStation101Modal = useCctvTrainingStore((s) => s.setActiveStation101Modal);
+  const activeStation101Modal = useCctvTrainingStore((s) => s.activeStation101Modal);
+  const missions = useRoleplayStore((s) => s.missions);
+  const isStarted = useRoleplayStore((s) => s.isStarted);
+  const isModalActive = activeStation101Modal !== null;
+
   return (
     <group dispose={null}>
       {/* ========================================================
@@ -307,32 +315,107 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
         </mesh>
       </group>
 
-      {/* สถานีทดสอบกล้อง IP (Zone B ที่ X = -6, Z = -8) */}
-      <group position={[-6, 0, -8]}>
+      {/* สถานีทดสอบกล้อง IP (Zone B ที่ X = -6, Z = -8) -> ภารกิจ 1 */}
+      <group
+        position={[-6, 0, -8]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveStation101Modal(1);
+        }}
+      >
         <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
           <boxGeometry args={[1.8, 0.9, 1.0]} />
           <meshStandardMaterial color="#334155" roughness={0.5} />
         </mesh>
+        {isStarted && !isModalActive && (
+          <Html position={[0, 1.6, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStation101Modal(1);
+              }}
+              className="bg-slate-900/95 hover:bg-sky-950 border border-sky-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+            >
+              <span className="w-5 h-5 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                {missions.M1.isCompleted ? '✓' : '1'}
+              </span>
+              <span className="font-bold text-[11px] text-sky-200">โต๊ะ 1: ภาพดิจิทัล</span>
+            </button>
+          </Html>
+        )}
       </group>
 
-      {/* ตู้แร็คเครือข่าย PoE (Zone C ที่ X = 6, Z = -8) */}
-      <group position={[6, 0, -8]}>
+      {/* ตู้แร็คเครือข่าย PoE (Zone C ที่ X = 6, Z = -8) -> ภารกิจ 2 */}
+      <group
+        position={[6, 0, -8]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveStation101Modal(2);
+        }}
+      >
         <mesh position={[0, 1.0, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.9, 2.0, 0.8]} />
           <meshStandardMaterial color="#0f172a" metalness={0.7} roughness={0.3} />
         </mesh>
+        {isStarted && !isModalActive && (
+          <Html position={[0, 2.3, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStation101Modal(2);
+              }}
+              className="bg-slate-900/95 hover:bg-emerald-950 border border-emerald-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+            >
+              <span className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                {missions.M2.isCompleted ? '✓' : '2'}
+              </span>
+              <span className="font-bold text-[11px] text-emerald-200">โต๊ะ 2: Data Flow</span>
+            </button>
+          </Html>
+        )}
       </group>
 
-      {/* เครื่องบันทึกภาพ NVR (Zone D ที่ X = -6, Z = 4) */}
-      <group position={[-6, 0, 4]}>
+      {/* เครื่องบันทึกภาพ NVR (Zone D ที่ X = -6, Z = 4) -> ภารกิจ 3 */}
+      <group
+        position={[-6, 0, 4]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveStation101Modal(3);
+        }}
+      >
         <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
           <boxGeometry args={[1.8, 0.9, 1.0]} />
           <meshStandardMaterial color="#334155" roughness={0.5} />
         </mesh>
+        {isStarted && !isModalActive && (
+          <Html position={[0, 1.6, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStation101Modal(3);
+              }}
+              className="bg-slate-900/95 hover:bg-amber-950 border border-amber-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+            >
+              <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                {missions.M3.isCompleted ? '✓' : '3'}
+              </span>
+              <span className="font-bold text-[11px] text-amber-200">โต๊ะ 3: หน้าที่อุปกรณ์</span>
+            </button>
+          </Html>
+        )}
       </group>
 
-      {/* โต๊ะคอมพิวเตอร์ควบคุม Client PC (Zone E ที่ X = 6, Z = 4) */}
-      <group position={[6, 0, 4]}>
+      {/* โต๊ะคอมพิวเตอร์ควบคุม Client PC (Zone E ที่ X = 6, Z = 4) -> ภารกิจ 5 */}
+      <group
+        position={[6, 0, 4]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveStation101Modal(5);
+        }}
+      >
         <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
           <boxGeometry args={[2.0, 0.9, 1.0]} />
           <meshStandardMaterial color="#1e293b" roughness={0.4} />
@@ -341,10 +424,33 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <boxGeometry args={[0.6, 0.45, 0.04]} />
           <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.5} />
         </mesh>
+        {isStarted && !isModalActive && (
+          <Html position={[0, 1.8, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStation101Modal(5);
+              }}
+              className="bg-slate-900/95 hover:bg-sky-950 border border-sky-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+            >
+              <span className="w-5 h-5 rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                {missions.M5.isCompleted ? '✓' : '5'}
+              </span>
+              <span className="font-bold text-[11px] text-sky-200">โต๊ะ 5: ต่อสาย &amp; Live View</span>
+            </button>
+          </Html>
+        )}
       </group>
 
-      {/* โต๊ะเปรียบเทียบระบบ Analog vs IP (Zone F ที่ X = 0, Z = 9) */}
-      <group position={[0, 0, 9]}>
+      {/* โต๊ะเปรียบเทียบระบบ Analog vs IP (Zone F ที่ X = 0, Z = 9) -> ภารกิจ 4 */}
+      <group
+        position={[0, 0, 9]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveStation101Modal(4);
+        }}
+      >
         <mesh position={[-2.4, 0.45, 0]} castShadow receiveShadow>
           <boxGeometry args={[2.4, 0.9, 1.4]} />
           <meshStandardMaterial color="#78716c" roughness={0.6} />
@@ -353,6 +459,23 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <boxGeometry args={[2.4, 0.9, 1.4]} />
           <meshStandardMaterial color="#0284c7" roughness={0.4} />
         </mesh>
+        {isStarted && !isModalActive && (
+          <Html position={[0, 1.6, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStation101Modal(4);
+              }}
+              className="bg-slate-900/95 hover:bg-purple-950 border border-purple-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+            >
+              <span className="w-5 h-5 rounded-full bg-purple-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                {missions.M4.isCompleted ? '✓' : '4'}
+              </span>
+              <span className="font-bold text-[11px] text-purple-200">โต๊ะ 4: Analog vs IP</span>
+            </button>
+          </Html>
+        )}
       </group>
 
       {/* ========================================================

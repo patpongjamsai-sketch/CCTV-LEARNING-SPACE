@@ -21,7 +21,8 @@ import { SettingsModal } from '../../hud/SettingsModal';
 import { GameStartScreen } from '../../game/GameStartScreen';
 import { createUnit1Submission } from '../../../client/game/createUnit1Submission';
 
-// 3D Props for Rooms 102 - 108
+// 3D Props for Rooms 101 - 108
+import { Room101SmartMartLab } from '../room101/Room101SmartMartLab';
 import { Room102CameraPlacementProps } from './props/Room102CameraPlacementProps';
 import { Room102SmartSchoolLab } from '../room102/Room102SmartSchoolLab';
 import { Room103CablingProps } from './props/Room103CablingProps';
@@ -73,6 +74,8 @@ export const Cctv3DLabApp: React.FC<Cctv3DLabAppProps> = ({
 
   const buildRoomSubmission = useCctvTrainingStore((s) => s.buildRoomSubmission);
   const setActiveRoomId = useCctvTrainingStore((s) => s.setActiveRoomId);
+  const activeStation101Modal = useCctvTrainingStore((s) => s.activeStation101Modal);
+  const setActiveStation101Modal = useCctvTrainingStore((s) => s.setActiveStation101Modal);
   const activeStation102Modal = useCctvTrainingStore((s) => s.activeStation102Modal);
   const setActiveStation102Modal = useCctvTrainingStore((s) => s.setActiveStation102Modal);
   const activeStation103Modal = useCctvTrainingStore((s) => s.activeStation103Modal);
@@ -286,6 +289,18 @@ export const Cctv3DLabApp: React.FC<Cctv3DLabAppProps> = ({
             </div>
           )}
 
+          {/* Room 101 Smart Mart Activity Runner */}
+          {roomNum === 101 && (
+            <Room101SmartMartLab
+              activeStation={activeStation101Modal}
+              onCloseStation={() => setActiveStation101Modal(null)}
+              onCompletedMission={async () => {
+                completionSentRef.current = true;
+                await onCompleted?.(createUnit1Submission(useRoleplayStore.getState()));
+              }}
+            />
+          )}
+
           {/* Room 102 Smart School Activity Runner */}
           {roomNum === 102 && (
             <Room102SmartSchoolLab
@@ -363,27 +378,46 @@ export const Cctv3DLabApp: React.FC<Cctv3DLabAppProps> = ({
             />
           )}
 
-          {/* Roblox Character Walking & Table Interaction Helper Bar */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none">
-            <div className="bg-slate-900/90 backdrop-blur-md border border-sky-500/50 px-5 py-2 rounded-full shadow-2xl flex items-center gap-3 text-xs text-slate-200">
-              <span className="flex items-center gap-1.5 font-bold text-sky-400">
-                <span className="text-base">🧑‍🔧</span>
-                <span>ตัวละคร Roblox:</span>
-                <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 text-slate-100">[W][A][S][D]</span>
-                <span>เดินไปที่โต๊ะ</span>
-              </span>
-              <span className="text-slate-600">|</span>
-              <span className="flex items-center gap-1 text-slate-300">
-                <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 text-slate-100">[Shift]</span>
-                <span>วิ่ง</span>
-              </span>
-              <span className="text-slate-600">|</span>
-              <span className="flex items-center gap-1 text-emerald-400 font-bold">
-                <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-emerald-500/50 text-emerald-300">[E]</span>
-                <span>หรือคลิกที่โต๊ะเพื่อทำภารกิจ</span>
-              </span>
-            </div>
-          </div>
+          {/* Roblox Character Walking & Table Interaction Helper Bar (Hidden when modal is open, and positioned safely above inventory in room 101) */}
+          {activeStation101Modal === null &&
+            activeStation102Modal === null &&
+            activeStation103Modal === null &&
+            activeStation104Modal === null &&
+            activeStation105Modal === null &&
+            activeStation106Modal === null &&
+            activeStation107Modal === null &&
+            activeStation108Modal === null && (
+              <div
+                className={`fixed ${
+                  roomNum === 101 ? 'bottom-28' : 'bottom-6'
+                } left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none transition-all`}
+              >
+                <div className="bg-slate-900/90 backdrop-blur-md border border-sky-500/50 px-5 py-2 rounded-full shadow-2xl flex items-center gap-3 text-xs text-slate-200">
+                  <span className="flex items-center gap-1.5 font-bold text-sky-400">
+                    <span className="text-base">🧑‍🔧</span>
+                    <span>ตัวละคร Roblox:</span>
+                    <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 text-slate-100">
+                      [W][A][S][D]
+                    </span>
+                    <span>เดินไปที่โต๊ะ</span>
+                  </span>
+                  <span className="text-slate-600">|</span>
+                  <span className="flex items-center gap-1 text-slate-300">
+                    <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 text-slate-100">
+                      [Shift]
+                    </span>
+                    <span>วิ่ง</span>
+                  </span>
+                  <span className="text-slate-600">|</span>
+                  <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                    <span className="font-mono bg-slate-800 px-1.5 py-0.5 rounded border border-emerald-500/50 text-emerald-300">
+                      [E]
+                    </span>
+                    <span>หรือคลิกที่โต๊ะเพื่อทำภารกิจ</span>
+                  </span>
+                </div>
+              </div>
+            )}
 
           <ObjectiveHud />
           {roomNum === 101 && <InventoryBar />}

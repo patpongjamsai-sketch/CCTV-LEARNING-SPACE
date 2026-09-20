@@ -4,6 +4,7 @@ import { useCctvTrainingStore } from '../../store/useCctvTrainingStore';
 
 export const ObjectiveHud: React.FC = () => {
   const activeRoomId = useCctvTrainingStore((s) => s.activeRoomId);
+  const setActive101Modal = useCctvTrainingStore((s) => s.setActiveStation101Modal);
   const setActive102Modal = useCctvTrainingStore((s) => s.setActiveStation102Modal);
   const smartSchool102 = useCctvTrainingStore((s) => s.smartSchool102);
 
@@ -660,6 +661,74 @@ export const ObjectiveHud: React.FC = () => {
         <p className="text-xs text-slate-300 mt-0.5 leading-relaxed line-clamp-2">
           {activeMission.descriptionTh}
         </p>
+
+        {/* 5 Station Action Buttons for Room 101 */}
+        <div className="grid grid-cols-5 gap-1 pt-2 border-t border-slate-800">
+          <button
+            type="button"
+            onClick={() => setActive101Modal(1)}
+            className={`p-1 rounded-lg text-[10px] font-semibold transition-all text-center border cursor-pointer ${
+              missions.M1.isCompleted
+                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-sky-400'
+            }`}
+          >
+            <span className="block font-bold truncate">{missions.M1.isCompleted ? '✓ M1' : '1. Pipeline'}</span>
+            <span className="text-[9px] opacity-75">{missions.M1.score}/15</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActive101Modal(2)}
+            className={`p-1 rounded-lg text-[10px] font-semibold transition-all text-center border cursor-pointer ${
+              missions.M2.isCompleted
+                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-emerald-400'
+            }`}
+          >
+            <span className="block font-bold truncate">{missions.M2.isCompleted ? '✓ M2' : '2. Flow'}</span>
+            <span className="text-[9px] opacity-75">{missions.M2.score}/20</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActive101Modal(3)}
+            className={`p-1 rounded-lg text-[10px] font-semibold transition-all text-center border cursor-pointer ${
+              missions.M3.isCompleted
+                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-amber-400'
+            }`}
+          >
+            <span className="block font-bold truncate">{missions.M3.isCompleted ? '✓ M3' : '3. Match'}</span>
+            <span className="text-[9px] opacity-75">{missions.M3.score}/15</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActive101Modal(4)}
+            className={`p-1 rounded-lg text-[10px] font-semibold transition-all text-center border cursor-pointer ${
+              missions.M4.isCompleted
+                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-purple-400'
+            }`}
+          >
+            <span className="block font-bold truncate">{missions.M4.isCompleted ? '✓ M4' : '4. Compare'}</span>
+            <span className="text-[9px] opacity-75">{missions.M4.score}/15</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActive101Modal(5)}
+            className={`p-1 rounded-lg text-[10px] font-semibold transition-all text-center border cursor-pointer ${
+              missions.M5.isCompleted
+                ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-sky-400'
+            }`}
+          >
+            <span className="block font-bold truncate">{missions.M5.isCompleted ? '✓ M5' : '5. Wiring'}</span>
+            <span className="text-[9px] opacity-75">{missions.M5.score}/25</span>
+          </button>
+        </div>
 
         {/* Progress Bar */}
         <div className="w-full bg-slate-800 rounded-full h-2 mt-2.5 overflow-hidden border border-slate-700">

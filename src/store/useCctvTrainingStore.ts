@@ -33,6 +33,12 @@ export interface CctvTrainingStoreState {
   setActiveRoomId: (roomId: string) => void;
 
   // ==========================================
+  // Room 101 State & Actions (Smart Mart Simulation Modals)
+  // ==========================================
+  activeStation101Modal: 1 | 2 | 3 | 4 | 5 | null;
+  setActiveStation101Modal: (station: 1 | 2 | 3 | 4 | 5 | null) => void;
+
+  // ==========================================
   // Room 102 State & Actions (Smart School Simulation)
   // ==========================================
   activeStation102Modal: 1 | 2 | 3 | null;
@@ -274,6 +280,10 @@ export const useCctvTrainingStore = create<CctvTrainingStoreState>((set, get) =>
   activeTool: 'TOOL_NONE',
   setActiveTool: (tool) => set({ activeTool: tool }),
   setActiveRoomId: (roomId) => set({ activeRoomId: roomId }),
+
+  // Room 101 (Smart Mart Simulation Modals)
+  activeStation101Modal: null,
+  setActiveStation101Modal: (station) => set({ activeStation101Modal: station }),
 
   // Room 102 (Smart School Simulation)
   activeStation102Modal: null,
