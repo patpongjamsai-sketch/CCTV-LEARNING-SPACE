@@ -1,6 +1,7 @@
 import { getVerifiedAuthContext } from '../lib/auth/claims';
 import { createAdminSupabaseClient } from '../lib/supabase/admin';
 import { DashboardShell, type DashboardUnit } from '../components/portal/DashboardShell';
+import { getStudentProgressOverviewService } from '../server/services/progressionService';
 
 export default async function DashboardPage() {
   try {
@@ -31,46 +32,36 @@ export default async function DashboardPage() {
     const classId = membership?.class_id;
     const isStaff = profile.role === 'teacher' || profile.role === 'admin';
 
-    // Fetch units and student's progress
-    const { data: unitRows } = await supabase
-      .from('units')
-      .select('id, sequence_no, title')
-      .eq('status', 'published')
-      .order('sequence_no', { ascending: true });
-
-    const { data: progressRows } = await supabase
-      .from('unit_progress')
-      .select('unit_id, highest_score, passed, progress_percent')
-      .eq('student_id', authContext.userId);
-
-    const progressMap = new Map((progressRows || []).map((p: any) => [p.unit_id, p]));
+    // Progress and unlock state come from the server progression predicate.
+    const overview = classId && !isStaff
+      ? await getStudentProgressOverviewService(authContext.userId, classId)
+      : null;
 
     const units: DashboardUnit[] = [];
     let completedUnits = 0;
     let bestScore = 0;
 
-    for (const u of unitRows || []) {
-      const prog = progressMap.get(u.id);
-      const passed = Boolean(prog?.passed);
-      const score = Number(prog?.highest_score || 0);
+    for (const u of overview?.units || []) {
+      const passed = u.passed;
+      const score = u.approvedScore ?? 0;
 
       if (passed) completedUnits += 1;
       if (score > bestScore) bestScore = score;
 
-      const isUnlocked = isStaff || u.sequence_no === 1 || passed;
+      const isUnlocked = u.unlocked;
 
       let statusLabel = 'รอเปิด';
       if (passed) {
         statusLabel = `ผ่านแล้ว (${score} คะแนน)`;
       } else if (isUnlocked) {
-        statusLabel = u.sequence_no === 1 ? 'พร้อมเรียน' : 'เปิดแล้ว';
+        statusLabel = u.sequenceNo === 1 ? 'พร้อมเรียน' : 'เปิดแล้ว';
       }
 
-      const href = u.sequence_no === 1 ? '/labs/3d/room-101' : '/courses/21909-2020';
+      const href = '/courses/21909-2020';
 
       units.push({
-        id: u.id,
-        sequenceNo: u.sequence_no,
+        id: u.unitId,
+        sequenceNo: u.sequenceNo,
         title: u.title,
         statusLabel,
         href,
@@ -86,7 +77,7 @@ export default async function DashboardPage() {
         }}
         summary={{
           completedUnits,
-          totalUnits: (unitRows || []).length || 8,
+          totalUnits: overview?.units.length || 8,
           passedMissions: completedUnits,
           bestScore,
         }}
