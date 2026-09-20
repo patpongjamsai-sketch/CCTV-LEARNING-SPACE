@@ -138,3 +138,82 @@ export async function overrideStudentProgressService(
     return { success: true, progressId: result.progress_id };
   });
 }
+
+export type ClassStudentRecord = {
+  studentId: string;
+  studentCode: string;
+  displayName: string;
+  unitProgress: Record<string, {
+    unitId: string;
+    sequenceNo: number;
+    progressPercent: number;
+    passed: boolean;
+    unlocked: boolean;
+    approvedScore: number | null;
+  }>;
+};
+
+/**
+ * Retrieves the enrolled students in a class along with their unit progression states.
+ */
+export async function getClassStudentsService(
+  actorId: string,
+  classId: string,
+): Promise<ClassStudentRecord[]> {
+  await assertCanManageClass(actorId, classId);
+  const sql = getServerDatabase();
+
+  const rows = await sql`
+    select
+      p.id as student_id,
+      p.student_code,
+      p.display_name,
+      u.id as unit_id,
+      u.sequence_no,
+      coalesce(up.progress_percent, 0) as progress_percent,
+      coalesce(up.passed, false) as passed,
+      coalesce(private.is_unit_unlocked(p.id, ${classId}, u.id), false) as unlocked,
+      up.approved_score
+    from public.class_members as cm
+    join public.profiles as p on p.id = cm.profile_id
+    join public.classes as c on c.id = cm.class_id
+    left join public.units as u on u.course_id = c.course_id and u.status = 'published'
+    left join public.unit_progress as up
+      on up.student_id = p.id
+     and up.class_id = cm.class_id
+     and up.unit_id = u.id
+    where cm.class_id = ${classId}
+      and cm.member_role = 'student'
+      and cm.active = true
+    order by p.student_code asc, u.sequence_no asc
+  `;
+
+  const map = new Map<string, ClassStudentRecord>();
+
+  for (const row of rows) {
+    if (!map.has(row.student_id)) {
+      map.set(row.student_id, {
+        studentId: row.student_id,
+        studentCode: row.student_code || '',
+        displayName: row.display_name || '',
+        unitProgress: {},
+      });
+    }
+
+    if (row.unit_id) {
+      const student = map.get(row.student_id)!;
+      const unitKey = `U${String(row.sequence_no).padStart(2, '0')}`;
+      student.unitProgress[unitKey] = {
+        unitId: row.unit_id,
+        sequenceNo: row.sequence_no,
+        progressPercent: Number(row.progress_percent),
+        passed: Boolean(row.passed),
+        unlocked: Boolean(row.unlocked),
+        approvedScore: row.approved_score !== null ? Number(row.approved_score) : null,
+      };
+    }
+  }
+
+  return Array.from(map.values());
+}
+

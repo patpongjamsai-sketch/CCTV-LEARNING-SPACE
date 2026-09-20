@@ -107,3 +107,8 @@ export const studentProgressPathSchema = z.object({
   studentId: z.string().uuid(),
   unitId: z.string().uuid(),
 });
+
+export const classPathSchema = z.object({
+  classId: z.string().uuid(),
+});
+

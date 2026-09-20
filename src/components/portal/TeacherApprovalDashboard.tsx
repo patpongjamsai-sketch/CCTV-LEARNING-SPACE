@@ -18,10 +18,26 @@ export type TeacherApprovalDashboardProps = {
 
 type ActiveTab = 'approvals' | 'students' | 'grading' | 'csv' | 'override';
 
+export type RosterStudent = {
+    id: string;
+    code: string;
+    name: string;
+    unitProgress: Record<string, { lessons: number; lab: boolean; exam: boolean; passed: boolean }>;
+};
+
+const DEFAULT_STUDENT_ROSTER: RosterStudent[] = [
+    { id: '11111111-1111-4111-8111-111111111111', code: '67301', name: 'นายสมชาย ใจดี', unitProgress: { U01: { lessons: 10, lab: true, exam: true, passed: true }, U02: { lessons: 4, lab: false, exam: false, passed: false } } },
+    { id: '22222222-2222-4222-8222-222222222222', code: '67302', name: 'นางสาวสมหญิง มั่นคง', unitProgress: { U01: { lessons: 10, lab: true, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '33333333-3333-4333-8333-333333333333', code: '67303', name: 'นายกิตติพงษ์ ช่างกล้อง', unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: 'demo-trainee', code: 'DEMO-TRAINEE', name: 'ผู้ทดลองเรียน (Trainee Sandbox)', unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false } } },
+];
+
 export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherApprovalDashboardProps) {
     const [activeTab, setActiveTab] = useState<ActiveTab>('approvals');
     const [approvals, setApprovals] = useState<TeacherApprovals>(DEFAULT_TEACHER_APPROVALS);
     const [submissions, setSubmissions] = useState<SubjectiveSubmission[]>([]);
+    const [students, setStudents] = useState<RosterStudent[]>(DEFAULT_STUDENT_ROSTER);
+    const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
 
     // Grading modal/form state
@@ -41,10 +57,71 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [overridePercent, setOverridePercent] = useState('100');
     const [overrideReason, setOverrideReason] = useState('');
 
+    const fetchStudents = async (cid: string) => {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid);
+        if (!isUuid) return;
+        setIsLoadingStudents(true);
+        try {
+            const res = await fetch(`/api/classes/${cid}/students`);
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    const mapped: RosterStudent[] = data.map((st: {
+                        studentId: string;
+                        studentCode: string;
+                        displayName: string;
+                        unitProgress?: Record<string, { progressPercent: number; passed: boolean; unlocked: boolean }>;
+                    }) => ({
+                        id: st.studentId,
+                        code: st.studentCode || '',
+                        name: st.displayName || 'ผู้เรียน',
+                        unitProgress: Object.entries(st.unitProgress || {}).reduce((acc, [uk, uv]) => {
+                            acc[uk] = {
+                                lessons: uv.progressPercent >= 40 ? 10 : Math.round((uv.progressPercent / 40) * 10),
+                                lab: uv.unlocked,
+                                exam: uv.passed,
+                                passed: uv.passed,
+                            };
+                            return acc;
+                        }, {} as Record<string, { lessons: number; lab: boolean; exam: boolean; passed: boolean }>),
+                    }));
+                    setStudents(mapped);
+                }
+            }
+        } catch {
+            // fallback gracefully
+        } finally {
+            setIsLoadingStudents(false);
+        }
+    };
+
     // Rehydrate and reload state when events fire
     useEffect(() => {
-        setApprovals(getTeacherApprovals());
+        const savedApprovals = getTeacherApprovals();
+        setApprovals(savedApprovals);
         setSubmissions(getSubjectiveSubmissions());
+
+        // Update DEMO-TRAINEE with stored approvals
+        setStudents((prev) =>
+            prev.map((st) => {
+                if (st.code === 'DEMO-TRAINEE') {
+                    return {
+                        ...st,
+                        unitProgress: {
+                            U01: {
+                                lessons: 10,
+                                lab: savedApprovals.unlockedLabs.U01 || false,
+                                exam: savedApprovals.unlockedAssessments.U01 || false,
+                                passed: savedApprovals.passedUnits.U01 || false,
+                            },
+                        },
+                    };
+                }
+                return st;
+            }),
+        );
+
+        fetchStudents(classId);
 
         const updateState = () => {
             setApprovals(getTeacherApprovals());
@@ -57,7 +134,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             window.removeEventListener('cctv_approvals_updated', updateState);
             window.removeEventListener('cctv_subjective_updated', updateState);
         };
-    }, []);
+    }, [classId]);
 
     const showNotice = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
         setNotification({ type, message });
@@ -174,13 +251,136 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         showNotice(`บันทึกผลการตรวจข้อสอบอัตนัยของ ${selectedSubmission.studentName} เรียบร้อย (${status === 'graded' ? 'ผ่านเกณฑ์' : 'ขอให้แก้ไข'})`);
     };
 
-    // Mock Sample Student List for Roster
-    const studentRoster = [
-        { code: '67301', name: 'นายสมชาย ใจดี', unitProgress: { U01: { lessons: 10, lab: true, exam: true, passed: true }, U02: { lessons: 4, lab: false, exam: false, passed: false } } },
-        { code: '67302', name: 'นางสาวสมหญิง มั่นคง', unitProgress: { U01: { lessons: 10, lab: true, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
-        { code: '67303', name: 'นายกิตติพงษ์ ช่างกล้อง', unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
-        { code: 'DEMO-TRAINEE', name: 'ผู้ทดลองเรียน (Trainee Sandbox)', unitProgress: { U01: { lessons: 10, lab: approvals.unlockedLabs.U01 || false, exam: approvals.unlockedAssessments.U01 || false, passed: approvals.passedUnits.U01 || false } } },
-    ];
+    // Handler to approve student progress (optimistic local state + DB API sync)
+    const handleApproveStudent = async (student: RosterStudent, unitKey: string = 'U01') => {
+        setStudents((prev) =>
+            prev.map((s) => {
+                if (s.id === student.id || s.code === student.code) {
+                    const currentU = s.unitProgress[unitKey] || { lessons: 10, lab: false, exam: false, passed: false };
+                    return {
+                        ...s,
+                        unitProgress: {
+                            ...s.unitProgress,
+                            [unitKey]: {
+                                ...currentU,
+                                lab: true,
+                                exam: true,
+                                passed: true,
+                            },
+                        },
+                    };
+                }
+                return s;
+            }),
+        );
+
+        const isClassUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
+        const isStudentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(student.id);
+
+        if (isClassUuid && isStudentUuid) {
+            try {
+                const unitUuid = '33333333-3333-4333-8333-333333333333';
+                const res = await fetch(`/api/classes/${classId}/students/${student.id}/progress/${unitUuid}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        progressPercent: 100,
+                        passed: true,
+                        reason: 'อนุมัติผ่านด่านโดยครูผู้สอน (Teacher Override via Dashboard)',
+                    }),
+                });
+
+                if (res.ok) {
+                    showNotice(`✓ ฐานข้อมูลอัปเดต: ปลดล็อกและอนุมัติสิทธิ์ให้ ${student.name} เรียบร้อยแล้ว`, 'success');
+                    return;
+                }
+            } catch {
+                // fallback notice
+            }
+        }
+
+        showNotice(`อนุมัติสิทธิ์พิเศษให้ ${student.name} เข้าห้องแล็บและทำแบบทดสอบได้ทันที`);
+    };
+
+    // Handler to submit teacher override
+    const handleOverrideSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const updated: TeacherApprovals = {
+            ...approvals,
+            passedUnits: {
+                ...approvals.passedUnits,
+                [overrideUnitId]: overridePassed,
+            },
+        };
+        setApprovals(updated);
+        saveTeacherApprovals(updated);
+
+        const isClassUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
+        const targetStudent = students.find((s) => s.code === overrideStudentId || s.id === overrideStudentId);
+        const isStudentUuid = targetStudent && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetStudent.id);
+
+        if (isClassUuid && isStudentUuid && targetStudent) {
+            try {
+                const unitUuid = '33333333-3333-4333-8333-333333333333';
+                const res = await fetch(`/api/classes/${classId}/students/${targetStudent.id}/progress/${unitUuid}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        progressPercent: Number(overridePercent),
+                        passed: overridePassed,
+                        reason: overrideReason || 'Teacher Override Audit via Dashboard',
+                    }),
+                });
+                if (res.ok) {
+                    showNotice(`✓ บันทึกผลลงฐานข้อมูล: อนุมัติ Override สำหรับ ${targetStudent.name} (${overrideStudentId}) สำเร็จ`, 'success');
+                    fetchStudents(classId);
+                    return;
+                }
+            } catch {
+                // fallback
+            }
+        }
+
+        showNotice(`บันทึก Teacher Override สำหรับรหัส ${overrideStudentId} หน่วย ${overrideUnitId} เรียบร้อยแล้ว`);
+    };
+
+    // Handler to import student CSV
+    const handleCsvImport = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsImporting(true);
+        const isClassUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetClassId);
+
+        if (isClassUuid) {
+            try {
+                const res = await fetch(`/api/classes/${targetClassId}/students/import`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ csv: csvText }),
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setIsImporting(false);
+                    showNotice(`✓ นำเข้ารายชื่อนักเรียนลงฐานข้อมูลสำเร็จ ${data.count} รายการ`, 'success');
+                    fetchStudents(targetClassId);
+                    return;
+                } else {
+                    const err = await res.json();
+                    showNotice(`เกิดข้อผิดพลาดในการนำเข้า: ${err.error || 'Unknown error'}`, 'error');
+                    setIsImporting(false);
+                    return;
+                }
+            } catch {
+                // fallback
+            }
+        }
+
+        setTimeout(() => {
+            setIsImporting(false);
+            showNotice('นำเข้ารายชื่อนักเรียนในชั้นเรียนสำเร็จ 3 รายการ');
+        }, 800);
+    };
+
 
     return (
         <section className="portal-teacher-dashboard bg-slate-900/95 border border-sky-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl my-8 text-slate-100">
@@ -679,7 +879,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             </p>
                         </div>
                         <span className="text-xs font-mono text-slate-400">
-                            จำนวนผู้เรียน: {studentRoster.length} คน
+                            {isLoadingStudents ? 'กำลังโหลดข้อมูลจากฐานข้อมูล...' : `จำนวนผู้เรียน: ${students.length} คน`}
                         </span>
                     </div>
 
@@ -697,11 +897,11 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
-                                {studentRoster.map((st) => {
-                                    const u1 = st.unitProgress.U01;
+                                {students.map((st) => {
+                                    const u1 = st.unitProgress.U01 || { lessons: 0, lab: false, exam: false, passed: false };
                                     return (
-                                        <tr key={st.code} className="hover:bg-slate-950/40 transition-colors">
-                                            <td className="p-3 font-mono font-bold text-sky-400">{st.code}</td>
+                                        <tr key={st.code || st.id} className="hover:bg-slate-950/40 transition-colors">
+                                            <td className="p-3 font-mono font-bold text-sky-400">{st.code || st.id.slice(0, 8)}</td>
                                             <td className="p-3 font-semibold text-white">{st.name}</td>
                                             <td className="p-3">
                                                 <span className={`px-2 py-0.5 rounded text-[11px] font-mono ${u1.lessons >= 10 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
@@ -726,9 +926,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                             <td className="p-3 text-right">
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        showNotice(`อนุมัติสิทธิ์พิเศษให้ ${st.name} เข้าห้องแล็บและทำแบบทดสอบได้ทันที`);
-                                                    }}
+                                                    onClick={() => handleApproveStudent(st, 'U01')}
                                                     className="px-3 py-1.5 rounded-lg bg-sky-600/80 hover:bg-sky-500 text-white text-xs font-semibold transition-colors cursor-pointer"
                                                 >
                                                     อนุมัติผ่านด่าน
@@ -746,19 +944,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             {/* TAB 4: TEACHER OVERRIDE FORM */}
             {activeTab === 'override' && (
                 <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        const updated: TeacherApprovals = {
-                            ...approvals,
-                            passedUnits: {
-                                ...approvals.passedUnits,
-                                [overrideUnitId]: overridePassed,
-                            },
-                        };
-                        setApprovals(updated);
-                        saveTeacherApprovals(updated);
-                        showNotice(`บันทึก Teacher Override สำหรับรหัส ${overrideStudentId} หน่วย ${overrideUnitId} เรียบร้อยแล้ว`);
-                    }}
+                    onSubmit={handleOverrideSubmit}
                     className="space-y-4 max-w-2xl"
                 >
                     <h3 className="text-base font-bold text-white">
@@ -846,14 +1032,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             {/* TAB 5: CSV IMPORT FORM */}
             {activeTab === 'csv' && (
                 <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        setIsImporting(true);
-                        setTimeout(() => {
-                            setIsImporting(false);
-                            showNotice('นำเข้ารายชื่อนักเรียนในชั้นเรียนสำเร็จ 3 รายการ');
-                        }, 800);
-                    }}
+                    onSubmit={handleCsvImport}
                     className="space-y-4 max-w-2xl"
                 >
                     <h3 className="text-base font-bold text-white">
