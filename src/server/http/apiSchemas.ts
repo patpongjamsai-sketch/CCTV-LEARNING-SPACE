@@ -30,3 +30,80 @@ export const progressOverrideInputSchema = z.object({
   passed: z.boolean(),
   reason: z.string().trim().min(3),
 });
+
+const answerPayloadSchema = z
+  .union([z.array(z.unknown()), z.record(z.string(), z.unknown())])
+  .superRefine((value, context) => {
+    const serialized = JSON.stringify(value);
+    if (serialized.length > 262144) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Answer payload is too large',
+      });
+    }
+  });
+
+export const learningSubmissionInputSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('quiz'),
+      classId: z.string().uuid(),
+      quizId: z.string().uuid(),
+      answers: answerPayloadSchema,
+      startedAt: z.string().datetime().optional(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('lab'),
+      classId: z.string().uuid(),
+      unitId: z.string().uuid(),
+      title: z.string().trim().min(1).max(200),
+      studentNotes: z.string().trim().max(5_000).optional(),
+    })
+    .strict(),
+]);
+
+export const evidenceSubmissionIdSchema = z.string().uuid();
+
+export const evidenceMetadataSchema = z
+  .record(z.string(), z.unknown())
+  .superRefine((value, context) => {
+    if (JSON.stringify(value).length > 16_384) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Evidence metadata is too large',
+      });
+    }
+  });
+
+export const teacherReviewInputSchema = z
+  .object({
+    status: z.enum(['reviewing', 'passed', 'revision_required']),
+    approvedScore: z.number().min(0).max(100).nullable().optional(),
+    feedback: z.string().trim().max(5_000).optional(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.status === 'passed' && (value.approvedScore === null || value.approvedScore === undefined)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['approvedScore'],
+        message: 'A passed LAB requires an approved score',
+      });
+    }
+
+    if (value.status === 'reviewing' && value.approvedScore !== undefined && value.approvedScore !== null) {
+      context.addIssue({
+        code: 'custom',
+        path: ['approvedScore'],
+        message: 'A reviewing LAB cannot receive an approved score',
+      });
+    }
+  });
+
+export const studentProgressPathSchema = z.object({
+  classId: z.string().uuid(),
+  studentId: z.string().uuid(),
+  unitId: z.string().uuid(),
+});

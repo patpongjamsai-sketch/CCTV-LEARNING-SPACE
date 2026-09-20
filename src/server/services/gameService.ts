@@ -2,7 +2,7 @@ import 'server-only';
 
 import { canSubmitForStudent } from '../auth/authorizationRules';
 import { getServerDatabase, withTrustedTransaction } from '../database/client';
-import { evaluateUnit1Submission, type Unit1Submission } from '../game/evaluateUnit1Submission';
+import { evaluateRoomSubmission } from '../game/evaluateRoomSubmission';
 import {
   gameEventsInputSchema,
   gameFinalizeInputSchema,
@@ -171,7 +171,7 @@ export async function finalizeGameSessionService(
   }
 
   // 1. Server-authoritative score calculation (ignoring any client score)
-  const evaluation = evaluateUnit1Submission(input.answerState as Unit1Submission);
+  const evaluation = evaluateRoomSubmission(session.unit_id, input.answerState);
   const hintsUsed = typeof (input.answerState as { totalHintsUsed?: unknown })?.totalHintsUsed === 'number'
     ? (input.answerState as { totalHintsUsed: number }).totalHintsUsed
     : 0;
