@@ -379,6 +379,75 @@ select test_support.assert_true(
   ),
   'Unit 2 must remain locked until Unit 1 is passed under its completion rule'
 );
+
+-- Frozen Unit 1 rule: a teacher-passed LAB with evidence is sufficient to
+-- complete Unit 1 and unlock the next unit, even when a stricter game-score
+-- completion rule also exists for the unit.
+insert into public.lab_submissions (
+  id, class_id, unit_id, student_id, title, student_notes, status
+)
+values (
+  '6a000000-0000-0000-0000-000000000001',
+  '66000000-0000-0000-0000-000000000001',
+  '65000000-0000-0000-0000-000000000001',
+  '61000000-0000-0000-0000-000000000001',
+  'LAB01 evidence gate',
+  'Teacher-reviewed Unit 1 practical evidence',
+  'submitted'
+);
+
+update public.lab_submissions
+set status = 'submitted', submitted_at = now()
+where id = '6a000000-0000-0000-0000-000000000001';
+
+insert into public.evidence_files (
+  lab_submission_id, storage_path, original_name, mime_type, file_size, uploaded_by
+)
+values (
+  '6a000000-0000-0000-0000-000000000001',
+  '61000000-0000-0000-0000-000000000001/6a000000-0000-0000-0000-000000000001/lab01.pdf',
+  'lab01.pdf',
+  'application/pdf',
+  1024,
+  '61000000-0000-0000-0000-000000000001'
+);
+
+select private.review_lab_submission(
+  '6a000000-0000-0000-0000-000000000001',
+  'reviewing',
+  null,
+  'Evidence checked',
+  '62000000-0000-0000-0000-000000000001'
+);
+
+select private.review_lab_submission(
+  '6a000000-0000-0000-0000-000000000001',
+  'passed',
+  90,
+  'LAB01 passed',
+  '62000000-0000-0000-0000-000000000001'
+);
+
+select test_support.assert_true(
+  private.is_unit_unlocked(
+    '61000000-0000-0000-0000-000000000001',
+    '66000000-0000-0000-0000-000000000001',
+    '65000000-0000-0000-0000-000000000002'
+  ),
+  'a passed LAB with evidence must unlock Unit 2 without requiring a separate game score'
+);
+
+update public.unit_progress
+set status = 'in_progress',
+    progress_percent = 0,
+    approved_score = null,
+    passed = false,
+    completed_at = null,
+    approved_by = null,
+    approved_at = null
+where student_id = '61000000-0000-0000-0000-000000000001'
+  and class_id = '66000000-0000-0000-0000-000000000001'
+  and unit_id = '65000000-0000-0000-0000-000000000001';
 reset role;
 
 set local role authenticated;

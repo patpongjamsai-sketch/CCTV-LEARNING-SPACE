@@ -1,6 +1,8 @@
 import { ZodError } from 'zod';
 import { requireVerifiedAuthContext, UnauthenticatedError } from '../../../../../../../../lib/auth/claims';
 import { overrideStudentProgressService } from '../../../../../../../../server/services/classService';
+import { studentProgressPathSchema } from '../../../../../../../../server/http/apiSchemas';
+import { getStudentUnitProgressService } from '../../../../../../../../server/services/progressionService';
 
 type RouteContext = {
   params: Promise<{
@@ -10,17 +12,48 @@ type RouteContext = {
   }>;
 };
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const authContext = await requireVerifiedAuthContext();
+    const params = studentProgressPathSchema.parse(await context.params);
+    const result = await getStudentUnitProgressService(
+      authContext.userId,
+      params.classId,
+      params.studentId,
+      params.unitId,
+    );
+
+    return Response.json(result, { status: 200 });
+  } catch (error) {
+    if (error instanceof UnauthenticatedError) {
+      return Response.json({ error: error.message }, { status: 401 });
+    }
+    if (error instanceof ZodError) {
+      return Response.json({ error: 'Invalid progress path', details: error.issues }, { status: 400 });
+    }
+    if (error instanceof Error && error.message.startsWith('Forbidden:')) {
+      return Response.json({ error: error.message }, { status: 403 });
+    }
+    if (error instanceof Error && error.message.startsWith('Not found:')) {
+      return Response.json({ error: error.message }, { status: 404 });
+    }
+
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    return Response.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const authContext = await requireVerifiedAuthContext();
-    const { classId, studentId, unitId } = await context.params;
+    const params = studentProgressPathSchema.parse(await context.params);
     const body = await request.json();
 
     const result = await overrideStudentProgressService(
       authContext.userId,
-      classId,
-      studentId,
-      unitId,
+      params.classId,
+      params.studentId,
+      params.unitId,
       body,
     );
 
