@@ -16,7 +16,7 @@ export function GameStartScreen({
   errorMessage,
 }: GameStartScreenProps) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
       <div className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-3xl p-7 shadow-2xl text-slate-100 flex flex-col gap-4 text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sky-500/20 text-sky-400 mx-auto text-3xl border border-sky-500/30">
           📹
@@ -37,7 +37,7 @@ export function GameStartScreen({
         <div className="text-left bg-slate-950/60 p-3 rounded-xl border border-slate-800">
           <span className="block text-xs text-slate-400">ผู้รับการฝึกจากบัญชีที่เข้าสู่ระบบ</span>
           <strong className="block text-slate-100">{displayName}</strong>
-          {studentCode ? <span className="text-xs text-sky-300">รหัสนักเรียน {studentCode}</span> : null}
+          {studentCode ? <span className="block text-xs text-sky-300 mt-0.5">รหัสนักเรียน {studentCode}</span> : null}
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-left text-[11px] text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80">

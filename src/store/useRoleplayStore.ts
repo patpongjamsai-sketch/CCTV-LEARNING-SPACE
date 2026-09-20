@@ -272,13 +272,16 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
   reducedMotion: false,
   graphicsQuality: 'HIGH',
 
-  startSession: (name) => {
+  startSession: (name, roomTitle) => {
     set({
       isStarted: true,
       sessionStartTime: Date.now(),
       traineeName: name || 'นักเรียนช่างฝึกหัด CCTV',
     });
-    get().notify('เริ่มภารกิจเปิดระบบ Smart Mart CCTV!', 'info');
+    get().notify(
+      `เริ่มภารกิจ ${roomTitle || 'ห้องปฏิบัติการจำลอง 3D'}!`,
+      'info'
+    );
   },
 
   setCurrentZone: (zone) => set({ currentZone: zone }),

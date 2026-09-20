@@ -190,21 +190,21 @@ export const FieldNotebook: React.FC = () => {
           {activeTab === 'minimap' && (
             <div className="flex flex-col items-center gap-4">
               <p className="text-xs text-slate-400">
-                เดินสำรวจตามสถานีทั้ง 6 โซนใน Smart Mart (ตัวคุณอยู่ที่: <strong className="text-sky-400">{currentZone}</strong>)
+                ผังห้องปฏิบัติการศูนย์ฝึกอบรม Smart Mart &gt; ทางเชื่อมต่อ Room 102
               </p>
               <div className="grid grid-cols-3 gap-3 w-full max-w-2xl bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center text-xs">
                 <div className={`p-4 rounded-xl border ${currentZone === 'ZONE_B' ? 'border-sky-400 bg-sky-950/30 font-bold' : 'border-slate-800 bg-slate-900/40'}`}>
                   <div className="text-lg">📹</div>
-                  <div className="text-sky-300 font-semibold mt-1">Zone B</div>
-                  <div className="text-slate-400 text-[10px]">สถานีกล้อง IP</div>
+                  <div className="text-sky-300 font-semibold mt-1">สถานีกล้องวงจรปิด IP</div>
+                  <div className="text-slate-400 text-[10px]">ทดสอบและกำหนดค่ากล้อง</div>
                 </div>
                 <div className="p-4 rounded-xl border border-slate-800/40 bg-slate-900/20 text-slate-600 flex flex-col justify-center">
-                  <div className="text-xs">ทางเดินชั้นวางของ</div>
+                  <div className="text-xs">ทางเดินกลางร้าน</div>
                 </div>
                 <div className={`p-4 rounded-xl border ${currentZone === 'ZONE_C' ? 'border-sky-400 bg-sky-950/30 font-bold' : 'border-slate-800 bg-slate-900/40'}`}>
                   <div className="text-lg">🔀</div>
-                  <div className="text-sky-300 font-semibold mt-1">Zone C</div>
-                  <div className="text-slate-400 text-[10px]">ห้องตู้แร็ค PoE Switch</div>
+                  <div className="text-sky-300 font-semibold mt-1">ห้องอุปกรณ์เครือข่าย</div>
+                  <div className="text-slate-400 text-[10px]">ตู้แร็ค & PoE Switch</div>
                 </div>
 
                 <div className="p-4 rounded-xl border border-slate-800/40 bg-slate-900/20 text-slate-600 flex flex-col justify-center">
@@ -212,27 +212,28 @@ export const FieldNotebook: React.FC = () => {
                 </div>
                 <div className={`p-4 rounded-xl border ${currentZone === 'ZONE_A' ? 'border-sky-400 bg-sky-950/30 font-bold' : 'border-slate-800 bg-slate-900/40'}`}>
                   <div className="text-lg">🏬</div>
-                  <div className="text-sky-300 font-semibold mt-1">Zone A</div>
-                  <div className="text-slate-400 text-[10px]">จุดรับภารกิจ / ผจก.</div>
+                  <div className="text-sky-300 font-semibold mt-1">จุดรับภารกิจ / สรุปงาน</div>
+                  <div className="text-slate-400 text-[10px]">เคาน์เตอร์ผู้จัดการ</div>
                 </div>
-                <div className="p-4 rounded-xl border border-slate-800/40 bg-slate-900/20 text-slate-600 flex flex-col justify-center">
-                  <div className="text-xs">ชั้นวางสินค้า</div>
+                <div className="p-4 rounded-xl border border-emerald-800/60 bg-emerald-950/30 text-emerald-300 flex flex-col justify-center font-medium">
+                  <div className="text-xs font-bold">🚪 ประตูเชื่อมต่อ</div>
+                  <div className="text-[10px] opacity-80">สู่ Room 102</div>
                 </div>
 
                 <div className={`p-4 rounded-xl border ${currentZone === 'ZONE_D' ? 'border-sky-400 bg-sky-950/30 font-bold' : 'border-slate-800 bg-slate-900/40'}`}>
                   <div className="text-lg">📼</div>
-                  <div className="text-sky-300 font-semibold mt-1">Zone D</div>
-                  <div className="text-slate-400 text-[10px]">ห้องบันทึกภาพ NVR</div>
+                  <div className="text-sky-300 font-semibold mt-1">ห้องบันทึกภาพ NVR</div>
+                  <div className="text-slate-400 text-[10px]">เครื่องบันทึก & เซิร์ฟเวอร์</div>
                 </div>
                 <div className={`p-4 rounded-xl border ${currentZone === 'ZONE_F' ? 'border-sky-400 bg-sky-950/30 font-bold' : 'border-slate-800 bg-slate-900/40'}`}>
                   <div className="text-lg">⚖️</div>
-                  <div className="text-sky-300 font-semibold mt-1">Zone F</div>
-                  <div className="text-slate-400 text-[10px]">เปรียบเทียบ Analog/IP</div>
+                  <div className="text-sky-300 font-semibold mt-1">เปรียบเทียบ Analog vs IP</div>
+                  <div className="text-slate-400 text-[10px]">โต๊ะทดลองเปรียบเทียบระบบ</div>
                 </div>
                 <div className={`p-4 rounded-xl border ${currentZone === 'ZONE_E' ? 'border-sky-400 bg-sky-950/30 font-bold' : 'border-slate-800 bg-slate-900/40'}`}>
                   <div className="text-lg">🖥️</div>
-                  <div className="text-sky-300 font-semibold mt-1">Zone E</div>
-                  <div className="text-slate-400 text-[10px]">โต๊ะควบคุม Client PC</div>
+                  <div className="text-sky-300 font-semibold mt-1">โต๊ะควบคุม Client PC</div>
+                  <div className="text-slate-400 text-[10px]">หน้าจอมอนิเตอร์ตรวจการ</div>
                 </div>
               </div>
             </div>

@@ -126,11 +126,11 @@ export const ThirdPersonCamera: React.FC<ThirdPersonCameraProps> = ({
     let desiredZ = targetPosition.z + Math.cos(currentYaw) * radius;
     let desiredY = targetPosition.y + height;
 
-    // Camera wall collision avoidance (Store interior bounds)
-    const minX = -10.2;
-    const maxX = 10.2;
-    const minZ = -12.2;
-    const maxZ = 12.2;
+    // Camera wall collision avoidance (Facility interior bounds covering Room 101 & 102)
+    const minX = -23.0;
+    const maxX = 21.0;
+    const minZ = -11.8;
+    const maxZ = 11.8;
     const maxY = 4.65;
     const minY = 0.5;
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getCameraRelativeMove,
   moveWithObstacleSliding,
+  getRoomPhysicsConfig,
   type CollisionBox,
 } from '../shared/domain/playerMovement';
 
@@ -45,5 +46,29 @@ describe('player obstacle collision', () => {
     ];
     const next = moveWithObstacleSliding({ x: 0, z: 0.5 }, { x: 0, z: -1 }, doorwayWalls, 0.3);
     expect(next).toEqual({ x: 0, z: -0.5 });
+  });
+});
+
+describe('isolated room physics config', () => {
+  it('returns locked door obstacle for Room 101 when not unlocked', () => {
+    const locked = getRoomPhysicsConfig(101, false);
+    const unlocked = getRoomPhysicsConfig(101, true);
+    expect(locked.obstacles.length).toBeGreaterThan(unlocked.obstacles.length);
+    expect(locked.spawn).toEqual({ x: 0, z: 2.0 });
+    expect(locked.bounds.minX).toBe(-10.5);
+  });
+
+  it('returns clean centered bounds and spawn for Room 102', () => {
+    const r102 = getRoomPhysicsConfig(102);
+    expect(r102.spawn).toEqual({ x: 0, z: 2.0 });
+    expect(r102.bounds.minX).toBe(-10.5);
+    expect(r102.bounds.maxX).toBe(10.5);
+  });
+
+  it('returns dedicated workshop bounds and spawn for Room 103 and 104', () => {
+    const r103 = getRoomPhysicsConfig(103);
+    const r104 = getRoomPhysicsConfig(104);
+    expect(r103.spawn).toEqual({ x: 0, z: 3.5 });
+    expect(r104.spawn).toEqual({ x: 0, z: 3.5 });
   });
 });

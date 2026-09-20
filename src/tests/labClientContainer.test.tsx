@@ -17,6 +17,7 @@ vi.mock('next/dynamic', () => ({
 }));
 
 import { LabClientContainer } from '../app/labs/3d/[roomId]/LabClientContainer';
+import { toFinalizeResponse } from '../app/labs/3d/[roomId]/finalizeResult';
 
 describe('LabClientContainer', () => {
   beforeEach(() => {
@@ -41,5 +42,21 @@ describe('LabClientContainer', () => {
 
     expect(html).toContain('สมชาย นักเรียนดีเด่น');
     expect(html).toContain('data-testid="mock-3d-app"');
+  });
+
+  it('maps the server evaluator shape to the API response shape used by the result modal', () => {
+    const response = toFinalizeResponse('preview-attempt', {
+      totalScore: 84,
+      isPassed: true,
+      missionScores: { M1: 15, M2: 20, M3: 15, M4: 15, M5: 19 },
+      mandatoryChecks: {
+        cameraOnline: true,
+        nvrReachable: true,
+        clientLiveViewActive: true,
+      },
+    });
+
+    expect(response.approvedScore).toBe(84);
+    expect(response.passed).toBe(true);
   });
 });

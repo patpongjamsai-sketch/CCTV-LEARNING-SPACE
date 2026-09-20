@@ -3,6 +3,34 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 vi.mock('server-only', () => ({}));
 
+const { mockAdminFrom, mockProgression, mockRoomSlug } = vi.hoisted(() => ({
+  mockAdminFrom: vi.fn(),
+  mockProgression: vi.fn(async () => ({ unlocked: true })),
+  mockRoomSlug: { value: 'room-202' },
+}));
+
+function queryResult(data: unknown) {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    order: vi.fn(() => query),
+    limit: vi.fn(() => query),
+    maybeSingle: vi.fn(async () => ({ data })),
+    single: vi.fn(async () => ({ data })),
+  };
+  return query;
+}
+
+vi.mock('../lib/supabase/admin', () => ({
+  createAdminSupabaseClient: () => ({
+    from: mockAdminFrom,
+  }),
+}));
+
+vi.mock('../server/services/progressionService', () => ({
+  getStudentUnitProgressService: mockProgression,
+}));
+
 // Mock next/navigation
 const mockRedirect = vi.fn();
 const mockNotFound = vi.fn();
@@ -34,6 +62,35 @@ vi.mock('../app/labs/3d/[roomId]/LabClientContainer', () => ({
   ),
 }));
 
+mockAdminFrom.mockImplementation((table: string) => {
+  if (table === 'profiles') {
+    return queryResult({
+      id: '11111111-1111-4111-8111-111111111111',
+      display_name: 'ผู้เรียนทดสอบ',
+      role: 'student',
+      student_code: 'ST-001',
+    });
+  }
+  if (table === 'game_rooms') {
+    return queryResult({
+      id: '55555555-5555-4555-8555-555555555555',
+      unit_id: '33333333-3333-4333-8333-333333333333',
+      slug: mockRoomSlug.value,
+      code: mockRoomSlug.value === 'room-101' ? 'ROOM-101' : 'ROOM-202',
+      title: mockRoomSlug.value === 'room-101' ? 'Room 101 · Smart Mart' : 'Room 202 · Retail',
+      status: 'published',
+      content_version: 1,
+    });
+  }
+  if (table === 'class_members') {
+    return queryResult({
+      class_id: '22222222-2222-4222-8222-222222222222',
+      member_role: 'student',
+    });
+  }
+  return queryResult(null);
+});
+
 import LabPage from '../app/labs/3d/[roomId]/page';
 
 describe('3D Lab Page Gating & Permissions', () => {
@@ -49,11 +106,29 @@ describe('3D Lab Page Gating & Permissions', () => {
 
   it('renders mock container for room-101 in fallback / preview environment', async () => {
     mockAuthUser = { userId: '11111111-1111-4111-8111-111111111111' };
+    mockRoomSlug.value = 'room-101';
 
     const jsx = await LabPage({ params: Promise.resolve({ roomId: 'room-101' }) });
     const html = renderToStaticMarkup(jsx);
 
     expect(html).toContain('data-testid="lab-client-container"');
     expect(html).toContain('Room 101 · Smart Mart');
+    mockRoomSlug.value = 'room-202';
+  });
+
+  it('uses server progression result to unlock a non-preview room', async () => {
+    mockAuthUser = { userId: '11111111-1111-4111-8111-111111111111' };
+    mockProgression.mockResolvedValueOnce({ unlocked: true });
+
+    const jsx = await LabPage({ params: Promise.resolve({ roomId: 'room-202' }) });
+    const html = renderToStaticMarkup(jsx);
+
+    expect(mockProgression).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      '11111111-1111-4111-8111-111111111111',
+      '33333333-3333-4333-8333-333333333333',
+    );
+    expect(html).toContain('data-testid="lab-client-container"');
   });
 });

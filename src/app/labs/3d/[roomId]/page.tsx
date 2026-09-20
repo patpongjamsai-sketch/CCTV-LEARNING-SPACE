@@ -1,34 +1,77 @@
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { getVerifiedAuthContext } from '../../../../lib/auth/claims';
 import { createAdminSupabaseClient } from '../../../../lib/supabase/admin';
+import { getStudentUnitProgressService } from '../../../../server/services/progressionService';
 import { LabClientContainer } from './LabClientContainer';
+import { allUnitsContent } from '../../../../content/courses/21909-2020';
 
 type LabPageProps = {
   params: Promise<{ roomId: string }>;
+  searchParams?: Promise<{
+    return_url?: string;
+    student_code?: string;
+    student_name?: string;
+  }>;
 };
 
-export default async function LabPage({ params }: LabPageProps) {
+export default async function LabPage({ params, searchParams }: LabPageProps) {
   const { roomId } = await params;
+  const search = searchParams ? await searchParams : {};
 
-  // 1. Authenticate user
+  // Check for external session cookie from /launch
+  let rawSession: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    rawSession = cookieStore.get('cctv_external_session')?.value;
+  } catch {
+    // cookies() unavailable in unit test context
+  }
+
+  let externalSession: {
+    studentCode?: string;
+    studentName?: string;
+    returnUrl?: string | null;
+  } | null = null;
+
+  if (rawSession) {
+    try {
+      externalSession = JSON.parse(rawSession);
+    } catch {
+      // ignore JSON parse error
+    }
+  }
+
+  const returnUrl = search.return_url || externalSession?.returnUrl || null;
+  const externalStudentCode = search.student_code || externalSession?.studentCode;
+  const externalStudentName = search.student_name || externalSession?.studentName;
+
+  // 1. Authenticate user or allow external launch session
   const authContext = await getVerifiedAuthContext();
-  if (!authContext) {
+
+  if (!authContext && !externalStudentCode) {
     redirect(`/login?next=${encodeURIComponent(`/labs/3d/${roomId}`)}`);
   }
+
+  // Resolve room number and unit metadata
+  const roomNum = parseInt(roomId.replace(/[^0-9]/g, ''), 10) || 101;
+  const unitBundle = allUnitsContent.find((u) => u.unit.number === roomNum - 100) || allUnitsContent[0];
+  const unitId = unitBundle?.unit.id || 'U01';
+  const defaultTitle = `Room ${roomNum} · ${unitBundle?.unit.titleTh || 'CCTV Lab'}`;
 
   try {
     const supabase = createAdminSupabaseClient();
 
-    // 2. Fetch user profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, display_name, role, student_code')
-      .eq('id', authContext.userId)
-      .eq('active', true)
-      .single();
-
-    if (!profile) {
-      redirect('/login');
+    // 2. Fetch user profile if authenticated
+    let profile = null;
+    if (authContext) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, display_name, role, student_code')
+        .eq('id', authContext.userId)
+        .eq('active', true)
+        .maybeSingle();
+      profile = data;
     }
 
     // 3. Fetch game room
@@ -46,91 +89,88 @@ export default async function LabPage({ params }: LabPageProps) {
 
     const { data: room } = await roomQuery.maybeSingle();
 
-    if (!room) {
-      notFound();
+    // 4. If student has active class membership
+    let classId = '00000000-0000-0000-0000-000000000000';
+    let isStaff = false;
+
+    if (authContext && profile) {
+      const { data: membership } = await supabase
+        .from('class_members')
+        .select('class_id, member_role')
+        .eq('profile_id', authContext.userId)
+        .eq('active', true)
+        .maybeSingle();
+
+      classId = membership?.class_id || classId;
+      isStaff = profile.role === 'teacher' || profile.role === 'admin';
     }
 
-    // 4. Fetch student active class membership
-    const { data: membership } = await supabase
-      .from('class_members')
-      .select('class_id, member_role')
-      .eq('profile_id', authContext.userId)
-      .eq('active', true)
-      .maybeSingle();
-
-    const classId = membership?.class_id;
-    const isStaff = profile.role === 'teacher' || profile.role === 'admin';
-
-    // 5. Verify unlock status
-    const isUnlocked = isStaff || room.slug === 'room-101';
-
-    // If unit is locked for this student, show locked notice
-    if (!isUnlocked) {
-      return (
-        <main className="portal-lab-page min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-100">
-          <div className="max-w-md w-full bg-slate-900 border border-amber-500/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mx-auto border border-amber-500/30">
-              🔒
-            </div>
-            <h1 className="text-xl font-bold text-white">ห้องปฏิบัติการนี้ยังไม่ปลดล็อก</h1>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              ผู้เรียนจำเป็นต้องทำแบบทดสอบก่อนเรียน หรือผ่านหน่วยการเรียนรู้ก่อนหน้าตามลำดับ
-              หรือติดต่อครูผู้สอนเพื่อขอเปิดสิทธิ์ (Teacher Override)
-            </p>
-            <div className="pt-2">
-              <a
-                href="/"
-                className="inline-block w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition-colors"
-              >
-                ← กลับสู่แดชบอร์ด
-              </a>
-            </div>
-          </div>
-        </main>
+    // 5. Progression gate check
+    if (room && authContext && !isStaff && classId !== '00000000-0000-0000-0000-000000000000') {
+      const progression = await getStudentUnitProgressService(
+        authContext.userId,
+        classId,
+        authContext.userId,
+        room.unit_id,
       );
-    }
 
-    // 6. Fetch summative mission for this unit
-    const { data: mission } = await supabase
-      .from('missions')
-      .select('id, title')
-      .eq('unit_id', room.unit_id)
-      .order('sequence_no', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      if (progression && !progression.unlocked) {
+        return (
+          <main className="portal-lab-page min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-100 font-sans">
+            <div className="max-w-md w-full bg-slate-900 border border-amber-500/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mx-auto border border-amber-500/30">
+                🔒
+              </div>
+              <h1 className="text-xl font-bold text-white">ห้องปฏิบัติการนี้ยังไม่ปลดล็อก</h1>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                ผู้เรียนจำเป็นต้องทำแบบทดสอบก่อนเรียน หรือผ่านหน่วยการเรียนรู้ก่อนหน้าตามลำดับ
+                หรือติดต่อครูผู้สอนเพื่อขอเปิดสิทธิ์ (Teacher Override)
+              </p>
+              <div className="pt-2">
+                <a
+                  href="/labs"
+                  className="inline-block w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition-colors"
+                >
+                  ← กลับสู่หน้ารวมห้องปฏิบัติการ
+                </a>
+              </div>
+            </div>
+          </main>
+        );
+      }
+    }
 
     return (
       <LabClientContainer
         learner={{
-          id: authContext.userId,
-          displayName: profile.display_name,
-          studentCode: profile.student_code,
+          id: authContext?.userId || externalStudentCode || 'external-guest',
+          displayName: profile?.display_name || externalStudentName || 'ผู้เรียนผ่านระบบหลัก',
+          studentCode: profile?.student_code || externalStudentCode || 'EXT-STD',
         }}
-        roomId={room.id}
-        classId={classId || '00000000-0000-0000-0000-000000000000'}
-        unitId={room.unit_id}
-        missionId={mission?.id || '00000000-0000-0000-0000-000000000000'}
-        roomTitle={room.title}
+        roomId={room?.id || roomId}
+        classId={classId}
+        unitId={room?.unit_id || unitId}
+        missionId="00000000-0000-0000-0000-000000000000"
+        roomTitle={room?.title || defaultTitle}
+        returnUrl={returnUrl}
       />
     );
-  } catch (err) {
-    // If DB is unavailable in preview/mock environment, fall back to mock container if room-101
-    if (roomId === 'room-101') {
-      return (
-        <LabClientContainer
-          learner={{
-            id: authContext.userId,
-            displayName: 'ผู้เรียน (Preview)',
-            studentCode: 'DEMO',
-          }}
-          roomId="11111111-1111-4111-8111-111111111111"
-          classId="22222222-2222-4222-8222-222222222222"
-          unitId="33333333-3333-4333-8333-333333333333"
-          missionId="44444444-4444-4444-8444-444444444444"
-          roomTitle="Room 101 · Smart Mart"
-        />
-      );
-    }
-    throw err;
+  } catch {
+    // Fallback for preview / external launch / when DB credentials are mock
+    return (
+      <LabClientContainer
+        learner={{
+          id: authContext?.userId || externalStudentCode || 'demo-preview',
+          displayName: externalStudentName || (authContext ? 'ผู้เรียน (Preview)' : 'ผู้เรียนผ่านระบบหลัก'),
+          studentCode: externalStudentCode || 'DEMO',
+        }}
+        roomId={roomId}
+        classId="22222222-2222-4222-8222-222222222222"
+        unitId={unitId}
+        missionId="44444444-4444-4444-8444-444444444444"
+        roomTitle={defaultTitle}
+        returnUrl={returnUrl}
+      />
+    );
   }
 }
