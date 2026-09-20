@@ -190,8 +190,8 @@ export const Room108CapstoneProps: React.FC<Room108CapstonePropsProps> = () => {
         description="Requirement Brief · ตรวจสอบ FOV 8 โซน · อนุมัติงบประมาณ BOM 7 รายการ"
         completed={smartCapstone108.station1Completed}
         isModalActive={isModalActive}
-        minimized={minimized[1]}
-        closed={closed[1]}
+        minimized={minimized[1] ?? false}
+        closed={closed[1] ?? false}
         onToggleMinimize={() => setMinimized((p) => ({ ...p, 1: !p[1] }))}
         onClose={() => setClosed((p) => ({ ...p, 1: true }))}
         onOpen={() => setActiveStation108Modal(1)}
@@ -233,8 +233,8 @@ export const Room108CapstoneProps: React.FC<Room108CapstonePropsProps> = () => {
         description="NVR 8-Ch Reachable · 8 Cameras Online · 24/7 Rec · UPS Failover · Cyber Hardening"
         completed={smartCapstone108.station2Completed}
         isModalActive={isModalActive}
-        minimized={minimized[2]}
-        closed={closed[2]}
+        minimized={minimized[2] ?? false}
+        closed={closed[2] ?? false}
         onToggleMinimize={() => setMinimized((p) => ({ ...p, 2: !p[2] }))}
         onClose={() => setClosed((p) => ({ ...p, 2: true }))}
         onOpen={() => setActiveStation108Modal(2)}
@@ -271,8 +271,8 @@ export const Room108CapstoneProps: React.FC<Room108CapstonePropsProps> = () => {
         description="Punch List เคลียร์ 0 ข้อบกพร่อง · บันทึกฝึกอบรมผู้ใช้ · Digital Handover Sign-off"
         completed={smartCapstone108.station3Completed}
         isModalActive={isModalActive}
-        minimized={minimized[3]}
-        closed={closed[3]}
+        minimized={minimized[3] ?? false}
+        closed={closed[3] ?? false}
         onToggleMinimize={() => setMinimized((p) => ({ ...p, 3: !p[3] }))}
         onClose={() => setClosed((p) => ({ ...p, 3: true }))}
         onOpen={() => setActiveStation108Modal(3)}

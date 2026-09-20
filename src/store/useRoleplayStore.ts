@@ -85,7 +85,7 @@ export interface RoleplayStoreState {
   graphicsQuality: 'HIGH' | 'LOW';
 
   // Actions
-  startSession: (name?: string) => void;
+  startSession: (name?: string, roomTitle?: string) => void;
   setCurrentZone: (zone: ZoneId) => void;
   setInteractionPrompt: (prompt: string | null) => void;
   notify: (text: string, type?: 'info' | 'success' | 'warning' | 'error') => void;
@@ -570,9 +570,8 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
         ...missions.M4,
         score: evalResult.score,
         isCompleted: evalResult.isPassed,
-        lastFeedbackTh: `ความถูกต้อง: ${evalResult.correctCount}/${evalResult.totalCards} ข้อ (${
-          evalResult.isPassed ? 'ผ่านเกณฑ์อย่างน้อย 6/8' : 'ยังไม่ถึงเกณฑ์ 6/8'
-        })`,
+        lastFeedbackTh: `ความถูกต้อง: ${evalResult.correctCount}/${evalResult.totalCards} ข้อ (${evalResult.isPassed ? 'ผ่านเกณฑ์อย่างน้อย 6/8' : 'ยังไม่ถึงเกณฑ์ 6/8'
+          })`,
       },
     };
 
@@ -699,9 +698,8 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
         isCompleted: isM5Complete,
         lastFeedbackTh: isM5Complete
           ? 'ประกอบระบบและเชื่อมต่อสายสำเร็จ ภาพ Live View ขึ้นบนจอแล้ว!'
-          : `ความคืบหน้า M5: Camera ${topology.isCameraOnline ? 'Online' : 'Offline'} | Live View: ${
-              topology.isLiveViewActive ? 'Active' : 'Down'
-            }`,
+          : `ความคืบหน้า M5: Camera ${topology.isCameraOnline ? 'Online' : 'Offline'} | Live View: ${topology.isLiveViewActive ? 'Active' : 'Down'
+          }`,
       },
     };
 

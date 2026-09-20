@@ -167,8 +167,8 @@ export const Room106StorageProps: React.FC = () => {
         description="จำนวนกล้อง · Retention Days · ความจุ TB"
         completed={smartStorage106.station1Completed}
         isModalActive={isModalActive}
-        minimized={minimized[1]}
-        closed={closed[1]}
+        minimized={minimized[1] ?? false}
+        closed={closed[1] ?? false}
         onToggleMinimize={() => setMinimized((p) => ({ ...p, 1: !p[1] }))}
         onClose={() => setClosed((p) => ({ ...p, 1: true }))}
         onOpen={() => setActiveStation106Modal(1)}
@@ -195,8 +195,8 @@ export const Room106StorageProps: React.FC = () => {
         description="Surveillance HDD · SATA · Format / Initialize"
         completed={smartStorage106.station2Completed}
         isModalActive={isModalActive}
-        minimized={minimized[2]}
-        closed={closed[2]}
+        minimized={minimized[2] ?? false}
+        closed={closed[2] ?? false}
         onToggleMinimize={() => setMinimized((p) => ({ ...p, 2: !p[2] }))}
         onClose={() => setClosed((p) => ({ ...p, 2: true }))}
         onOpen={() => setActiveStation106Modal(2)}
@@ -223,8 +223,8 @@ export const Room106StorageProps: React.FC = () => {
         description="เปิดบริการ · Online · จับคู่ Mobile App"
         completed={smartStorage106.station3Completed}
         isModalActive={isModalActive}
-        minimized={minimized[3]}
-        closed={closed[3]}
+        minimized={minimized[3] ?? false}
+        closed={closed[3] ?? false}
         onToggleMinimize={() => setMinimized((p) => ({ ...p, 3: !p[3] }))}
         onClose={() => setClosed((p) => ({ ...p, 3: true }))}
         onOpen={() => setActiveStation106Modal(3)}

@@ -112,10 +112,10 @@ export const Room105NvrConfigProps: React.FC = () => {
 
         {/* 3D Test Cameras on Stand */}
         <group position={[0.5, 0.98, -0.1]}>
-          <VirtualCctvDevice deviceId="DOME_INDOOR" position={[0, 0, 0]} />
+          <VirtualCctvDevice deviceId="CAMERA_DOME" position={[0, 0, 0]} />
         </group>
         <group position={[0.8, 1.48, -0.42]}>
-          <VirtualCctvDevice deviceId="BULLET_OUTDOOR" position={[0, 0, 0]} rotation={[0, -0.5, 0]} />
+          <VirtualCctvDevice deviceId="CAMERA_BULLET" position={[0, 0, 0]} rotation={[0, -0.5, 0]} />
         </group>
 
         {/* 3D Interactive Floating Holographic Banner */}

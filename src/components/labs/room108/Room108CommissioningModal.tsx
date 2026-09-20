@@ -25,10 +25,10 @@ export const Room108CommissioningModal: React.FC<Room108CommissioningModalProps>
   onSave,
   onClose,
 }) => {
-  const [hardwareRackMounted, setHardwareRackMounted] = useState<boolean>(
+  const [hardwareRackMounted] = useState<boolean>(
     initialPayload?.hardwareRackMounted ?? true
   );
-  const [poePowerBudgetChecked, setPoePowerBudgetChecked] = useState<boolean>(
+  const [poePowerBudgetChecked] = useState<boolean>(
     initialPayload?.poeSwitchPowerBudgetChecked ?? true
   );
 

@@ -1,5 +1,5 @@
 import { unit6SubmissionSchema, type CommonUnitEvaluation } from '../../shared/domain/workstationTypes';
-import type { Room106LabSubmissionPayload } from '../../shared/domain/room106Types';
+
 
 export function evaluateUnit6Submission(rawInput: unknown): CommonUnitEvaluation {
   const input = (rawInput || {}) as any;
