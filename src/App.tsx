@@ -100,7 +100,7 @@ export const App: React.FC<AppProps> = ({
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-slate-950 font-sans">
+    <div className="relative w-full h-full overflow-hidden bg-slate-950 font-sans">
       {/* Start / Briefing Overlay Screen */}
       {!isStarted && (
         <GameStartScreen
@@ -115,6 +115,13 @@ export const App: React.FC<AppProps> = ({
       {/* 3D WebGL Canvas */}
       <Canvas
         shadows={graphicsQuality === 'HIGH'}
+        dpr={graphicsQuality === 'HIGH' ? [1, 1.5] : 1}
+        gl={{
+          powerPreference: 'high-performance',
+          antialias: true,
+          stencil: false,
+          depth: true,
+        }}
         camera={{ position: [0, 3, 5], fov: 60 }}
         className="w-full h-full"
       >
