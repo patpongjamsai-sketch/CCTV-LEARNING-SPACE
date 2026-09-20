@@ -14,6 +14,11 @@
 4. `supabase/migrations/004_security.sql`
 5. `supabase/migrations/005_functions_triggers.sql`
 6. `supabase/migrations/006_performance_indexes.sql`
+7. `supabase/migrations/007_learning_progression_rules.sql`
+8. `supabase/migrations/008_lab_evidence_storage.sql`
+9. `supabase/migrations/009_connect_lab_unit1_progress.sql`
+10. `supabase/migrations/20260916143702_fix_progression_audit_timestamp.sql`
+11. `supabase/migrations/20260916144233_lab_pass_unlocks_unit.sql`
 
 ไฟล์ที่ 6 เป็น migration เสริมจากผล Supabase Performance Advisor หลังติดตั้ง 001–005 เพื่อปิดคำเตือน Foreign Key ที่ไม่มี covering index โดยไม่แก้ประวัติ migration ย้อนหลัง
 
@@ -45,6 +50,15 @@ Browser ไม่มีสิทธิ์เขียน `approved_score`, `pass
 - `private.upsert_unit_progress(...)`
 - `private.issue_certificate(...)`
 
+เมื่อครูตรวจ LAB เป็น `passed` trigger ฝั่งฐานข้อมูลจะสร้าง/ปรับปรุง `unit_progress`
+ของผู้เรียนใน Unit เดียวกันแบบ transaction เดียวกัน พร้อมบันทึก Audit Log
+`unit_progress.lab_verified` โดยต้องมี Evidence อย่างน้อยหนึ่งไฟล์ก่อนอนุมัติ
+
+สำหรับ Unit 1 หาก LAB ที่มี Evidence ถูกครูตรวจผ่าน ฟังก์ชัน progression จะใช้
+`unit_progress.lab_verified` เป็น completion source ล่าสุดและปลดล็อก Unit ถัดไป
+โดยไม่บังคับ game score ซ้ำ กรณีที่มีการบันทึก game progress ภายหลัง ระบบจะกลับไป
+ใช้ summative completion rule ตาม source ล่าสุดนั้น
+
 ฟังก์ชันเหล่านี้ให้ `EXECUTE` เฉพาะ `service_role`, อยู่ใน schema ที่ไม่ expose ผ่าน Data API, ใช้ `SECURITY DEFINER` พร้อม `search_path = ''` และ Browser เรียกไม่ได้ อย่าใส่ Service Role Key ใน Client หรือ repository
 
 ## RLS โดยสรุป
@@ -75,4 +89,4 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\tests\run-tests.ps1
 
 ใช้ migration ชุดเดียวกันกับ Development, Staging และ Production แต่ต้องเป็น Supabase Project แยกกัน ห้าม copy Auth user หรือหลักฐานผู้เรียนจริงจาก Production ลง Development และต้องทดสอบบน Staging ก่อน Production เสมอ
 
-แนวทาง Bucket ส่วน LAB อยู่ที่ `STORAGE_LAB_EVIDENCE.md`; รอบนี้ยังไม่สร้าง Bucket หรือ Storage Policy
+Bucket ส่วน LAB ใช้ `lab-evidence` แบบ Private ตาม migration `20260916130000_008_lab_evidence_storage.sql`; การอัปโหลดผ่าน Server API เท่านั้น ส่วน Storage Policy สำหรับ direct browser upload ยังไม่เปิดใช้งาน
