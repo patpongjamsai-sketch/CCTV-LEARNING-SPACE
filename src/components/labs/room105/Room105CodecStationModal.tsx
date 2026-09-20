@@ -119,25 +119,39 @@ export const Room105CodecStationModal: React.FC<Room105CodecStationModalProps> =
   // Switch global codec
   const handleSetGlobalCodec = (codec: VideoCodecType) => {
     setGlobalCodec(codec);
+
     setChannelConfigs((prev) => {
       const next: Record<number, ChannelStreamConfig> = {};
+
       Object.keys(prev).forEach((chKey) => {
         const ch = Number(chKey);
+        const currentConfig = prev[ch];
+
+        // Record<number, T> can still return undefined when indexed under
+        // noUncheckedIndexedAccess, so guard before reading the config.
+        if (!currentConfig) {
+          return;
+        }
+
         next[ch] = {
-          ...prev[ch],
+          ...currentConfig,
           mainStream: {
-            ...prev[ch].mainStream,
+            ...currentConfig.mainStream,
             codec,
-            // When H.264, double bitrate to maintain similar 4K/1080p quality, or mark stutter if exceeded
-            bitrateKbps: codec === 'H.264' ? Math.min(8192, prev[ch].mainStream.bitrateKbps * 1.5) : 4096,
+            // When H.264, increase bitrate to maintain similar image quality.
+            bitrateKbps:
+              codec === 'H.264'
+                ? Math.min(8192, currentConfig.mainStream.bitrateKbps * 1.5)
+                : 4096,
           },
           subStream: {
-            ...prev[ch].subStream,
+            ...currentConfig.subStream,
             codec,
           },
           liveViewStatus: codec === 'H.264' ? 'HIGH_BANDWIDTH' : 'OPTIMAL',
         };
       });
+
       return next;
     });
   };
@@ -146,18 +160,26 @@ export const Room105CodecStationModal: React.FC<Room105CodecStationModalProps> =
   const handleUpdateChannelConfig = (
     channelNumber: number,
     field: 'frameRateFps' | 'bitrateKbps' | 'bitrateMode' | 'resolution',
-    value: any
+    value: number | string | BitrateControlMode
   ) => {
-    setChannelConfigs((prev) => ({
-      ...prev,
-      [channelNumber]: {
-        ...prev[channelNumber],
-        mainStream: {
-          ...prev[channelNumber].mainStream,
-          [field]: value,
+    setChannelConfigs((prev) => {
+      const currentConfig = prev[channelNumber];
+
+      if (!currentConfig) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [channelNumber]: {
+          ...currentConfig,
+          mainStream: {
+            ...currentConfig.mainStream,
+            [field]: value,
+          },
         },
-      },
-    }));
+      };
+    });
   };
 
   // Calculations
@@ -210,7 +232,18 @@ export const Room105CodecStationModal: React.FC<Room105CodecStationModalProps> =
     onSave(payload);
   };
 
-  const currentChConfig = channelConfigs[selectedChannel] || channelConfigs[1];
+  const currentChConfig =
+    channelConfigs[selectedChannel] ?? channelConfigs[1];
+
+  if (!currentChConfig) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+        <div className="rounded-2xl border border-amber-500/40 bg-slate-900 p-5 text-amber-300 shadow-xl">
+          ไม่พบข้อมูลการตั้งค่า Channel สำหรับ Station 2
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
@@ -538,6 +571,11 @@ export const Room105CodecStationModal: React.FC<Room105CodecStationModalProps> =
                   <div className="grid grid-cols-2 gap-2 aspect-video bg-slate-900 rounded-xl p-2 border border-slate-800">
                     {[1, 2, 3, 4].map((ch) => {
                       const cfg = channelConfigs[ch];
+
+                      if (!cfg) {
+                        return null;
+                      }
+
                       return (
                         <div
                           key={ch}

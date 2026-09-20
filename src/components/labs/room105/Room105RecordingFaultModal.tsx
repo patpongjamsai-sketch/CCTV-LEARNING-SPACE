@@ -8,8 +8,7 @@ import {
   NvrFaultLogEntry,
   PrivacyMaskRect,
   DayScheduleSlot,
-  RecordMode,
-} from '../../../shared/domain/room105Types';
+  } from '../../../shared/domain/room105Types';
 
 interface Room105RecordingFaultModalProps {
   initialPayload?: Partial<Station3RecordingFaultPayload>;
@@ -52,11 +51,11 @@ export const Room105RecordingFaultModal: React.FC<Room105RecordingFaultModalProp
       },
     ]
   );
-  const [isAddingMask, setIsAddingMask] = useState(false);
+  const [,setIsAddingMask] = useState(false);
 
   // Recording Schedule
-  const [scheduleMode, setScheduleMode] = useState<RecordMode>('MOTION');
-  const [recordingSchedule, setRecordingSchedule] = useState<DayScheduleSlot[]>(
+  
+  const [recordingSchedule] = useState<DayScheduleSlot[]>(
     initialPayload?.recordingSchedule || [
       {
         day: 'MON',
@@ -110,22 +109,43 @@ export const Room105RecordingFaultModal: React.FC<Room105RecordingFaultModalProp
   );
 
   // Fault Retest Scenario & Log
-  const [selectedFault, setSelectedFault] = useState<NvrFaultScenario>(
-    initialPayload?.faultScenario || ROOM105_FAULT_SCENARIOS[0]
-  );
-  const [faultLog, setFaultLog] = useState<NvrFaultLogEntry>(
-    initialPayload?.faultLog || {
-      problemDescription: 'กล้อง CAM-02 หลุดการเชื่อมต่อ NVR แจ้งเตือน Account Locked หลังพยายามยืนยันตัวตนด้วยรหัสผิด',
-      possibleCause: 'รหัสผ่าน ONVIF กล้องไม่ตรงกับที่บันทึกไว้ใน NVR ทำให้เกิด Brute-force Lockout',
-      testMethod: 'ใช้ NVR Security Tool ตรวจสอบสถานะการเชื่อมต่อ และทดสอบ Ping IP 192.168.1.102',
-      testResult: 'Ping ตอบสนองปกติ Latency 1.1ms แต่ Port 8000 ปฏิเสธการ Authentication',
-      appliedSolution: 'ปลดล็อคผ่าน Account Security Menu และซิงค์ Master Password ของ NVR ไปยังกล้อง CAM-02',
-      retestVerification: 'Retest สำเร็จ: กล้อง CAM-02 กลับมา Online ภาพสตรีมสดขึ้นปกติบน CH 2 ไม่พบ Packet Loss',
-      retestPassed: true,
-    }
-  );
-  const [isRetesting, setIsRetesting] = useState(false);
-  const [retestPassed, setRetestPassed] = useState(initialPayload?.retestPassed ?? true);
+// Fault Retest Scenario & Log
+const [selectedFault, setSelectedFault] = useState<NvrFaultScenario>(() => {
+  if (initialPayload?.faultScenario) {
+    return initialPayload.faultScenario;
+  }
+
+  const defaultFault = ROOM105_FAULT_SCENARIOS[0];
+
+  if (!defaultFault) {
+    throw new Error('ROOM105_FAULT_SCENARIOS must contain at least one fault scenario');
+  }
+
+  return defaultFault;
+});
+
+const [faultLog, setFaultLog] = useState<NvrFaultLogEntry>(
+  initialPayload?.faultLog ?? {
+    problemDescription:
+      'กล้อง CAM-02 หลุดการเชื่อมต่อ NVR แจ้งเตือน Account Locked หลังพยายามยืนยันตัวตนด้วยรหัสผิด',
+    possibleCause:
+      'รหัสผ่าน ONVIF กล้องไม่ตรงกับที่บันทึกไว้ใน NVR ทำให้เกิด Brute-force Lockout',
+    testMethod:
+      'ใช้ NVR Security Tool ตรวจสอบสถานะการเชื่อมต่อ และทดสอบ Ping IP 192.168.1.102',
+    testResult:
+      'Ping ตอบสนองปกติ Latency 1.1ms แต่ Port 8000 ปฏิเสธการ Authentication',
+    appliedSolution:
+      'ปลดล็อคผ่าน Account Security Menu และซิงค์ Master Password ของ NVR ไปยังกล้อง CAM-02',
+    retestVerification:
+      'Retest สำเร็จ: กล้อง CAM-02 กลับมา Online ภาพสตรีมสดขึ้นปกติบน CH 2 ไม่พบ Packet Loss',
+    retestPassed: true,
+  }
+);
+
+const [isRetesting, setIsRetesting] = useState(false);
+const [retestPassed, setRetestPassed] = useState(
+  initialPayload?.retestPassed ?? true
+);
 
   // Cell toggle in 8x8 Grid
   const handleToggleCell = (idx: number) => {

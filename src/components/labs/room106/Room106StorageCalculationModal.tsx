@@ -98,9 +98,13 @@ export const Room106StorageCalculationModal: React.FC<Room106StorageCalculationM
   const handleApplyPreset = (index: number) => {
     setSelectedPresetIndex(index);
     const preset = PRESETS[index];
-    setResolution(preset.resolution);
-    setCodec(preset.codec);
-    setBitrateMbps(preset.defaultBitrateMbps);
+if (!preset) {
+  return;
+}
+
+setResolution(preset.resolution);
+setCodec(preset.codec);
+setBitrateMbps(preset.defaultBitrateMbps);
   };
 
   const handleSaveAndSubmit = () => {

@@ -36,7 +36,11 @@ export const Room105NvrLab: React.FC<Room105NvrLabProps> = ({
   const setSmartNvr105Station1 = useCctvTrainingStore((s: any) => s.setSmartNvr105Station1);
   const setSmartNvr105Station2 = useCctvTrainingStore((s: any) => s.setSmartNvr105Station2);
   const setSmartNvr105Station3 = useCctvTrainingStore((s: any) => s.setSmartNvr105Station3);
+const defaultFaultScenario = ROOM105_FAULT_SCENARIOS[0];
 
+if (!defaultFaultScenario) {
+  throw new Error('ROOM105_FAULT_SCENARIOS must contain at least one scenario');
+}
   const [labState, setLabState] = useState<Room105LabState>({
     station1: {
       onvifDiscovered: true,
@@ -105,7 +109,7 @@ export const Room105NvrLab: React.FC<Room105NvrLabProps> = ({
           ],
         },
       ],
-      faultScenario: ROOM105_FAULT_SCENARIOS[0],
+      faultScenario: defaultFaultScenario,
       faultLog: {
         problemDescription: 'กล้อง CAM-02 หลุดการเชื่อมต่อ NVR แจ้งเตือน Account Locked หลังพยายามยืนยันตัวตนด้วยรหัสผิด',
         possibleCause: 'รหัสผ่าน ONVIF กล้องไม่ตรงกับที่บันทึกไว้ใน NVR ทำให้เกิด Brute-force Lockout',

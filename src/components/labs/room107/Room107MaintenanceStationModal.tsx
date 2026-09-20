@@ -64,7 +64,7 @@ export const Room107MaintenanceStationModal: React.FC<Room107MaintenanceStationM
   const [pmChecklistSigned, setPmChecklistSigned] = useState<boolean>(
     Boolean(initialPayload?.pmChecklistSigned || initialPayload?.isCompleted)
   );
-  const [customerAcknowledged, setCustomerAcknowledged] = useState<boolean>(
+  const [customerAcknowledged] = useState<boolean>(
     Boolean(initialPayload?.customerAcknowledged ?? true)
   );
 
@@ -76,7 +76,7 @@ export const Room107MaintenanceStationModal: React.FC<Room107MaintenanceStationM
   // Scoring rubric (40 pts max):
   // 1. Lens inspection & cleaning procedure: 20 pts
   // 2. 5-point PM Checklist & Service Report sign-off: 20 pts
-  const { scoreBreakdown, totalScore } = useMemo(() => {
+  const { totalScore } = useMemo(() => {
     let sLens = 0;
     if (lensCleanDone && moistureChecked && focusCalibrated && waterproofGasketInspected) {
       sLens = 20;

@@ -6,7 +6,7 @@ import {
   INITIAL_CHANNEL_MAPPINGS,
   ChannelMappingRow,
   Station1OnvifMappingPayload,
-  OnvifProfile,
+
 } from '../../../shared/domain/room105Types';
 
 interface Room105OnvifStationModalProps {
@@ -32,7 +32,7 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
   );
 
   // Authentication credentials state per camera (safe simulation - no plain passwords persisted in payload)
-  const [authInputs, setAuthInputs] = useState<Record<string, { username: string; authSuccess: boolean }>>({
+  const [,setAuthInputs] = useState<Record<string, { username: string; authSuccess: boolean }>>({
     'CAM-01': { username: 'admin', authSuccess: true },
     'CAM-02': { username: 'admin', authSuccess: true },
     'CAM-03': { username: 'admin', authSuccess: true },
@@ -69,10 +69,10 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
       prev.map((row) =>
         row.deviceId === deviceId
           ? {
-              ...row,
-              authenticated: !row.authenticated,
-              status: !row.authenticated ? 'ONLINE' : 'OFFLINE',
-            }
+            ...row,
+            authenticated: !row.authenticated,
+            status: !row.authenticated ? 'ONLINE' : 'OFFLINE',
+          }
           : row
       )
     );
@@ -85,7 +85,7 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
   });
   const collisionChannels = Object.keys(channelCounts)
     .map(Number)
-    .filter((ch) => channelCounts[ch] > 1);
+    .filter((ch) => (channelCounts[ch] ?? 0) > 1);
   const hasCollision = collisionChannels.length > 0;
 
   // Auto-align correct 1-to-1 mappings
@@ -267,14 +267,13 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
                         const currentMapping = mappings.find((m) => m.deviceId === cam.deviceId);
                         const isOnline = currentMapping?.status === 'ONLINE';
                         const currentCh = currentMapping?.channelNumber ?? 1;
-                        const isDuplicate = channelCounts[currentCh] > 1;
+                        const isDuplicate = (channelCounts[currentCh] ?? 0) > 1;
 
                         return (
                           <tr
                             key={cam.deviceId}
-                            className={`hover:bg-slate-900/60 transition-colors ${
-                              selectedPreviewCam === cam.deviceId ? 'bg-sky-950/30' : ''
-                            }`}
+                            className={`hover:bg-slate-900/60 transition-colors ${selectedPreviewCam === cam.deviceId ? 'bg-sky-950/30' : ''
+                              }`}
                             onClick={() => setSelectedPreviewCam(cam.deviceId)}
                           >
                             <td className="py-3 px-2.5">
@@ -303,11 +302,10 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
                               <select
                                 value={currentCh}
                                 onChange={(e) => handleAssignChannel(cam.deviceId, Number(e.target.value))}
-                                className={`bg-slate-900 font-bold font-mono px-2.5 py-1.5 rounded-xl border text-xs cursor-pointer ${
-                                  isDuplicate
+                                className={`bg-slate-900 font-bold font-mono px-2.5 py-1.5 rounded-xl border text-xs cursor-pointer ${isDuplicate
                                     ? 'border-amber-500 text-amber-300 bg-amber-950/40'
                                     : 'border-sky-500/50 text-white'
-                                }`}
+                                  }`}
                               >
                                 <option value={1}>CH 1 (Channel 1)</option>
                                 <option value={2}>CH 2 (Channel 2)</option>
@@ -322,22 +320,20 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
                                   e.stopPropagation();
                                   handleToggleAuth(cam.deviceId);
                                 }}
-                                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all border cursor-pointer ${
-                                  currentMapping?.authenticated
+                                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all border cursor-pointer ${currentMapping?.authenticated
                                     ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300'
                                     : 'bg-rose-950/60 border-rose-500/50 text-rose-300'
-                                }`}
+                                  }`}
                               >
                                 {currentMapping?.authenticated ? '✓ ผ่านสิทธิ์ (admin)' : '✕ ไม่ผ่านสิทธิ์'}
                               </button>
                             </td>
                             <td className="py-3 px-2.5 text-center">
                               <span
-                                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  isOnline
+                                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${isOnline
                                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                                     : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                }`}
+                                  }`}
                               >
                                 <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}`} />
                                 {isOnline ? 'ONLINE' : 'OFFLINE'}
@@ -355,8 +351,23 @@ export const Room105OnvifStationModal: React.FC<Room105OnvifStationModalProps> =
             {/* Right: Camera Preview & Specs Monitor (4 cols) */}
             <div className="lg:col-span-4 space-y-4">
               {(() => {
-                const activeCam = ROOM105_ONVIF_CAMERA_CATALOG.find((c) => c.deviceId === selectedPreviewCam) || ROOM105_ONVIF_CAMERA_CATALOG[0];
-                const activeMapping = mappings.find((m) => m.deviceId === activeCam.deviceId);
+                const activeCam =
+                  ROOM105_ONVIF_CAMERA_CATALOG.find(
+                    (c) => c.deviceId === selectedPreviewCam
+                  ) ?? ROOM105_ONVIF_CAMERA_CATALOG[0];
+
+                if (!activeCam) {
+                  return (
+                    <div className="bg-slate-950/80 border border-amber-500/40 rounded-2xl p-4 text-amber-300">
+                      ไม่พบข้อมูลกล้องสำหรับแสดงตัวอย่าง
+                    </div>
+                  );
+                }
+
+                const activeMapping = mappings.find(
+                  (m) => m.deviceId === activeCam.deviceId
+                );
+
                 const isOnline = activeMapping?.status === 'ONLINE';
 
                 return (

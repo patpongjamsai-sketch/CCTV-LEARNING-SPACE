@@ -18,7 +18,7 @@ export const Room107DiagnosticStationModal: React.FC<Room107DiagnosticStationMod
   onSave,
   onClose,
 }) => {
-  const [steps, setSteps] = useState<DiagnosticStepItem[]>(
+  const [steps] = useState<DiagnosticStepItem[]>(
     initialPayload?.diagnosticSteps || DEFAULT_DIAGNOSTIC_STEPS
   );
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
@@ -74,7 +74,7 @@ export const Room107DiagnosticStationModal: React.FC<Room107DiagnosticStationMod
   // 1. Diagnostic Steps review & understanding: 10 pts
   // 2. PoE Measurement performed and voltage drop identified (42.5V < 48V): 15 pts
   // 3. Appropriate power resolution applied and Retest passed (>= 48V, NO_VIDEO cleared): 15 pts
-  const { scoreBreakdown, totalScore } = useMemo(() => {
+  const {totalScore } = useMemo(() => {
     let sSteps = 10;
     let sMeasure = 0;
     let sFix = 0;
@@ -114,6 +114,8 @@ export const Room107DiagnosticStationModal: React.FC<Room107DiagnosticStationMod
     onSave(payload);
     onClose();
   };
+
+  const activeStep = steps[activeStepIndex];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-3 sm:p-6 backdrop-blur-md overflow-y-auto">
@@ -208,11 +210,19 @@ export const Room107DiagnosticStationModal: React.FC<Room107DiagnosticStationMod
             </div>
 
             <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-[11px] space-y-1">
-              <div className="font-bold text-sky-300">{steps[activeStepIndex].nameTh}</div>
-              <div className="text-slate-400">{steps[activeStepIndex].description}</div>
-              <div className="mt-1 text-amber-300 bg-amber-950/30 p-2 rounded border border-amber-500/30">
-                <strong>ผลการตรวจสอบ:</strong> {steps[activeStepIndex].findings}
-              </div>
+              {activeStep ? (
+                <>
+                  <div className="font-bold text-sky-300">{activeStep.nameTh}</div>
+                  <div className="text-slate-400">{activeStep.description}</div>
+                  <div className="mt-1 text-amber-300 bg-amber-950/30 p-2 rounded border border-amber-500/30">
+                    <strong>ผลการตรวจสอบ:</strong> {activeStep.findings}
+                  </div>
+                </>
+              ) : (
+                <div className="text-amber-300">
+                  ไม่พบขั้นตอนการวินิจฉัยที่เลือก
+                </div>
+              )}
             </div>
           </div>
 

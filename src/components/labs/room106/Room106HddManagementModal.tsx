@@ -51,10 +51,24 @@ export const Room106HddManagementModal: React.FC<Room106HddManagementModalProps>
     initialPayload?.selectedRaidMode || 'NONE'
   );
 
-  const selectedHdd: Room106HddItem = useMemo(() => {
-    return (
-      ROOM106_HDD_CATALOG.find((h) => h.id === selectedHddId) || ROOM106_HDD_CATALOG[4]
+  const selectedHdd = useMemo<Room106HddItem>(() => {
+    const matchedHdd = ROOM106_HDD_CATALOG.find(
+      (hdd) => hdd.id === selectedHddId
     );
+
+    if (matchedHdd) {
+      return matchedHdd;
+    }
+
+    const fallbackHdd = ROOM106_HDD_CATALOG[0];
+
+    if (!fallbackHdd) {
+      throw new Error(
+        'ROOM106_HDD_CATALOG must contain at least one HDD'
+      );
+    }
+
+    return fallbackHdd;
   }, [selectedHddId]);
 
   // Scoring rubric (40 pts max):
@@ -63,35 +77,58 @@ export const Room106HddManagementModal: React.FC<Room106HddManagementModalProps>
   // 3. SATA cables connected & Format/Initialize complete: 15 pts
   // 4. SMART check performed: 5 pts
   const { scoreBreakdown, totalScore } = useMemo(() => {
-    let sCap = 0;
-    let sGrade = 0;
-    let sFormat = 0;
-    let sSmart = 0;
+    let capacity = 0;
+    let grade = 0;
+    let cablingAndFormat = 0;
+    let smartCheck = 0;
 
-    if (selectedHdd.capacityTb === 8) sCap = 10;
-    else if (selectedHdd.capacityTb === 4) sCap = 5;
-
-    if (selectedHdd.grade === 'Surveillance' && selectedHdd.is24x7Certified) sGrade = 10;
-    else sGrade = 3;
-
-    if (isSataDataConnected && isSataPowerConnected && hddFormatted && hddInitialized) {
-      sFormat = 15;
-    } else if (isSataDataConnected && isSataPowerConnected) {
-      sFormat = 6;
+    if (selectedHdd.capacityTb === 8) {
+      capacity = 10;
+    } else if (selectedHdd.capacityTb === 4) {
+      capacity = 5;
     }
 
-    if (isSmartTested) sSmart = 5;
+    if (
+      selectedHdd.grade === 'Surveillance' &&
+      selectedHdd.is24x7Certified
+    ) {
+      grade = 10;
+    } else {
+      grade = 3;
+    }
+
+    if (
+      isSataDataConnected &&
+      isSataPowerConnected &&
+      hddFormatted &&
+      hddInitialized
+    ) {
+      cablingAndFormat = 15;
+    } else if (isSataDataConnected && isSataPowerConnected) {
+      cablingAndFormat = 6;
+    }
+
+    if (isSmartTested) {
+      smartCheck = 5;
+    }
 
     return {
       scoreBreakdown: {
-        capacity: sCap,
-        grade: sGrade,
-        cablingAndFormat: sFormat,
-        smartCheck: sSmart,
+        capacity,
+        grade,
+        cablingAndFormat,
+        smartCheck,
       },
-      totalScore: sCap + sGrade + sFormat + sSmart,
+      totalScore: capacity + grade + cablingAndFormat + smartCheck,
     };
-  }, [selectedHdd, isSataDataConnected, isSataPowerConnected, hddFormatted, hddInitialized, isSmartTested]);
+  }, [
+    selectedHdd,
+    isSataDataConnected,
+    isSataPowerConnected,
+    hddFormatted,
+    hddInitialized,
+    isSmartTested,
+  ]);
 
   const handleRunSmartCheck = () => {
     setIsSmartTested(true);

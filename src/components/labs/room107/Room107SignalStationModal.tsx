@@ -14,11 +14,11 @@ export const Room107SignalStationModal: React.FC<Room107SignalStationModalProps>
   onSave,
   onClose,
 }) => {
-  const [symptomIdentified, setSymptomIdentified] = useState<
+  const [symptomIdentified] = useState<
     'ROLLING_HUM_BARS' | 'GHOSTING' | 'INTERMITTENT_LINK'
   >(initialPayload?.symptomIdentified || 'ROLLING_HUM_BARS');
 
-  const [rootCause, setRootCause] = useState<
+  const [rootCause] = useState<
     'GROUND_LOOP_POTENTIAL_DIFF' | 'UNSHIELDED_POWER_PROXIMITY'
   >(initialPayload?.rootCause || 'GROUND_LOOP_POTENTIAL_DIFF');
 
@@ -51,7 +51,7 @@ export const Room107SignalStationModal: React.FC<Room107SignalStationModalProps>
   // Scoring rubric (20 pts max):
   // 1. Correct Symptom & Waveform Analysis: 8 pts
   // 2. Ground Loop Isolator installed properly and retested clean: 12 pts
-  const { scoreBreakdown, totalScore } = useMemo(() => {
+  const { totalScore } = useMemo(() => {
     let sAnalysis = 0;
     let sIsolator = 0;
 
