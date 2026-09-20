@@ -239,3 +239,27 @@ export function moveWithObstacleSliding(
   const resolvedZ = collides(nextZ, obstacles, radius) ? current.z : nextZ.z;
   return { x: resolvedX, z: resolvedZ };
 }
+
+export interface VerticalPhysicsState {
+  y: number;
+  verticalVelocity: number;
+}
+
+export function applyVerticalPhysics(
+  current: VerticalPhysicsState,
+  deltaSeconds: number,
+  gravity: number = 16.0,
+): VerticalPhysicsState {
+  if (current.y <= 0 && current.verticalVelocity <= 0) {
+    return { y: 0, verticalVelocity: 0 };
+  }
+
+  const nextVelocity = current.verticalVelocity - gravity * deltaSeconds;
+  const nextY = current.y + current.verticalVelocity * deltaSeconds;
+
+  if (nextY <= 0) {
+    return { y: 0, verticalVelocity: 0 };
+  }
+
+  return { y: nextY, verticalVelocity: nextVelocity };
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRoleplayStore } from '../../store/useRoleplayStore';
 import { useCctvTrainingStore } from '../../store/useCctvTrainingStore';
 import { ConceptId, DeviceId } from '../../shared/domain/roleplayTypes';
@@ -18,8 +18,8 @@ export const FieldNotebook: React.FC = () => {
   const learningEvidence = useRoleplayStore((s) => s.learningEvidence);
   const traineeName = useRoleplayStore((s) => s.traineeName);
   const setActiveStation101Modal = useCctvTrainingStore((s) => s.setActiveStation101Modal);
-
-  const [activeTab, setActiveTab] = useState<'checklist' | 'minimap' | 'workbenches' | 'diagnostics' | 'certificate'>('checklist');
+  const activeTab = useRoleplayStore((s) => s.notebookActiveTab);
+  const setActiveTab = useRoleplayStore((s) => s.setNotebookActiveTab);
 
   if (!isNotebookOpen) return null;
 

@@ -3,6 +3,7 @@ import {
   getCameraRelativeMove,
   moveWithObstacleSliding,
   getRoomPhysicsConfig,
+  applyVerticalPhysics,
   type CollisionBox,
 } from '../shared/domain/playerMovement';
 
@@ -70,5 +71,27 @@ describe('isolated room physics config', () => {
     const r104 = getRoomPhysicsConfig(104);
     expect(r103.spawn).toEqual({ x: 0, z: 3.5 });
     expect(r104.spawn).toEqual({ x: 0, z: 3.5 });
+  });
+});
+
+describe('vertical jumping and gravity physics', () => {
+  it('keeps character stationary on ground if on ground with no upward velocity', () => {
+    const result = applyVerticalPhysics({ y: 0, verticalVelocity: 0 }, 0.02, 16.0);
+    expect(result.y).toBe(0);
+    expect(result.verticalVelocity).toBe(0);
+  });
+
+  it('ascends under initial jump impulse with gravity deceleration', () => {
+    // Jump with 5.2 m/s impulse for 0.02s
+    const step1 = applyVerticalPhysics({ y: 0, verticalVelocity: 5.2 }, 0.02, 16.0);
+    expect(step1.y).toBeCloseTo(0.104, 3);
+    expect(step1.verticalVelocity).toBeCloseTo(5.2 - 16.0 * 0.02, 3);
+  });
+
+  it('clamps to ground level and resets velocity upon landing', () => {
+    // Character near ground falling down
+    const landing = applyVerticalPhysics({ y: 0.05, verticalVelocity: -4.0 }, 0.05, 16.0);
+    expect(landing.y).toBe(0);
+    expect(landing.verticalVelocity).toBe(0);
   });
 });

@@ -25,8 +25,10 @@ import {
   validateCardDrop,
 } from '../shared/domain/missionRules';
 import { createLearningEvidence, LearningEvidenceRecord } from '../utils/learningEvidence';
+import { useCctvTrainingStore } from './useCctvTrainingStore';
 
 export interface DialogueState {
+  zoneId?: ZoneId;
   speakerNameTh: string;
   speakerRoleTh: string;
   bubbles: string[];
@@ -79,6 +81,8 @@ export interface RoleplayStoreState {
   interactionPromptText: string | null;
   notificationMessage: { text: string; type: 'info' | 'success' | 'warning' | 'error' } | null;
   isNotebookOpen: boolean;
+  notebookActiveTab: 'checklist' | 'minimap' | 'workbenches' | 'diagnostics' | 'certificate';
+  setNotebookActiveTab: (tab: 'checklist' | 'minimap' | 'workbenches' | 'diagnostics' | 'certificate') => void;
   isHintModalOpen: boolean;
   isSettingsOpen: boolean;
   isCertificateOpen: boolean;
@@ -101,6 +105,7 @@ export interface RoleplayStoreState {
   openStationDialogue: (zoneId: ZoneId) => void;
   nextDialogueBubble: () => void;
   closeDialogue: () => void;
+  finishDialogueAndLaunchMission: () => void;
 
   // Mission 1 Actions
   placeCardOnMission1Slot: (slotIndex: number) => void;
@@ -273,6 +278,8 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
   interactionPromptText: null,
   notificationMessage: null,
   isNotebookOpen: false,
+  notebookActiveTab: 'checklist',
+  setNotebookActiveTab: (tab) => set({ notebookActiveTab: tab }),
   isHintModalOpen: false,
   isSettingsOpen: false,
   isCertificateOpen: false,
@@ -378,6 +385,7 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
     set({
       visitedStations: visited,
       activeDialogue: {
+        zoneId,
         speakerNameTh: station.npcNameTh || 'สถานีความรู้',
         speakerRoleTh: station.npcRoleTh || 'Instructor',
         bubbles: station.dialogueBubbles,
@@ -404,12 +412,40 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
         },
       });
     } else {
-      get().closeDialogue();
+      get().finishDialogueAndLaunchMission();
     }
   },
 
   closeDialogue: () => {
     set({ activeDialogue: null });
+  },
+
+  finishDialogueAndLaunchMission: () => {
+    const d = get().activeDialogue;
+    const zoneId = d?.zoneId;
+    get().closeDialogue();
+
+    if (!zoneId) return;
+
+    if (zoneId === 'ZONE_A') {
+      set({ isNotebookOpen: true, notebookActiveTab: 'checklist' });
+      get().notify('เปิดสมุดงานช่าง: รายการ Checklist ภารกิจทั้งหมด', 'info');
+    } else if (zoneId === 'ZONE_B') {
+      useCctvTrainingStore.getState().setActiveStation101Modal(1);
+      get().notify('เปิดภารกิจที่ 1: วงจรภาพดิจิทัล (โต๊ะกล้อง IP)', 'info');
+    } else if (zoneId === 'ZONE_C') {
+      useCctvTrainingStore.getState().setActiveStation101Modal(2);
+      get().notify('เปิดภารกิจที่ 2: Data Flow & PoE Switch', 'info');
+    } else if (zoneId === 'ZONE_D') {
+      useCctvTrainingStore.getState().setActiveStation101Modal(3);
+      get().notify('เปิดภารกิจที่ 3: หน้าที่อุปกรณ์ & เครื่อง NVR', 'info');
+    } else if (zoneId === 'ZONE_F') {
+      useCctvTrainingStore.getState().setActiveStation101Modal(4);
+      get().notify('เปิดภารกิจที่ 4: เปรียบเทียบ Analog vs IP', 'info');
+    } else if (zoneId === 'ZONE_E') {
+      useCctvTrainingStore.getState().setActiveStation101Modal(5);
+      get().notify('เปิดภารกิจที่ 5: ต่อสาย & Live View บนจอควบคุม', 'info');
+    }
   },
 
   placeCardOnMission1Slot: (slotIndex) => {

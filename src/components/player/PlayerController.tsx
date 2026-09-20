@@ -12,6 +12,7 @@ import {
   getCameraRelativeMove,
   moveWithObstacleSliding,
   getRoomPhysicsConfig,
+  applyVerticalPhysics,
 } from '../../shared/domain/playerMovement';
 
 interface KeyState {
@@ -20,6 +21,7 @@ interface KeyState {
   left: boolean;
   right: boolean;
   sprint: boolean;
+  jump?: boolean;
 }
 
 export interface PlayerControllerProps {
@@ -56,6 +58,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
   const config = getRoomPhysicsConfig(roomNum, isRoom102Unlocked);
   const positionRef = useRef(new THREE.Vector3(config.spawn.x, 0, config.spawn.z));
   const velocityRef = useRef(new THREE.Vector2(0, 0));
+  const verticalVelocityRef = useRef(0);
   const rotationYRef = useRef(Math.PI);
   const cameraYawRef = useRef(0);
   const isRightDraggingRef = useRef(false);
@@ -120,10 +123,17 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         handleInteract();
       }
 
-      // Space to advance dialogue
-      if (code === 'Space' && activeDialogue) {
+      // Spacebar: Advance dialogue if talking, otherwise jump
+      if (code === 'Space') {
         e.preventDefault();
-        nextDialogueBubble();
+        if (activeDialogue) {
+          nextDialogueBubble();
+        } else {
+          // Jump impulse if on ground
+          if (positionRef.current.y <= 0.05 && verticalVelocityRef.current <= 0) {
+            verticalVelocityRef.current = 5.2; // Initial jump impulse (m/s)
+          }
+        }
       }
     };
 
@@ -342,6 +352,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
   };
 
   useFrame((_, delta) => {
+    const active101Modal = useCctvTrainingStore.getState().activeStation101Modal;
     const active102Modal = useCctvTrainingStore.getState().activeStation102Modal;
     const active103Modal = useCctvTrainingStore.getState().activeStation103Modal;
     const active104Modal = useCctvTrainingStore.getState().activeStation104Modal;
@@ -353,6 +364,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
       activeDialogue ||
       isNotebookOpen ||
       isSettingsOpen ||
+      active101Modal !== null ||
       active102Modal !== null ||
       active103Modal !== null ||
       active104Modal !== null ||
@@ -367,6 +379,15 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     }
 
     const safeDelta = Math.min(delta, 0.04);
+
+    // Apply vertical physics: jumping & gravity
+    const vert = applyVerticalPhysics(
+      { y: positionRef.current.y, verticalVelocity: verticalVelocityRef.current },
+      safeDelta,
+      16.0
+    );
+    positionRef.current.y = vert.y;
+    verticalVelocityRef.current = vert.verticalVelocity;
     const camYaw = cameraYawRef.current;
     const moveDir = getCameraRelativeMove(keys.current, camYaw);
     const moveX = moveDir.x;
