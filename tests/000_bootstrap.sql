@@ -4,7 +4,18 @@
 -- ไม่ใช่ส่วนที่จะนำไปรันบน Supabase project จริง
 create schema if not exists auth;
 create schema if not exists extensions;
+create schema if not exists storage;
 create schema if not exists test_support;
+
+-- จำลองตารางที่ Supabase Storage จัดเตรียมให้ในฐานข้อมูลจริง
+-- เพื่อให้ migration ตั้งค่า bucket ได้ใน PostgreSQL test container แบบ standalone
+create table if not exists storage.buckets (
+  id text primary key,
+  name text not null,
+  public boolean not null default false,
+  file_size_limit bigint,
+  allowed_mime_types text[]
+);
 
 do $roles$
 begin
@@ -99,4 +110,3 @@ $function$;
 
 grant usage on schema test_support to public;
 grant execute on all functions in schema test_support to public;
-

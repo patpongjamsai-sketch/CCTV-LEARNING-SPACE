@@ -89,6 +89,11 @@ select test_support.assert_true(
     'authenticated',
     'private.issue_certificate(text,uuid,uuid,jsonb)',
     'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.sync_lab_submission_unit_progress()',
+    'EXECUTE'
   ),
   'authenticated clients must not execute trusted outcome functions'
 );
@@ -112,6 +117,11 @@ select test_support.assert_true(
   and has_function_privilege(
     'service_role',
     'private.issue_certificate(text,uuid,uuid,jsonb)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'service_role',
+    'private.sync_lab_submission_unit_progress()',
     'EXECUTE'
   ),
   'service_role must execute the trusted backend transaction functions'
@@ -145,10 +155,20 @@ select test_support.assert_true(
   exists (
     select 1
     from pg_trigger
+    where tgrelid = 'public.lab_submissions'::regclass
+      and tgname = 'lab_submissions_sync_unit_progress'
+      and not tgisinternal
+  ),
+  'a passed teacher-reviewed LAB must be wired to Unit 1 progress synchronization'
+);
+
+select test_support.assert_true(
+  exists (
+    select 1
+    from pg_trigger
     where tgrelid = 'auth.users'::regclass
       and tgname = 'on_auth_user_created'
       and not tgisinternal
   ),
   'auth.users must create public.profiles through the approved trigger'
 );
-

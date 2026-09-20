@@ -121,6 +121,52 @@ values (
   'published'
 );
 
+-- เตรียม diagnostic pre-test ที่ผ่านการอนุมัติ เพื่อให้ fixture นี้
+-- ทดสอบ game session หลังผ่าน gate ของ Unit 1 ได้จริง
+insert into public.quizzes (
+  id, unit_id, code, slug, quiz_type, title, max_score,
+  passing_percentage, content_version, scoring_version, status
+)
+values (
+  '54000000-0000-0000-0000-000000000002',
+  '52000000-0000-0000-0000-000000000001',
+  'PRE-1',
+  'pre-1',
+  'pre',
+  'Diagnostic Pre-test',
+  10,
+  80,
+  4,
+  7,
+  'published'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '50000000-0000-0000-0000-000000000001', true);
+
+insert into public.quiz_attempts (
+  quiz_id, class_id, student_id, client_answers, started_at, submitted_at
+)
+values (
+  '54000000-0000-0000-0000-000000000002',
+  '53000000-0000-0000-0000-000000000001',
+  '50000000-0000-0000-0000-000000000001',
+  '[{"question":"diagnostic","answer":"a"}]'::jsonb,
+  now() - interval '5 minutes',
+  now()
+)
+returning id as flow_pre_attempt_id \gset
+
+reset role;
+set local role service_role;
+select private.approve_quiz_attempt(
+  :'flow_pre_attempt_id',
+  5,
+  5,
+  '50000000-0000-0000-0000-000000000002',
+  'Diagnostic pre-test approved for workflow fixture'
+);
+reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '50000000-0000-0000-0000-000000000001', true);
 
@@ -314,6 +360,35 @@ select private.review_lab_submission(
   90,
   'meets criteria',
   '50000000-0000-0000-0000-000000000002'
+);
+
+select test_support.assert_true(
+  (
+    select status = 'completed'
+      and progress_percent = 100
+      and approved_score = 90
+      and passed = true
+      and approved_by = '50000000-0000-0000-0000-000000000002'::uuid
+      and approved_at is not null
+    from public.unit_progress
+    where student_id = '50000000-0000-0000-0000-000000000001'
+      and class_id = '53000000-0000-0000-0000-000000000001'
+      and unit_id = '52000000-0000-0000-0000-000000000001'
+  ),
+  'a passed teacher-verified LAB must synchronize Unit 1 progress with its trusted score and approval provenance'
+);
+
+select test_support.assert_true(
+  exists (
+    select 1
+    from public.audit_logs as al
+    where al.action = 'unit_progress.lab_verified'
+      and al.entity_table = 'unit_progress'
+      and al.class_id = '53000000-0000-0000-0000-000000000001'
+      and al.new_data ->> 'source_lab_submission_id' = :'lab_submission_id'
+      and al.new_data ->> 'passed' = 'true'
+  ),
+  'LAB to Unit 1 synchronization must leave an append-only provenance audit record'
 );
 
 select private.finalize_game_attempt(
