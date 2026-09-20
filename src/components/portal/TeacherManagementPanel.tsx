@@ -6,8 +6,10 @@ export type TeacherManagementPanelProps = {
   classId?: string;
 };
 
+type LabReviewStatus = 'reviewing' | 'passed' | 'revision_required';
+
 export function TeacherManagementPanel({ classId = 'default-class' }: TeacherManagementPanelProps) {
-  const [activeTab, setActiveTab] = useState<'csv' | 'override'>('csv');
+  const [activeTab, setActiveTab] = useState<'csv' | 'override' | 'review'>('csv');
 
   // CSV Import State
   const [csvText, setCsvText] = useState(
@@ -25,6 +27,14 @@ export function TeacherManagementPanel({ classId = 'default-class' }: TeacherMan
   const [overrideReason, setOverrideReason] = useState('');
   const [isOverriding, setIsOverriding] = useState(false);
   const [overrideResult, setOverrideResult] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // LAB teacher verification state
+  const [reviewSubmissionId, setReviewSubmissionId] = useState('');
+  const [reviewStatus, setReviewStatus] = useState<LabReviewStatus>('reviewing');
+  const [reviewScore, setReviewScore] = useState('');
+  const [reviewFeedback, setReviewFeedback] = useState('');
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewResult, setReviewResult] = useState<{ success?: boolean; message?: string } | null>(null);
 
   const handleCsvImport = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +106,54 @@ export function TeacherManagementPanel({ classId = 'default-class' }: TeacherMan
     }
   };
 
+  const handleReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsReviewing(true);
+    setReviewResult(null);
+
+    try {
+      const body: {
+        status: LabReviewStatus;
+        approvedScore?: number;
+        feedback?: string;
+      } = {
+        status: reviewStatus,
+        feedback: reviewFeedback,
+      };
+
+      if (reviewStatus === 'passed') {
+        body.approvedScore = Number(reviewScore);
+      }
+
+      const res = await fetch(
+        `/api/learning/lab-submissions/${encodeURIComponent(reviewSubmissionId)}/review`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'การตรวจสอบ LAB ล้มเหลว');
+      }
+
+      setReviewResult({
+        success: true,
+        message: `บันทึกผลการตรวจสอบ LAB แล้ว (${data.status})`,
+      });
+      setReviewFeedback('');
+    } catch (err) {
+      setReviewResult({
+        success: false,
+        message: err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการตรวจสอบ',
+      });
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
   return (
     <section className="portal-teacher-panel bg-slate-900/90 border border-sky-500/30 rounded-2xl p-6 shadow-xl my-8 text-slate-100">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-6">
@@ -125,6 +183,17 @@ export function TeacherManagementPanel({ classId = 'default-class' }: TeacherMan
             }`}
           >
             ปรับปรุงผลการเรียน (Override)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('review')}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === 'review'
+                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            ตรวจสอบ LAB
           </button>
         </div>
       </div>
@@ -270,6 +339,83 @@ export function TeacherManagementPanel({ classId = 'default-class' }: TeacherMan
               }`}
             >
               {overrideResult.message}
+            </div>
+          )}
+        </form>
+      )}
+
+      {activeTab === 'review' && (
+        <form onSubmit={handleReview} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">รหัส LAB Submission (UUID)</label>
+            <input
+              type="text"
+              placeholder="UUID ของผลงาน LAB ที่ส่งแล้ว"
+              value={reviewSubmissionId}
+              onChange={(e) => setReviewSubmissionId(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">ผลการตรวจสอบ</label>
+              <select
+                value={reviewStatus}
+                onChange={(e) => setReviewStatus(e.target.value as LabReviewStatus)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500"
+              >
+                <option value="reviewing">รับเรื่องตรวจสอบ</option>
+                <option value="passed">ผ่าน</option>
+                <option value="revision_required">ขอให้แก้ไข</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">คะแนนอนุมัติ (0 - 100)</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={reviewScore}
+                onChange={(e) => setReviewScore(e.target.value)}
+                disabled={reviewStatus !== 'passed'}
+                required={reviewStatus === 'passed'}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500 disabled:opacity-50"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-300 mb-1">ข้อเสนอแนะถึงผู้เรียน</label>
+            <textarea
+              rows={3}
+              value={reviewFeedback}
+              onChange={(e) => setReviewFeedback(e.target.value)}
+              className="w-full text-xs bg-slate-950 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-sky-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-xs text-slate-400">ระบบจะตรวจสิทธิ์ครูและบันทึกผลผ่านฐานข้อมูลพร้อม Audit Log</span>
+            <button
+              type="submit"
+              disabled={isReviewing}
+              className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition-colors"
+            >
+              {isReviewing ? 'กำลังตรวจสอบ...' : 'บันทึกผลตรวจ LAB'}
+            </button>
+          </div>
+
+          {reviewResult && (
+            <div
+              className={`p-3.5 rounded-xl text-xs font-medium border ${
+                reviewResult.success
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                  : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+              }`}
+            >
+              {reviewResult.message}
             </div>
           )}
         </form>

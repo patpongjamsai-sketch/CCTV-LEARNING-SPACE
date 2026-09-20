@@ -14,6 +14,15 @@ describe('Next.js learning portal shell', () => {
     expect(html).toContain('href="/labs/3d/room-101"');
   });
 
+  it('routes the first learning module to the canonical course before the LAB', async () => {
+    const componentUrl = new URL('../components/portal/DashboardShell.tsx', import.meta.url).href;
+    const { DashboardShell } = await import(/* @vite-ignore */ componentUrl);
+
+    const html = renderToStaticMarkup(<DashboardShell />);
+
+    expect(html).toMatch(/class="portal-module-card" data-unit-id="01" href="\/courses\/21909-2020"/);
+  });
+
   it('renders the authenticated learner and backend-approved progress', async () => {
     const componentUrl = new URL('../components/portal/DashboardShell.tsx', import.meta.url).href;
     const { DashboardShell } = await import(/* @vite-ignore */ componentUrl);
@@ -66,5 +75,6 @@ describe('Next.js learning portal shell', () => {
     expect(html).toContain('Teacher &amp; Admin Center');
     expect(html).toContain('นำเข้านักเรียน (CSV)');
     expect(html).toContain('ปรับปรุงผลการเรียน (Override)');
+    expect(html).toContain('ตรวจสอบ LAB');
   });
 });
