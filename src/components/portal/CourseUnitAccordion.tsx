@@ -349,93 +349,35 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
                                             </div>
                                         )}
 
-                                        {/* Interactive Pipeline Cards */}
-                                        <div className={`pipeline-grid ${!examGate.unlocked ? 'opacity-60 pointer-events-none' : ''}`}>
-                                            {/* Pre-test & Knowledge Checks */}
-                                            {bundle.assessments.map((asm, idx) => (
-                                                <div key={asm.id} className="pipeline-card">
-                                                    <div>
-                                                        <div className="pipeline-card-header">
-                                                            <span className="pipeline-badge text-sky-400 border border-sky-500/30">
-                                                                {asm.id}
-                                                            </span>
-                                                            <span className="text-[11px] text-slate-400 font-mono">
-                                                                {idx === 0 ? '📝 Pre-test' : '💡 Check'}
-                                                            </span>
-                                                        </div>
-                                                        <h4>{asm.titleTh}</h4>
-                                                        <p>{asm.purpose}</p>
-                                                    </div>
-                                                    <div className="pipeline-card-footer">
-                                                        <span className="text-xs font-mono text-emerald-400">
-                                                            {asm.scoring.maxScore} คะแนน ({asm.scoring.weight}%)
-                                                        </span>
-                                                        <a
-                                                            href={`/assessments#${asm.id}`}
-                                                            className="px-2.5 py-1 rounded-lg bg-sky-600/80 hover:bg-sky-500 text-white text-xs font-medium transition-colors"
-                                                        >
-                                                            ทำแบบทดสอบ
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            ))}
-
-                                            {/* Fault Challenge */}
-                                            <div className="pipeline-card card-fault">
-                                                <div>
-                                                    <div className="pipeline-card-header">
-                                                        <span className="pipeline-badge text-amber-300 border border-amber-500/40">
-                                                            {bundle.faultChallenge.id}
-                                                        </span>
-                                                        <span className="text-[11px] text-amber-300 font-bold font-mono">
-                                                            🔍 Fault Challenge
-                                                        </span>
-                                                    </div>
-                                                    <h4>{bundle.faultChallenge.titleTh}</h4>
-                                                    <p>
-                                                        กระบวนการสืบค้น 6 ขั้น: {bundle.faultChallenge.requiredProcess.join(' → ')}
-                                                    </p>
-                                                </div>
-                                                <div className="pipeline-card-footer">
-                                                    <span className="text-xs font-mono text-amber-300 font-bold">
-                                                        {bundle.faultChallenge.scoring.maxScore} คะแนน (15%)
+                                        {/* Assessment Hub CTA Card */}
+                                        <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950/40 border border-sky-500/30 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2 flex-wrap text-xs font-mono">
+                                                    <span className="px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 font-bold">
+                                                        {bundle.unit.id}-A01 ปรนัย 10 ข้อ
                                                     </span>
-                                                    <a
-                                                        href={`/assessments#${bundle.faultChallenge.id}`}
-                                                        className="px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
-                                                    >
-                                                        เริ่มวิเคราะห์
-                                                    </a>
+                                                    <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 font-bold">
+                                                        {bundle.faultChallenge.id} อัตนัย 6 ขั้นตอน
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">
+                                                        {bundle.lab.id} 3D LAB
+                                                    </span>
+                                                    <span className="px-2 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-800 font-bold">
+                                                        {bundle.reflection.id} สะท้อนคิด
+                                                    </span>
                                                 </div>
+                                                <p className="text-xs text-slate-300 leading-relaxed m-0">
+                                                    ศูนย์ประเมินสมรรถนะประจำหน่วย: ทำแบบทดสอบปรนัย (10 ข้อ), วินิจฉัยปัญหาเชิงลึก 6 ขั้นตอน ({bundle.faultChallenge.titleTh}), และบันทึกการสะท้อนคิด
+                                                </p>
                                             </div>
 
-                                            {/* Reflection & Evidence */}
-                                            <div className="pipeline-card card-reflection">
-                                                <div>
-                                                    <div className="pipeline-card-header">
-                                                        <span className="pipeline-badge text-purple-300 border border-purple-500/40">
-                                                            {bundle.reflection.id}
-                                                        </span>
-                                                        <span className="text-[11px] text-purple-300 font-bold font-mono">
-                                                            📋 Reflection
-                                                        </span>
-                                                    </div>
-                                                    <h4>{bundle.reflection.titleTh}</h4>
-                                                    <p>
-                                                        {bundle.reflection.prompts[0] || 'สรุปความรู้และหลักฐานการเรียนรู้ประจำหน่วย'}
-                                                    </p>
-                                                </div>
-                                                <div className="pipeline-card-footer">
-                                                    <span className="text-xs font-mono text-purple-300 font-bold">
-                                                        {bundle.reflection.scoring.maxScore} คะแนน (5%)
-                                                    </span>
-                                                    <a
-                                                        href={`/assessments#${bundle.reflection.id}`}
-                                                        className="px-2.5 py-1 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
-                                                    >
-                                                        บันทึกสรุป
-                                                    </a>
-                                                </div>
+                                            <div className="shrink-0">
+                                                <a
+                                                    href={`/assessments#${bundle.unit.id}`}
+                                                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-md shadow-sky-500/20 transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+                                                >
+                                                    <span>🚀 ไปทำแบบประเมินหน่วยที่ {bundle.unit.number} ({bundle.unit.id}) →</span>
+                                                </a>
                                             </div>
                                         </div>
                                     </section>
