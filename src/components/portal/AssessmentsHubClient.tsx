@@ -296,11 +296,15 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                             <section
                                 key={bundle.unit.id}
                                 id={`unit-card-${bundle.unit.id}`}
-                                className={`assessment-unit-card ${isCurrentActive ? 'assessment-unit-card-active' : ''}`}
+                                className={`p-6 rounded-3xl bg-slate-900/90 border transition-all ${
+                                    isCurrentActive
+                                        ? 'border-sky-500/60 shadow-2xl shadow-sky-500/10 ring-1 ring-sky-500/40'
+                                        : 'border-slate-800 shadow-xl'
+                                }`}
                             >
                                 {/* Unit Card Header */}
-                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-                                    <div className="space-y-1">
+                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+                                    <div className="space-y-1.5">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="px-2.5 py-0.5 rounded-md font-mono text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
                                                 {bundle.unit.id}
@@ -308,18 +312,29 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                                             <span className="text-xs font-mono text-slate-400">
                                                 หน่วยการเรียนรู้ที่ {bundle.unit.number}
                                             </span>
-                                            {unitExam?.passed && (
+                                            <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px] font-mono">
+                                                เกณฑ์รวม 100 คะแนน
+                                            </span>
+                                            {unitExam?.passed ? (
                                                 <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold">
-                                                    ✓ ปรนัย: {unitExam.score}/10
+                                                    ✓ ปรนัย: {unitExam.score}/10 คะแนน
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[11px] font-mono">
+                                                    ○ ปรนัย: ยังไม่สอบ
                                                 </span>
                                             )}
-                                            {unitFault && (
+                                            {unitFault ? (
                                                 <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/30 text-[11px] font-mono font-bold">
-                                                    🟡 อัตนัย: รอตรวจ
+                                                    🟡 อัตนัย: ส่งตรวจแล้ว
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 text-[11px] font-mono">
+                                                    ○ อัตนัย: ยังไม่ส่ง
                                                 </span>
                                             )}
                                         </div>
-                                        <h4 className="text-lg font-bold text-white m-0">
+                                        <h4 className="text-xl font-bold text-white m-0">
                                             {bundle.unit.titleTh}
                                         </h4>
                                         <p className="text-xs text-slate-400 leading-relaxed max-w-3xl m-0">
@@ -328,18 +343,15 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                                     </div>
 
                                     <div className="flex items-center gap-3 shrink-0">
-                                        <span className="text-xs font-mono text-slate-400">
-                                            เกณฑ์รวม 100 คะแนน
-                                        </span>
                                         <button
                                             type="button"
                                             onClick={() => {
                                                 setSelectedUnitId(bundle.unit.id);
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                             }}
-                                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                                 isCurrentActive
-                                                    ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
+                                                    ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30 font-extrabold'
                                                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
                                             }`}
                                         >
@@ -348,79 +360,245 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                                     </div>
                                 </div>
 
-                                {/* Assessment Items in this Unit */}
-                                <ol className="portal-unit-list m-0 mt-4">
-                                    {bundle.assessments.map((a) => (
-                                        <li key={a.id} id={a.id} className="hover:border-sky-500/40 transition-colors">
-                                            <span className="font-mono text-xs">{a.id}</span>
-                                            <div>
-                                                <strong className="text-white text-sm block">{a.titleTh}</strong>
-                                                <small className="block text-slate-400 text-xs mt-0.5">
-                                                    {bundle.unit.id} · Knowledge Check · เกณฑ์คะแนน: {a.scoring.maxScore} คะแนน (นน. {a.scoring.weight}%)
-                                                </small>
+                                <div className="mt-6 space-y-6">
+                                    {/* ========================================================================= */}
+                                    {/* หมวดที่ 1: แบบประเมินปรนัย (Objective Assessments / Knowledge Checks) */}
+                                    {/* ========================================================================= */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between border-b border-sky-500/20 pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sky-400 font-bold text-sm flex items-center gap-1.5">
+                                                    <span aria-hidden="true">📝</span> แบบประเมินปรนัย (Objective Assessments)
+                                                </span>
+                                                <span className="text-[11px] px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800/60 font-mono">
+                                                    {bundle.assessments.length} รายการ
+                                                </span>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedUnitId(bundle.unit.id);
-                                                    setIsExamModalOpen(true);
-                                                }}
-                                                className="px-3 py-1 bg-sky-600/80 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer"
-                                            >
-                                                ทำแบบทดสอบ
-                                            </button>
-                                        </li>
-                                    ))}
-
-                                    <li key={bundle.lab.id} id={bundle.lab.id} className="hover:border-emerald-500/40 transition-colors">
-                                        <span className="font-mono text-xs">{bundle.lab.id}</span>
-                                        <div>
-                                            <strong className="text-white text-sm block">{bundle.lab.titleTh}</strong>
-                                            <small className="block text-slate-400 text-xs mt-0.5">
-                                                {bundle.unit.id} · Practical LAB · เกณฑ์คะแนน: {bundle.lab.scoring.maxScore} คะแนน (นน. {bundle.lab.scoring.weight}%)
-                                            </small>
+                                            <span className="text-[11px] text-slate-400 hidden sm:inline">
+                                                วัดความรอบรู้เชิงทฤษฎี มาตรฐานอุปกรณ์ และเกณฑ์ความปลอดภัยก่อนปฏิบัติการ
+                                            </span>
                                         </div>
-                                        <a
-                                            href={`/labs/3d/room-${bundle.unit.number + 100}`}
-                                            className="px-3 py-1 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer"
-                                        >
-                                            เข้าห้อง LAB {bundle.unit.number + 100}
-                                        </a>
-                                    </li>
 
-                                    <li key={bundle.faultChallenge.id} id={bundle.faultChallenge.id} className="hover:border-amber-500/40 transition-colors">
-                                        <span className="font-mono text-xs">{bundle.faultChallenge.id}</span>
-                                        <div>
-                                            <strong className="text-white text-sm block">{bundle.faultChallenge.titleTh}</strong>
-                                            <small className="block text-slate-400 text-xs mt-0.5">
-                                                {bundle.unit.id} · Fault Challenge · เกณฑ์คะแนน: {bundle.faultChallenge.scoring.maxScore} คะแนน (นน. {bundle.faultChallenge.scoring.weight}%)
-                                            </small>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-xs text-slate-300 border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+                                                        <th className="py-2.5 px-3 w-28">รหัส</th>
+                                                        <th className="py-2.5 px-3">รายการประเมิน &amp; สมรรถนะช่างที่สะท้อน</th>
+                                                        <th className="py-2.5 px-3 w-40">เกณฑ์การวัดผล</th>
+                                                        <th className="py-2.5 px-3 w-36 text-right">การประเมิน</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-800/60">
+                                                    {bundle.assessments.map((a) => (
+                                                        <tr key={a.id} id={a.id} className="hover:bg-slate-800/40 transition-colors">
+                                                            <td className="py-3 px-3 align-top font-mono font-bold text-sky-400">
+                                                                {a.id}
+                                                                <span className="block text-[10px] text-slate-400 font-normal">
+                                                                    {a.type === 'knowledge_check'
+                                                                        ? 'Knowledge'
+                                                                        : a.type === 'equipment_matching'
+                                                                        ? 'Matching'
+                                                                        : a.type === 'system_diagram'
+                                                                        ? 'Diagram'
+                                                                        : 'Pre-LAB Gate'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3 px-3 align-top">
+                                                                <strong className="text-white font-semibold text-sm block mb-1">
+                                                                    {a.titleTh}
+                                                                </strong>
+                                                                <p className="text-xs text-slate-400 leading-relaxed m-0">
+                                                                    <span className="text-sky-300/80 font-medium">สมรรถนะ: </span>
+                                                                    {a.purpose}
+                                                                </p>
+                                                            </td>
+                                                            <td className="py-3 px-3 align-top font-mono">
+                                                                <span className="text-slate-200 font-semibold block">
+                                                                    เต็ม {a.scoring.maxScore} คะแนน
+                                                                </span>
+                                                                <span className="text-[11px] text-slate-400 block">
+                                                                    น้ำหนัก {a.scoring.weight}%
+                                                                </span>
+                                                                <span className="text-[11px] text-emerald-400/90 font-sans">
+                                                                    {a.passingRule.type === 'minimum_percentage'
+                                                                        ? `เกณฑ์ผ่าน ≥ ${a.passingRule.value}%`
+                                                                        : 'ผ่านเกณฑ์ Safety Gate'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3 px-3 align-top text-right">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedUnitId(bundle.unit.id);
+                                                                        setIsExamModalOpen(true);
+                                                                    }}
+                                                                    className="px-3 py-1.5 bg-sky-600/80 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1 shadow-sm"
+                                                                >
+                                                                    ทำข้อสอบปรนัย
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedUnitId(bundle.unit.id);
-                                                setIsFaultModalOpen(true);
-                                            }}
-                                            className="px-3 py-1 bg-amber-600/80 hover:bg-amber-500 text-white rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer"
-                                        >
-                                            เริ่มวิเคราะห์ 6 ขั้น
-                                        </button>
-                                    </li>
+                                    </div>
 
-                                    <li key={bundle.reflection.id} id={bundle.reflection.id}>
-                                        <span className="font-mono text-xs">{bundle.reflection.id}</span>
-                                        <div>
-                                            <strong className="text-white text-sm block">{bundle.reflection.titleTh}</strong>
-                                            <small className="block text-slate-400 text-xs mt-0.5">
-                                                {bundle.unit.id} · Reflection · เกณฑ์คะแนน: {bundle.reflection.scoring.maxScore} คะแนน (นน. {bundle.reflection.scoring.weight}%)
-                                            </small>
+                                    {/* ========================================================================= */}
+                                    {/* หมวดที่ 2: แบบประเมินอัตนัยและสมรรถนะวิชาชีพ (Subjective & Performance) */}
+                                    {/* ========================================================================= */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-amber-300 font-bold text-sm flex items-center gap-1.5">
+                                                    <span aria-hidden="true">🔍</span> แบบประเมินอัตนัยและสมรรถนะวิชาชีพ (Subjective &amp; Performance)
+                                                </span>
+                                                <span className="text-[11px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/60 font-mono">
+                                                    3 เครื่องมือ
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] text-slate-400 hidden sm:inline">
+                                                วิเคราะห์หาสาเหตุด้วยหลักฐาน 6 ขั้นตอน และเกณฑ์สมรรถนะภาคปฏิบัติในระบบเสมือน
+                                            </span>
                                         </div>
-                                        <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 shrink-0">
-                                            สรุปสะท้อนคิด
-                                        </span>
-                                    </li>
-                                </ol>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-xs text-slate-300 border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px]">
+                                                        <th className="py-2.5 px-3 w-28">รหัส</th>
+                                                        <th className="py-2.5 px-3">เครื่องมือวัด &amp; สมรรถนะช่างเทคนิค</th>
+                                                        <th className="py-2.5 px-3 w-40">เกณฑ์การวัดผล</th>
+                                                        <th className="py-2.5 px-3 w-36 text-right">การประเมิน</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-800/60">
+                                                    {/* 1. Fault Challenge (อัตนัยวิเคราะห์ 6 ขั้นตอน) */}
+                                                    <tr id={bundle.faultChallenge.id} className="hover:bg-slate-800/40 transition-colors">
+                                                        <td className="py-3 px-3 align-top font-mono font-bold text-amber-400">
+                                                            {bundle.faultChallenge.id}
+                                                            <span className="block text-[10px] text-slate-400 font-normal">
+                                                                อัตนัย (Fault)
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top">
+                                                            <strong className="text-white font-semibold text-sm block mb-1">
+                                                                {bundle.faultChallenge.titleTh}
+                                                            </strong>
+                                                            <p className="text-xs text-slate-400 leading-relaxed m-0 mb-1">
+                                                                <span className="text-amber-300/80 font-medium">สมรรถนะ: </span>
+                                                                การวินิจฉัยปัญหาเชิงตรรกะ บันทึกหลักฐานผลทดสอบ และแก้ไขปัญหาตามกระบวนการ 6 ขั้นตอน
+                                                            </p>
+                                                            <span className="inline-block text-[10px] font-mono text-amber-400/80 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/50">
+                                                                6 STEPS: Problem → Cause → Test → Result → Solution → Retest
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top font-mono">
+                                                            <span className="text-slate-200 font-semibold block">
+                                                                เต็ม {bundle.faultChallenge.scoring.maxScore} คะแนน
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 block">
+                                                                น้ำหนัก {bundle.faultChallenge.scoring.weight}%
+                                                            </span>
+                                                            <span className="text-[11px] text-amber-400/90 font-sans">
+                                                                รูบริกการวิเคราะห์ 6 ขั้นตอน
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top text-right">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setSelectedUnitId(bundle.unit.id);
+                                                                    setIsFaultModalOpen(true);
+                                                                }}
+                                                                className="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1 shadow-sm"
+                                                            >
+                                                                {unitFault ? 'ดูรายงานอัตนัย' : 'ทำแบบทดสอบอัตนัย'}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+
+                                                    {/* 2. Practical LAB Rubric (สมรรถนะการปฏิบัติใน 3D Lab) */}
+                                                    <tr id={bundle.lab.id} className="hover:bg-slate-800/40 transition-colors">
+                                                        <td className="py-3 px-3 align-top font-mono font-bold text-emerald-400">
+                                                            {bundle.lab.id}
+                                                            <span className="block text-[10px] text-slate-400 font-normal">
+                                                                สมรรถนะปฏิบัติ
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top">
+                                                            <strong className="text-white font-semibold text-sm block mb-1">
+                                                                เกณฑ์วัดผลสมรรถนะภาคปฏิบัติ: {bundle.lab.titleTh}
+                                                            </strong>
+                                                            <p className="text-xs text-slate-400 leading-relaxed m-0 mb-1">
+                                                                <span className="text-emerald-300/80 font-medium">สมรรถนะ: </span>
+                                                                การติดตั้งอุปกรณ์ ต่อสาย Cat6/HDMI คำนวณงบไฟ PoE และทดสอบสัญญาณภาพสด Live View
+                                                            </p>
+                                                            <span className="inline-block text-[10px] font-mono text-emerald-400/80 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
+                                                                AUTHENTIC 3D LAB · ห้อง {bundle.unit.number + 100}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top font-mono">
+                                                            <span className="text-slate-200 font-semibold block">
+                                                                เต็ม {bundle.lab.scoring.maxScore} คะแนน
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 block">
+                                                                น้ำหนัก {bundle.lab.scoring.weight}%
+                                                            </span>
+                                                            <span className="text-[11px] text-emerald-400/90 font-sans">
+                                                                ผ่านเกณฑ์ทดสอบระบบ 100%
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top text-right">
+                                                            <a
+                                                                href={`/labs/3d/room-${bundle.unit.number + 100}`}
+                                                                className="px-3 py-1.5 bg-emerald-600/80 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-colors inline-flex items-center gap-1 shadow-sm"
+                                                            >
+                                                                เข้าห้อง LAB {bundle.unit.number + 100}
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+
+                                                    {/* 3. Reflection (การประเมินการสะท้อนคิด) */}
+                                                    <tr id={bundle.reflection.id} className="hover:bg-slate-800/40 transition-colors">
+                                                        <td className="py-3 px-3 align-top font-mono font-bold text-slate-400">
+                                                            {bundle.reflection.id}
+                                                            <span className="block text-[10px] text-slate-400 font-normal">
+                                                                สะท้อนคิด
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top">
+                                                            <strong className="text-white font-semibold text-sm block mb-1">
+                                                                {bundle.reflection.titleTh}
+                                                            </strong>
+                                                            <p className="text-xs text-slate-400 leading-relaxed m-0">
+                                                                <span className="text-slate-300/80 font-medium">สมรรถนะ: </span>
+                                                                การประเมินตนเอง สรุปบทเรียน และสะท้อนมาตรฐานจรรยาบรรณวิชาชีพช่าง CCTV
+                                                            </p>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top font-mono">
+                                                            <span className="text-slate-200 font-semibold block">
+                                                                เต็ม {bundle.reflection.scoring.maxScore} คะแนน
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 block">
+                                                                น้ำหนัก {bundle.reflection.scoring.weight}%
+                                                            </span>
+                                                            <span className="text-[11px] text-slate-400 font-sans">
+                                                                ประเมินความสมบูรณ์
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 align-top text-right">
+                                                            <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 inline-block">
+                                                                สะท้อนคิด
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
                             </section>
                         );
                     })}
