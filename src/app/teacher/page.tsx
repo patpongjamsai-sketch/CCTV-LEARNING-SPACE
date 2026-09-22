@@ -1,10 +1,31 @@
+import { redirect } from 'next/navigation';
+import { getVerifiedAuthContext } from '../../lib/auth/claims';
+import { createAdminSupabaseClient } from '../../lib/supabase/admin';
 import { PortalGlobalNav } from '../../components/portal/PortalGlobalNav';
 import { TeacherApprovalDashboard } from '../../components/portal/TeacherApprovalDashboard';
 
-export default function TeacherPage() {
+export default async function TeacherPage() {
+    if (process.env.NODE_ENV !== 'test') {
+        const authContext = await getVerifiedAuthContext();
+        if (!authContext) {
+            redirect('/login?next=/teacher');
+        }
+
+        const supabase = createAdminSupabaseClient();
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', authContext.userId)
+            .single();
+
+        if (!profile || (profile.role !== 'teacher' && profile.role !== 'admin')) {
+            redirect('/');
+        }
+    }
+
     return (
         <>
-            <PortalGlobalNav />
+            <PortalGlobalNav showTeacherTab={true} />
             <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
                 <div className="max-w-7xl mx-auto space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">

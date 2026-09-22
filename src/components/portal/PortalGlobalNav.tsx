@@ -18,8 +18,15 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItem[] = [
     { num: '06', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher', matchPrefix: '/teacher' },
 ];
 
-export function PortalGlobalNav() {
+export type PortalGlobalNavProps = {
+    showTeacherTab?: boolean;
+};
+
+export function PortalGlobalNav({ showTeacherTab = false }: PortalGlobalNavProps = {}) {
     const pathname = usePathname() || '';
+    const items = showTeacherTab || pathname.startsWith('/teacher')
+        ? GLOBAL_NAV_ITEMS
+        : GLOBAL_NAV_ITEMS.filter((item) => item.href !== '/teacher');
 
     return (
         <header className="portal-global-nav" aria-label="แถบนำทางหลัก 01 ถึง 05">
@@ -30,7 +37,7 @@ export function PortalGlobalNav() {
                 </a>
 
                 <nav className="portal-global-tabs" aria-label="เมนูระบบ">
-                    {GLOBAL_NAV_ITEMS.map((item) => {
+                    {items.map((item) => {
                         const isActive = item.href === '/'
                             ? pathname === '/'
                             : pathname.startsWith(item.matchPrefix || item.href);

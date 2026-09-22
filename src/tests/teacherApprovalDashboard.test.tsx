@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
 
 import TeacherPage from '../app/teacher/page';
 import { TeacherApprovalDashboard } from '../components/portal/TeacherApprovalDashboard';
@@ -13,8 +15,9 @@ describe('Teacher Approval Dashboard SSR & Hydration contract', () => {
     expect(DEFAULT_TEACHER_APPROVALS.unlockedAssessments.U01).toBe(false);
   });
 
-  it('renders TeacherPage static markup safely without hydration divergence', () => {
-    const html = renderToStaticMarkup(<TeacherPage />);
+  it('renders TeacherPage static markup safely without hydration divergence', async () => {
+    const page = await TeacherPage();
+    const html = renderToStaticMarkup(page);
 
     expect(html).toContain('แดชบอร์ดครูผู้สอน');
     expect(html).toContain('TEACHER COMMAND CENTER');

@@ -52,6 +52,9 @@ export function DashboardShell({
 }: DashboardShellProps = {}) {
     const experiencePoints = summary.completedUnits * 100 + summary.passedMissions * 25;
     const isTeacherOrAdmin = learner.role === 'teacher' || learner.role === 'admin';
+    const visibleNavItems = isTeacherOrAdmin
+        ? navigationItems
+        : navigationItems.filter((item) => item.href !== '/teacher');
 
     return (
         <div className="portal-shell">
@@ -65,7 +68,7 @@ export function DashboardShell({
                 <p className="portal-workspace-copy">พื้นที่เรียนรู้สำหรับช่างเทคนิคกล้องวงจรปิด</p>
 
                 <nav className="portal-navigation" aria-label="เมนูหลัก 01 ถึง 05">
-                    {navigationItems.map((item, index) => (
+                    {visibleNavItems.map((item, index) => (
                         <a
                             className={index === 0 ? 'portal-nav-link portal-nav-link-active' : 'portal-nav-link'}
                             href={item.href}

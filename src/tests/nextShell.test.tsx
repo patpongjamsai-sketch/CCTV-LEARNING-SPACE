@@ -76,5 +76,21 @@ describe('Next.js learning portal shell', () => {
     expect(html).toContain('นำเข้านักเรียน (CSV)');
     expect(html).toContain('ปรับปรุงผลการเรียน (Override)');
     expect(html).toContain('ตรวจสอบ LAB');
+    expect(html).toContain('href="/teacher"');
+  });
+
+  it('hides the /teacher navigation item from student learners', async () => {
+    const componentUrl = new URL('../components/portal/DashboardShell.tsx', import.meta.url).href;
+    const { DashboardShell } = await import(/* @vite-ignore */ componentUrl);
+
+    const html = renderToStaticMarkup(
+      <DashboardShell
+        learner={{ displayName: 'สมหญิง นักเรียน', role: 'student' }}
+      />,
+    );
+
+    expect(html).toContain('สมหญิง นักเรียน');
+    expect(html).not.toContain('href="/teacher"');
+    expect(html).not.toContain('อนุมัติสิทธิ์ (Teacher)');
   });
 });
