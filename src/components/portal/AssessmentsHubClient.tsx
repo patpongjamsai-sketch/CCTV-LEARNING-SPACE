@@ -21,6 +21,8 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
     const [faultSubmissions, setFaultSubmissions] = useState<Record<string, { status: string; submittedAt: string }>>({});
     const [reflections, setReflections] = useState<Record<string, { submittedAt: string }>>({});
 
+    const [currentUser, setCurrentUser] = useState<{ displayName: string; studentCode?: string; role: string } | null>(null);
+
     const activeBundle = bundles.find((b) => b.unit.id === selectedUnitId) || bundles[0];
     if (!activeBundle) return null;
 
@@ -77,6 +79,18 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
     useEffect(() => {
         reloadSavedStates();
 
+        // Fetch current logged-in user profile
+        fetch('/api/auth/me', { cache: 'no-store' })
+            .then((res) => res.ok ? res.json() : null)
+            .then((data) => {
+                if (data?.user) {
+                    setCurrentUser(data.user);
+                }
+            })
+            .catch(() => {
+                // ignore
+            });
+
         const handleExamEvent = () => reloadSavedStates();
         const handleFaultEvent = () => reloadSavedStates();
         const handleReflEvent = () => reloadSavedStates();
@@ -117,6 +131,29 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
 
     return (
         <div className="space-y-6">
+            {/* User Profile Connected Banner */}
+            {currentUser && (
+                <div className="p-4 rounded-2xl bg-slate-900/90 border border-sky-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-md">
+                    <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 font-black flex items-center justify-center text-xs shadow-sm" aria-hidden="true">
+                            {currentUser.displayName.slice(0, 1) || 'ช'}
+                        </span>
+                        <div>
+                            <span className="text-slate-400 block text-[11px]">ผู้เข้าสอบที่เข้าสู่ระบบ:</span>
+                            <strong className="text-white font-bold text-sm">
+                                {currentUser.displayName}
+                                {currentUser.studentCode ? ` (รหัสนักศึกษา: ${currentUser.studentCode})` : ''}
+                            </strong>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-lg bg-sky-950 border border-sky-800 text-sky-300 font-mono text-xs">
+                            สถานะ: {currentUser.role === 'teacher' ? 'ครูผู้สอน' : currentUser.role === 'admin' ? 'ผู้ดูแลระบบ' : 'นักเรียน'}
+                        </span>
+                    </div>
+                </div>
+            )}
+
             {/* Unit Selector Bar (Interactive Pills U01-U08) */}
             <div className="p-5 bg-slate-900/90 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -38,8 +38,20 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
 
     useEffect(() => {
         let isMounted = true;
+
         const fetchUser = async () => {
             try {
+                // 1. Try server API route first (most reliable, reads HTTP cookies & profiles)
+                const res = await fetch('/api/auth/me', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.user && isMounted) {
+                        setUser(data.user);
+                        return;
+                    }
+                }
+
+                // 2. Fallback to Supabase Browser Client
                 const supabase = createBrowserSupabaseClient();
                 const { data: { user: authUser } } = await supabase.auth.getUser();
                 if (authUser && isMounted) {
@@ -108,14 +120,15 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
                     {user ? (
                         <div className="flex items-center gap-2.5 text-xs">
                             <span className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 font-black flex items-center justify-center text-xs shadow-sm" aria-hidden="true">
-                                {user.displayName.slice(0, 1) || 'ช'}
+                                {user.displayName ? user.displayName.slice(0, 1) : 'ช'}
                             </span>
                             <div className="hidden sm:flex flex-col text-left">
-                                <span className="font-semibold text-slate-200 text-xs truncate max-w-[140px]">
+                                <span className="font-semibold text-slate-200 text-xs truncate max-w-[150px]">
                                     {user.displayName}
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-mono">
                                     {user.role === 'teacher' ? '👨‍🏫 ครูผู้สอน' : user.role === 'admin' ? '🛡️ ผู้ดูแลระบบ' : '👨‍🔧 นักเรียน'}
+                                    {user.studentCode ? ` (${user.studentCode})` : ''}
                                 </span>
                             </div>
                             <a
@@ -129,7 +142,7 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
                     ) : (
                         <a
                             href="/login"
-                            className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-colors shadow-sm inline-flex items-center gap-1.5"
+                            className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-colors shadow-sm inline-flex items-center gap-1.5"
                         >
                             <span>เข้าสู่ระบบ</span>
                         </a>
