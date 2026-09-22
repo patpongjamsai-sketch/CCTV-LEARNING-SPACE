@@ -1,9 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
 :root {
     color-scheme: dark;
-    font-family: Prompt, "Leelawadee UI", "Segoe UI", Tahoma, sans-serif;
+    font-family: Kanit, "Leelawadee UI", "Segoe UI", Tahoma, sans-serif;
     --portal-bg: #07151e;
     --portal-panel: #0d2430;
     --portal-panel-soft: #123440;
@@ -160,7 +160,7 @@ a:focus-visible {
 }
 
 .portal-nav-label {
-    font-family: 'Prompt', sans-serif;
+    font-family: 'Kanit', sans-serif;
     font-size: 13.5px;
     font-weight: 500;
     color: #94a3b8;
@@ -215,7 +215,7 @@ a:focus-visible {
 }
 
 .portal-global-brand-text {
-    font-family: 'Prompt', sans-serif;
+    font-family: 'Kanit', sans-serif;
     font-size: 13px;
     font-weight: 700;
     color: #f2fbfc;
@@ -244,7 +244,7 @@ a:focus-visible {
     border-radius: 10px;
     color: #94a3b8;
     text-decoration: none;
-    font-family: 'Prompt', sans-serif;
+    font-family: 'Kanit', sans-serif;
     font-size: 13.5px;
     font-weight: 500;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1254,4 +1254,157 @@ a:focus-visible {
     font-size: 15px;
     font-weight: 700;
     color: #fff;
+}
+
+/* White authentication modal, using the portal's navy/cyan visual language. */
+.portal-auth-page {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 50% 8%, rgba(67, 212, 205, .18), transparent 32%),
+        linear-gradient(145deg, #06121b 0%, #0a2632 52%, #07151e 100%);
+}
+
+.portal-auth-backdrop {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .56;
+    background-image:
+        linear-gradient(rgba(67, 212, 205, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(67, 212, 205, .045) 1px, transparent 1px);
+    background-size: 44px 44px;
+}
+
+.portal-auth-scanline {
+    position: absolute;
+    top: 13%;
+    left: 8%;
+    right: 8%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--portal-cyan), transparent);
+    box-shadow: 0 0 18px rgba(67, 212, 205, .65);
+}
+
+.portal-auth-camera {
+    position: absolute;
+    width: 180px;
+    height: 74px;
+    border: 1px solid rgba(67, 212, 205, .2);
+    border-radius: 24px 10px 10px 24px;
+    transform: rotate(-14deg);
+}
+
+.portal-auth-camera::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: 13px;
+    width: 45px;
+    height: 45px;
+    border: 8px solid rgba(67, 212, 205, .2);
+    border-radius: 50%;
+}
+
+.portal-auth-camera-left { left: 5%; bottom: 13%; }
+.portal-auth-camera-right { right: 4%; top: 18%; transform: rotate(164deg); }
+
+.portal-auth-card {
+    position: relative;
+    z-index: 1;
+    max-width: 470px;
+    padding: 34px 36px 28px;
+    border: 1px solid rgba(255, 255, 255, .88);
+    background: #ffffff;
+    color: #12303c;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .45), 0 0 0 8px rgba(255, 255, 255, .04);
+}
+
+.portal-auth-brand {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #e7f9f7;
+    color: #087b7a;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+.portal-auth-header { margin-bottom: 22px; }
+.portal-auth-header h1 { color: #102b37; font-size: 27px; }
+.portal-auth-header p { color: #5f7480; }
+
+.portal-auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 20px;
+    padding: 5px;
+    border-radius: 14px;
+    background: #edf3f5;
+}
+
+.portal-auth-tab {
+    min-height: 42px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #647984;
+    font: 600 14px Kanit, sans-serif;
+    cursor: pointer;
+}
+
+.portal-auth-tab.is-active {
+    background: #ffffff;
+    color: #087b7a;
+    box-shadow: 0 4px 14px rgba(11, 48, 61, .1);
+}
+
+.portal-google-button {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    border: 1px solid #ccd8dd;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #233d49;
+    font: 600 14px Kanit, sans-serif;
+    cursor: pointer;
+}
+
+.portal-google-button:hover { border-color: #43a9a5; background: #f8fdfd; }
+.portal-google-icon { color: #4285f4; font: 800 18px Arial, sans-serif; }
+
+.portal-auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0;
+    color: #87979e;
+    font-size: 11px;
+}
+.portal-auth-divider::before, .portal-auth-divider::after { content: ''; height: 1px; flex: 1; background: #dde5e8; }
+
+.portal-form-group label { color: #27434f; }
+.portal-form-input { border-color: #ccd8dd; background: #f8fbfc; color: #18323d; }
+.portal-form-input::placeholder { color: #9aa9af; }
+.portal-auth-helper-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.portal-auth-helper-row-end { justify-content: flex-end; }
+.portal-remember { color: #6a7e87; font-size: 12px; }
+.portal-auth-link { color: #087b7a; }
+.portal-password-hint { margin: -8px 0 0; color: #71858e; font-size: 11px; }
+.portal-auth-submit { background: linear-gradient(135deg, #18b9b2, #0a8b91); color: #ffffff; box-shadow: 0 8px 20px rgba(10, 139, 145, .24); }
+.portal-auth-footer { margin: 22px 0 0; color: #87979e; font-size: 10px; text-align: center; }
+.portal-alert-error, .portal-alert-success { margin-bottom: 16px; }
+.portal-alert-error { background: #fff1f2; color: #a62335; }
+.portal-alert-success { background: #ecfdf5; color: #167052; }
+
+@media (max-width: 560px) {
+    .portal-auth-card { padding: 28px 22px 24px; border-radius: 20px; }
+    .portal-auth-header h1 { font-size: 23px; }
+    .portal-auth-camera { display: none; }
 }

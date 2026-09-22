@@ -1,9 +1,26 @@
-# CCTV Technician 3D Training Center — Unit 1: IP CCTV Fundamentals (Block-Style Role-Play)
+ # CCTV Technician 3D Training Center — Unit 1: IP CCTV Fundamentals (Block-Style Role-Play)
 
 > **รายวิชา:** กล้องวงจรปิดบนระบบเครือข่าย (**21909-2020**)  
 > **ระดับชั้น:** ประกาศนียบัตรวิชาชีพ (ปวช.) หลักสูตร พ.ศ. 2567  
 > **หน่วยการเรียนรู้ที่ 1:** IP CCTV Fundamentals (พื้นฐานระบบกล้องวงจรปิดบนเครือข่าย)  
 > **รูปแบบ:** 3D Block-Style Role-Play ภายในร้านสะดวกซื้อ Smart Mart
+
+---
+
+## ตั้งค่า Login และ Google OAuth
+
+หน้า `/login` รองรับอีเมล/รหัสผ่าน การสมัครสมาชิก และ Google OAuth ผ่าน Supabase Auth
+
+1. ใน Supabase ไปที่ **Authentication > Providers > Google** แล้วเปิดใช้งาน Google provider
+2. นำ Client ID และ Client Secret จาก Google Cloud มาใส่ใน Supabase (ห้ามใส่ Secret ในโค้ดหรือค่าที่ขึ้นต้นด้วย `NEXT_PUBLIC_`)
+3. ใน Google Cloud ตั้ง Authorized redirect URI เป็น URL callback ที่ Supabase แสดง เช่น `https://<project-ref>.supabase.co/auth/v1/callback`
+4. ใน Supabase ไปที่ **Authentication > URL Configuration** แล้วเพิ่ม Redirect URLs:
+   - `http://localhost:3000/auth/callback`
+   - `https://<โดเมน-vercel>/auth/callback`
+5. ตั้ง `NEXT_PUBLIC_SITE_URL` เป็น `http://localhost:3000` สำหรับเครื่องพัฒนา และเป็น URL จริงของ Vercel สำหรับ Production
+6. เพิ่มตัวแปรทั้งหมดจาก `.env.example` ใน Vercel Project Settings โดยเก็บ `SUPABASE_SECRET_KEY` และ `SUPABASE_DB_URL` เป็น server-only เสมอ
+
+เมื่อยืนยันตัวตนสำเร็จ ผู้ใช้จะกลับผ่าน `/auth/callback` และเข้าสู่ Dashboard ของระบบ
 
 ---
 

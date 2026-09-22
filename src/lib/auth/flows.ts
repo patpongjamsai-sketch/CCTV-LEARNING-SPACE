@@ -2,6 +2,7 @@ import {
   AUTH_MESSAGES,
   parseForgotPasswordInput,
   parseLoginInput,
+  parseSignUpInput,
   parseSetPasswordInput,
   safeNextPath,
 } from './validation';
@@ -20,6 +21,21 @@ export type LoginFlowDependencies = {
   getClaims: () => Promise<ClaimsLike>;
 };
 
+export type SignUpFlowDependencies = {
+  signUp: (input: {
+    email: string;
+    password: string;
+    options: { emailRedirectTo: string };
+  }) => Promise<ProviderResult>;
+};
+
+export type GoogleOAuthFlowDependencies = {
+  signInWithOAuth: (input: {
+    provider: 'google';
+    options: { redirectTo: string };
+  }) => Promise<{ data: { url: string | null; flowId?: string | null }; error: unknown | null }>;
+};
+
 export type ForgotPasswordFlowDependencies = {
   resetPasswordForEmail: (
     email: string,
@@ -35,7 +51,8 @@ export type SetPasswordFlowDependencies = {
 export type AuthFlowResult =
   | { kind: 'error'; message: string }
   | { kind: 'message'; message: string }
-  | { kind: 'redirect'; next: string };
+  | { kind: 'redirect'; next: string }
+  | { kind: 'external-redirect'; url: string };
 
 export type AuthActionState = {
   error?: string;
@@ -71,6 +88,76 @@ export async function runLoginFlow(
     return { kind: 'redirect', next: safeNextPath(formData.get('next')) };
   } catch {
     return { kind: 'error', message: AUTH_MESSAGES.loginFailed };
+  }
+}
+
+export async function runSignUpFlow(
+  formData: FormData,
+  emailRedirectTo: string | null,
+  dependencies: SignUpFlowDependencies,
+): Promise<AuthFlowResult> {
+  const input = parseSignUpInput(formData);
+  if (!input.ok) {
+    return { kind: 'error', message: input.message };
+  }
+
+  if (!emailRedirectTo) {
+    return { kind: 'error', message: AUTH_MESSAGES.requestUnavailable };
+  }
+
+  try {
+    const { error } = await dependencies.signUp({ ...input.data, options: { emailRedirectTo } });
+    if (error) {
+      return { kind: 'error', message: AUTH_MESSAGES.signUpFailed };
+    }
+  } catch {
+    return { kind: 'error', message: AUTH_MESSAGES.signUpFailed };
+  }
+
+  return { kind: 'message', message: AUTH_MESSAGES.signUpRequested };
+}
+
+export async function runGoogleOAuthFlow(
+  formData: FormData,
+  origin: string | null,
+  supabaseOrigin: string | null,
+  dependencies: GoogleOAuthFlowDependencies,
+): Promise<AuthFlowResult> {
+  let safeOrigin: string;
+  try {
+    if (!origin || !supabaseOrigin) throw new Error('missing origin');
+    const parsedOrigin = new URL(origin);
+    if (!['http:', 'https:'].includes(parsedOrigin.protocol) || parsedOrigin.origin !== origin) {
+      throw new Error('invalid origin');
+    }
+    safeOrigin = parsedOrigin.origin;
+  } catch {
+    return { kind: 'error', message: AUTH_MESSAGES.requestUnavailable };
+  }
+
+  const next = safeNextPath(formData.get('next'));
+  const redirectTo = `${safeOrigin}/auth/callback?next=${encodeURIComponent(next)}`;
+
+  try {
+    const { data, error } = await dependencies.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
+    if (error || !data.url) {
+      return { kind: 'error', message: AUTH_MESSAGES.requestUnavailable };
+    }
+    const providerUrl = new URL(data.url);
+    const expectedSupabaseOrigin = new URL(supabaseOrigin).origin;
+    if (
+      providerUrl.protocol !== 'https:' ||
+      providerUrl.origin !== expectedSupabaseOrigin ||
+      providerUrl.pathname !== '/auth/v1/authorize'
+    ) {
+      return { kind: 'error', message: AUTH_MESSAGES.requestUnavailable };
+    }
+    return { kind: 'external-redirect', url: data.url };
+  } catch {
+    return { kind: 'error', message: AUTH_MESSAGES.requestUnavailable };
   }
 }
 

@@ -5,6 +5,8 @@ export const AUTH_MESSAGES = {
   passwordTooLong: 'รหัสผ่านต้องมีความยาวไม่เกิน 128 ตัวอักษร',
   passwordMismatch: 'รหัสผ่านทั้งสองช่องไม่ตรงกัน',
   loginFailed: 'ไม่สามารถเข้าสู่ระบบได้ โปรดตรวจสอบอีเมลและรหัสผ่าน',
+  signUpRequested: 'ตรวจสอบอีเมลของคุณเพื่อยืนยันการสมัครสมาชิก',
+  signUpFailed: 'ไม่สามารถสมัครสมาชิกได้ในขณะนี้ โปรดลองอีกครั้ง',
   passwordResetRequested: 'หากอีเมลนี้อยู่ในระบบ เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่แล้ว',
   sessionRequired: 'ลิงก์นี้หมดอายุหรือไม่ถูกต้อง โปรดขอลิงก์ใหม่',
   passwordUpdateFailed: 'ไม่สามารถตั้งรหัสผ่านใหม่ได้ในขณะนี้ โปรดลองอีกครั้ง',
@@ -32,6 +34,8 @@ export type LoginInput = {
 export type SetPasswordInput = {
   password: string;
 };
+
+export type SignUpInput = LoginInput;
 
 const MAX_EMAIL_LENGTH = 254;
 const MAX_PASSWORD_LENGTH = 128;
@@ -102,6 +106,24 @@ export function safeNextPath(value: unknown, fallback = '/'): string {
   }
 }
 
+/** Uses a configured canonical URL in production and a validated request origin in development. */
+export function resolveSiteOrigin(
+  configuredUrl: string | undefined,
+  requestOrigin: string | null,
+  isProduction: boolean,
+): string | null {
+  const candidate = configuredUrl?.trim().replace(/\/$/, '') || (isProduction ? null : requestOrigin);
+  if (!candidate) return null;
+
+  try {
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.origin !== candidate) return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
 export function parseLoginInput(formData: FormData): ValidationResult<LoginInput> {
   const email = normalizeEmail(readText(formData, 'email'));
   if (!email) {
@@ -115,6 +137,23 @@ export function parseLoginInput(formData: FormData): ValidationResult<LoginInput
   }
 
   return { ok: true, data: { email, password } };
+}
+
+export function parseSignUpInput(formData: FormData): ValidationResult<SignUpInput> {
+  const loginInput = parseLoginInput(formData);
+  if (!loginInput.ok) {
+    return loginInput;
+  }
+
+  if (loginInput.data.password.length < MIN_NEW_PASSWORD_LENGTH) {
+    return { ok: false, message: AUTH_MESSAGES.passwordTooShort };
+  }
+
+  if (loginInput.data.password !== readText(formData, 'confirmPassword')) {
+    return { ok: false, message: AUTH_MESSAGES.passwordMismatch };
+  }
+
+  return loginInput;
 }
 
 export function parseForgotPasswordInput(formData: FormData): ValidationResult<{ email: string }> {

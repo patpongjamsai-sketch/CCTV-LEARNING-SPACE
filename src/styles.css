@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family: Prompt, "Segoe UI", Tahoma, sans-serif;
+  font-family: Kanit, "Segoe UI", Tahoma, sans-serif;
   --navy-950: #06151e;
   --navy-900: #0a2330;
   --navy-800: #103646;
@@ -29,7 +29,7 @@ button:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
   border-radius: 8px;
   background: rgb(7 34 46 / 94%);
   color: #e0f2fe;
-  font: 600 15px/1.25 Kanit, Prompt, sans-serif;
+  font: 600 15px/1.25 Kanit, sans-serif;
   text-align: center;
   white-space: nowrap;
   box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
