@@ -85,10 +85,10 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
         : GLOBAL_NAV_ITEMS.filter((item) => item.href !== '/teacher');
 
     return (
-        <header className="portal-global-nav" aria-label="แถบนำทางหลัก 01 ถึง 05">
-            <div className="portal-global-nav-inner">
-                <div className="flex items-center gap-6 overflow-x-auto">
-                    <a href="/" className="portal-global-brand" title="กลับหน้าแรก">
+        <header className="portal-global-nav w-full" aria-label="แถบนำทางหลัก 01 ถึง 05">
+            <div className="portal-global-nav-inner w-full">
+                <div className="flex items-center gap-4 lg:gap-6 overflow-x-auto min-w-0 flex-1">
+                    <a href="/" className="portal-global-brand shrink-0" title="กลับหน้าแรก">
                         <span className="portal-global-brand-badge">CCTV</span>
                         <span className="portal-global-brand-text">LEARNING ECOSYSTEM</span>
                     </a>
@@ -116,7 +116,7 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
                 </div>
 
                 {/* User Status / Login Badge */}
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-3 shrink-0 ml-auto pl-4">
                     {user ? (
                         <div className="flex items-center gap-2.5 text-xs">
                             <span className="w-7 h-7 rounded-full bg-gradient-to-tr from-cyan-600 to-sky-400 text-slate-950 font-black flex items-center justify-center text-xs shadow-sm" aria-hidden="true">

@@ -22,14 +22,55 @@ export type RosterStudent = {
     id: string;
     code: string;
     name: string;
-    unitProgress: Record<string, { lessons: number; lab: boolean; exam: boolean; passed: boolean }>;
+    unitProgress: Record<string, {
+        lessons: number;
+        lab: boolean;
+        labScore?: number | null;
+        exam: boolean;
+        examScore?: number | null;
+        passed: boolean;
+        latestQuizStatus?: string;
+        latestQuizSubmittedAt?: string | null;
+        latestLabStatus?: string;
+    }>;
 };
 
 const DEFAULT_STUDENT_ROSTER: RosterStudent[] = [
-    { id: '11111111-1111-4111-8111-111111111111', code: '67301', name: 'นายสมชาย ใจดี', unitProgress: { U01: { lessons: 10, lab: true, exam: true, passed: true }, U02: { lessons: 4, lab: false, exam: false, passed: false } } },
-    { id: '22222222-2222-4222-8222-222222222222', code: '67302', name: 'นางสาวสมหญิง มั่นคง', unitProgress: { U01: { lessons: 10, lab: true, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
-    { id: '33333333-3333-4333-8333-333333333333', code: '67303', name: 'นายกิตติพงษ์ ช่างกล้อง', unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
-    { id: 'demo-trainee', code: 'DEMO-TRAINEE', name: 'ผู้ทดลองเรียน (Trainee Sandbox)', unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false } } },
+    {
+        id: '11111111-1111-4111-8111-111111111111',
+        code: '67301',
+        name: 'นายสมชาย ใจดี',
+        unitProgress: {
+            U01: { lessons: 10, lab: true, labScore: 95, exam: true, examScore: 90, passed: true },
+            U02: { lessons: 4, lab: false, exam: false, passed: false },
+        },
+    },
+    {
+        id: '22222222-2222-4222-8222-222222222222',
+        code: '67302',
+        name: 'นางสาวสมหญิง มั่นคง',
+        unitProgress: {
+            U01: { lessons: 10, lab: true, labScore: 88, exam: false, latestQuizStatus: 'submitted', passed: false },
+            U02: { lessons: 0, lab: false, exam: false, passed: false },
+        },
+    },
+    {
+        id: '33333333-3333-4333-8333-333333333333',
+        code: '67303',
+        name: 'นายกิตติพงษ์ ช่างกล้อง',
+        unitProgress: {
+            U01: { lessons: 10, lab: false, exam: false, passed: false },
+            U02: { lessons: 0, lab: false, exam: false, passed: false },
+        },
+    },
+    {
+        id: 'demo-trainee',
+        code: 'DEMO-TRAINEE',
+        name: 'ผู้ทดลองเรียน (Trainee Sandbox)',
+        unitProgress: {
+            U01: { lessons: 10, lab: true, labScore: 92, exam: true, examScore: 85, passed: true },
+        },
+    },
 ];
 
 export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherApprovalDashboardProps) {
@@ -37,6 +78,9 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [approvals, setApprovals] = useState<TeacherApprovals>(DEFAULT_TEACHER_APPROVALS);
     const [submissions, setSubmissions] = useState<SubjectiveSubmission[]>([]);
     const [students, setStudents] = useState<RosterStudent[]>(DEFAULT_STUDENT_ROSTER);
+    const [selectedUnitTab, setSelectedUnitTab] = useState<string>('U01');
+    const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+    const [lastSyncTime, setLastSyncTime] = useState<string>('เพิ่งอัปเดต');
     const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
 
@@ -70,7 +114,14 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         studentId: string;
                         studentCode: string;
                         displayName: string;
-                        unitProgress?: Record<string, { progressPercent: number; passed: boolean; unlocked: boolean }>;
+                        unitProgress?: Record<string, {
+                            progressPercent: number;
+                            passed: boolean;
+                            unlocked: boolean;
+                            approvedScore?: number | null;
+                            latestQuiz?: { id: string; score: number | null; passed: boolean | null; status: string; submittedAt: string | null } | null;
+                            latestLab?: { id: string; status: string; passed: boolean | null; approvedScore: number | null; reviewedAt: string | null; submittedAt: string | null } | null;
+                        }>;
                     }) => ({
                         id: st.studentId,
                         code: st.studentCode || '',
@@ -78,14 +129,20 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         unitProgress: Object.entries(st.unitProgress || {}).reduce((acc, [uk, uv]) => {
                             acc[uk] = {
                                 lessons: uv.progressPercent >= 40 ? 10 : Math.round((uv.progressPercent / 40) * 10),
-                                lab: uv.unlocked,
-                                exam: uv.passed,
+                                lab: uv.latestLab?.passed ?? uv.unlocked,
+                                labScore: uv.latestLab?.approvedScore ?? (uv.passed ? 90 : null),
+                                exam: uv.latestQuiz?.passed ?? uv.passed,
+                                examScore: uv.latestQuiz?.score ?? uv.approvedScore,
                                 passed: uv.passed,
+                                latestQuizStatus: uv.latestQuiz?.status,
+                                latestQuizSubmittedAt: uv.latestQuiz?.submittedAt,
+                                latestLabStatus: uv.latestLab?.status,
                             };
                             return acc;
-                        }, {} as Record<string, { lessons: number; lab: boolean; exam: boolean; passed: boolean }>),
+                        }, {} as RosterStudent['unitProgress']),
                     }));
                     setStudents(mapped);
+                    setLastSyncTime(new Date().toLocaleTimeString('th-TH'));
                 }
             }
         } catch {
@@ -135,6 +192,16 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             window.removeEventListener('cctv_subjective_updated', updateState);
         };
     }, [classId]);
+
+    // Live auto-polling effect every 20 seconds
+    useEffect(() => {
+        if (!autoRefresh) return;
+        const interval = setInterval(() => {
+            fetchStudents(classId);
+            setSubmissions(getSubjectiveSubmissions());
+        }, 20000);
+        return () => clearInterval(interval);
+    }, [autoRefresh, classId]);
 
     const showNotice = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
         setNotification({ type, message });
@@ -869,18 +936,71 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             {/* TAB 3: STUDENT ROSTER & PROGRESSION APPROVAL */}
             {activeTab === 'students' && (
                 <div className="space-y-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <h3 className="text-lg font-bold text-white m-0">
                                 รายชื่อผู้เรียนและความก้าวหน้า 3 ขั้นตอน
                             </h3>
                             <p className="text-xs text-slate-400 mt-0.5">
-                                ตรวจสอบและอนุมัติการผ่านด่านของผู้เรียนเป็นรายบุคคล
+                                ตรวจสอบคะแนนสอบ ผลการทำแล็บ 3D และอนุมัติการผ่านด่านของผู้เรียนสดตามรายหน่วย
                             </p>
                         </div>
-                        <span className="text-xs font-mono text-slate-400">
-                            {isLoadingStudents ? 'กำลังโหลดข้อมูลจากฐานข้อมูล...' : `จำนวนผู้เรียน: ${students.length} คน`}
+                        <div className="flex items-center gap-3 shrink-0 text-xs">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    disabled={isLoadingStudents}
+                                    onClick={() => {
+                                        fetchStudents(classId);
+                                        setSubmissions(getSubjectiveSubmissions());
+                                        showNotice('✓ อัปเดตข้อมูลผู้เรียนและผลสอบสดเรียบร้อยแล้ว', 'info');
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-sky-400 border border-slate-700 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                    <span>{isLoadingStudents ? '⏳ กำลังซิงก์...' : '🔄 รีเฟรชข้อมูลสด'}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAutoRefresh(!autoRefresh)}
+                                    className={`px-2.5 py-1.5 rounded-xl border font-mono text-[11px] transition-colors cursor-pointer ${
+                                        autoRefresh
+                                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                            : 'bg-slate-800 text-slate-400 border-slate-700'
+                                    }`}
+                                >
+                                    {autoRefresh ? '● Auto-Sync (20s)' : '○ Auto-Sync: ปิด'}
+                                </button>
+                            </div>
+                            <span className="text-[11px] font-mono text-slate-500 hidden md:inline">
+                                {lastSyncTime}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Unit Selector Tabs (U01 to U08) */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800">
+                        <span className="text-xs font-mono font-bold text-slate-400 shrink-0 mr-1">
+                            เลือกหน่วยเรียนรู้:
                         </span>
+                        {allUnitsContent.map((bundle) => {
+                            const uid = bundle.unit.id;
+                            const isSelected = selectedUnitTab === uid;
+                            return (
+                                <button
+                                    key={uid}
+                                    type="button"
+                                    onClick={() => setSelectedUnitTab(uid)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                                        isSelected
+                                            ? 'bg-sky-500 text-slate-950 font-bold shadow-md shadow-sky-500/20'
+                                            : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                                    }`}
+                                >
+                                    <span className="font-mono">{uid}</span>
+                                    <span>{bundle.unit.titleTh.split(' ')[0]}</span>
+                                </button>
+                            );
+                        })}
                     </div>
 
                     <div className="overflow-x-auto">
@@ -898,35 +1018,93 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
                                 {students.map((st) => {
-                                    const u1 = st.unitProgress.U01 || { lessons: 0, lab: false, exam: false, passed: false };
+                                    const currentUnitData = st.unitProgress[selectedUnitTab] || { lessons: 0, lab: false, exam: false, passed: false };
+                                    const pendingSub = submissions.find(
+                                        (s) =>
+                                            (s.studentCode === st.code || s.studentName === st.name) &&
+                                            s.unitId === selectedUnitTab &&
+                                            s.status === 'pending',
+                                    );
+
                                     return (
                                         <tr key={st.code || st.id} className="hover:bg-slate-950/40 transition-colors">
-                                            <td className="p-3 font-mono font-bold text-sky-400">{st.code || st.id.slice(0, 8)}</td>
-                                            <td className="p-3 font-semibold text-white">{st.name}</td>
+                                            <td className="p-3 font-mono font-bold text-sky-400">
+                                                {st.code || st.id.slice(0, 8)}
+                                            </td>
+                                            <td className="p-3 font-semibold text-white">
+                                                {st.name}
+                                            </td>
                                             <td className="p-3">
-                                                <span className={`px-2 py-0.5 rounded text-[11px] font-mono ${u1.lessons >= 10 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                                                    {u1.lessons}/10 บท
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-[11px] font-mono ${
+                                                        currentUnitData.lessons >= 10
+                                                            ? 'bg-emerald-500/20 text-emerald-300'
+                                                            : 'bg-slate-800 text-slate-400'
+                                                    }`}
+                                                >
+                                                    {currentUnitData.lessons}/10 บท
                                                 </span>
                                             </td>
                                             <td className="p-3">
-                                                <span className={`px-2 py-0.5 rounded text-[11px] font-mono ${u1.lab ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                                                    {u1.lab ? '✓ ผ่านแล็บ 3D' : 'รอทดสอบ'}
-                                                </span>
+                                                {currentUnitData.lab ? (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                                        ✓ ผ่านแล็บ 3D {currentUnitData.labScore ? `(${currentUnitData.labScore}/100)` : ''}
+                                                    </span>
+                                                ) : currentUnitData.latestLabStatus === 'submitted' || currentUnitData.latestLabStatus === 'reviewing' ? (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                                        🔔 ส่งแล็บแล้ว (รอตรวจ)
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-400">
+                                                        รอทดสอบ
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="p-3">
-                                                <span className={`px-2 py-0.5 rounded text-[11px] font-mono ${u1.exam ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                                                    {u1.exam ? '✓ สอบแล้ว' : 'ยังไม่สอบ'}
-                                                </span>
+                                                {pendingSub ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedSubmission(pendingSub);
+                                                            setGradeScore(String(pendingSub.score || 8));
+                                                            setGradeFeedback(pendingSub.feedback || '');
+                                                        }}
+                                                        className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 text-[11px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer animate-pulse"
+                                                        title="คลิกเพื่อตรวจข้อสอบอัตนัยนี้ทันที"
+                                                    >
+                                                        <span>🔔 มีข้อสอบใหม่ (ตรวจ)</span>
+                                                    </button>
+                                                ) : currentUnitData.exam ? (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                                        ✓ สอบแล้ว {currentUnitData.examScore ? `(${currentUnitData.examScore}/100)` : ''}
+                                                    </span>
+                                                ) : currentUnitData.latestQuizStatus === 'submitted' ? (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                                                        📝 ส่งข้อสอบแล้ว
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-400">
+                                                        ยังไม่สอบ
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="p-3">
-                                                <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${u1.passed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
-                                                    {u1.passed ? '✓ ผ่านหน่วย 1' : 'กำลังดำเนินการ'}
+                                                <span
+                                                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                                        currentUnitData.passed
+                                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                                    }`}
+                                                >
+                                                    {currentUnitData.passed
+                                                        ? `✓ ผ่านหน่วย ${selectedUnitTab.replace('U0', '').replace('U', '')}`
+                                                        : 'กำลังดำเนินการ'}
                                                 </span>
                                             </td>
                                             <td className="p-3 text-right">
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleApproveStudent(st, 'U01')}
+                                                    onClick={() => handleApproveStudent(st, selectedUnitTab)}
                                                     className="px-3 py-1.5 rounded-lg bg-sky-600/80 hover:bg-sky-500 text-white text-xs font-semibold transition-colors cursor-pointer"
                                                 >
                                                     อนุมัติผ่านด่าน

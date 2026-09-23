@@ -150,6 +150,21 @@ export type ClassStudentRecord = {
     passed: boolean;
     unlocked: boolean;
     approvedScore: number | null;
+    latestQuiz?: {
+      id: string;
+      score: number | null;
+      passed: boolean | null;
+      status: string;
+      submittedAt: string | null;
+    } | null;
+    latestLab?: {
+      id: string;
+      status: string;
+      passed: boolean | null;
+      approvedScore: number | null;
+      reviewedAt: string | null;
+      submittedAt: string | null;
+    } | null;
   }>;
 };
 
@@ -173,7 +188,18 @@ export async function getClassStudentsService(
       coalesce(up.progress_percent, 0) as progress_percent,
       coalesce(up.passed, false) as passed,
       coalesce(private.is_unit_unlocked(p.id, ${classId}, u.id), false) as unlocked,
-      up.approved_score
+      up.approved_score,
+      latest_quiz.id as latest_quiz_id,
+      latest_quiz.approved_score as latest_quiz_score,
+      latest_quiz.passed as latest_quiz_passed,
+      latest_quiz.status as latest_quiz_status,
+      latest_quiz.submitted_at as latest_quiz_submitted_at,
+      latest_lab.id as latest_lab_id,
+      latest_lab.status as latest_lab_status,
+      latest_lab.passed as latest_lab_passed,
+      latest_lab.approved_score as latest_lab_approved_score,
+      latest_lab.reviewed_at as latest_lab_reviewed_at,
+      latest_lab.submitted_at as latest_lab_submitted_at
     from public.class_members as cm
     join public.profiles as p on p.id = cm.profile_id
     join public.classes as c on c.id = cm.class_id
@@ -182,6 +208,25 @@ export async function getClassStudentsService(
       on up.student_id = p.id
      and up.class_id = cm.class_id
      and up.unit_id = u.id
+    left join lateral (
+      select qa.id, qa.approved_score, qa.passed, qa.status, qa.submitted_at
+      from public.quiz_attempts as qa
+      join public.quizzes as q on q.id = qa.quiz_id
+      where qa.class_id = cm.class_id
+        and qa.student_id = p.id
+        and q.unit_id = u.id
+      order by qa.attempt_no desc
+      limit 1
+    ) as latest_quiz on true
+    left join lateral (
+      select ls.id, ls.status, ls.passed, ls.approved_score, ls.reviewed_at, ls.submitted_at
+      from public.lab_submissions as ls
+      where ls.class_id = cm.class_id
+        and ls.student_id = p.id
+        and ls.unit_id = u.id
+      order by ls.attempt_no desc
+      limit 1
+    ) as latest_lab on true
     where cm.class_id = ${classId}
       and cm.member_role = 'student'
       and cm.active = true
@@ -210,6 +255,25 @@ export async function getClassStudentsService(
         passed: Boolean(row.passed),
         unlocked: Boolean(row.unlocked),
         approvedScore: row.approved_score !== null ? Number(row.approved_score) : null,
+        latestQuiz: row.latest_quiz_id
+          ? {
+              id: row.latest_quiz_id,
+              score: row.latest_quiz_score !== null ? Number(row.latest_quiz_score) : null,
+              passed: row.latest_quiz_passed !== null ? Boolean(row.latest_quiz_passed) : null,
+              status: row.latest_quiz_status,
+              submittedAt: row.latest_quiz_submitted_at,
+            }
+          : null,
+        latestLab: row.latest_lab_id
+          ? {
+              id: row.latest_lab_id,
+              status: row.latest_lab_status,
+              passed: row.latest_lab_passed !== null ? Boolean(row.latest_lab_passed) : null,
+              approvedScore: row.latest_lab_approved_score !== null ? Number(row.latest_lab_approved_score) : null,
+              reviewedAt: row.latest_lab_reviewed_at,
+              submittedAt: row.latest_lab_submitted_at,
+            }
+          : null,
       };
     }
   }

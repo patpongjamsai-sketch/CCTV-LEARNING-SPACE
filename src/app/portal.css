@@ -180,6 +180,7 @@ a:focus-visible {
     position: sticky;
     top: 0;
     z-index: 50;
+    width: 100%;
     background: rgba(7, 21, 30, 0.85);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -188,8 +189,9 @@ a:focus-visible {
 }
 
 .portal-global-nav-inner {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
     padding: 10px 24px;
     display: flex;
     align-items: center;

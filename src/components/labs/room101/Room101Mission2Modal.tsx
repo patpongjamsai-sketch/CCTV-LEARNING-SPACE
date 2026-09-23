@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRoleplayStore } from '../../../store/useRoleplayStore';
 import { KNOWLEDGE_CARDS } from '../../../data/unit1RoleplayContent';
+import { Room101Mission2IsometricCanvas } from './Room101Mission2IsometricCanvas';
 
 interface Room101Mission2ModalProps {
   onClose: () => void;
@@ -28,6 +29,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
   const missionState = useRoleplayStore((s) => s.missions.M2);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [isTestingFlow, setIsTestingFlow] = useState<boolean>(false);
 
   const handleSlotClick = (index: number) => {
     if (!selectedCardId) {
@@ -46,15 +48,37 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
     setMission2SlotCardDirect(1, 'M2_POE_SW');
     setMission2SlotCardDirect(2, 'M2_NVR');
     setMission2SlotCardDirect(3, 'M2_CLIENT');
+    setIsTestingFlow(true);
+  };
+
+  const handleTriggerTest = () => {
+    setIsTestingFlow(true);
+    // Timeout to simulate continuous loop
+    setTimeout(() => {
+      // Keep active if completed
+    }, 4000);
   };
 
   const placedCardIds = mission2Slots
     .map((s) => s.currentPlacedItem?.id)
     .filter(Boolean) as string[];
 
+  // Connection calculations
+  const isCamCorrect = mission2Slots[0]?.status === 'CORRECT';
+  const isPoeCorrect = mission2Slots[1]?.status === 'CORRECT';
+  const isNvrCorrect = mission2Slots[2]?.status === 'CORRECT';
+  const isClientCorrect = mission2Slots[3]?.status === 'CORRECT';
+
+  const correctLinksCount =
+    (isCamCorrect && isPoeCorrect ? 1 : 0) +
+    (isPoeCorrect && isNvrCorrect ? 1 : 0) +
+    (isNvrCorrect && isClientCorrect ? 1 : 0);
+
+  const isFullSystemReady = isCamCorrect && isPoeCorrect && isNvrCorrect && isClientCorrect;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md select-none animate-in fade-in zoom-in-95 duration-200">
-      <div className="w-full max-w-4xl max-h-[92vh] bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="w-full max-w-5xl max-h-[94vh] bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-3">
@@ -73,7 +97,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
                 )}
               </div>
               <h2 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                เส้นทางข้อมูล Data Flow ในระบบ IP CCTV
+                เส้นทางข้อมูล Data Flow ในระบบ IP CCTV (3D Isometric Lab)
               </h2>
             </div>
           </div>
@@ -105,20 +129,58 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
               <span>สถาปัตยกรรมการส่งข้อมูลดิจิทัล (Network Topology Data Flow)</span>
             </div>
             <p>
-              ข้อมูลภาพวิดีโอจากกล้อง IP จะไหลตามลำดับ: เริ่มจาก <strong>IP Camera</strong> แปลงภาพเป็น RTSP Stream ➡️ ส่งต่อผ่านสาย Cat6 เข้าสู่ <strong>PoE Switch</strong> เพื่อสวิตชิ่งแพ็กเก็ต ➡️ เข้าสู่เครื่องบันทึก <strong>NVR</strong> เพื่อเขียนลงฮาร์ดดิสก์ ➡️ และส่งสัญญาณภาพไปยัง <strong>Client PC / Monitor</strong> เพื่อแสดงผลสด
+              ข้อมูลภาพวิดีโอจากกล้อง IP จะไหลตามลำดับ: เริ่มจาก <strong>IP Camera</strong> แปลงภาพเป็น RTSP Stream ➡️ ส่งต่อผ่านสาย Cat6 เข้าสู่ <strong>PoE Switch</strong> เพื่อสวิตชิ่งแพ็กเก็ต ➡️ เข้าสู่เครื่องบันทึก <strong>NVR</strong> เพื่อเขียนลงฮาร์ดดิสก์ ➡️ และส่งสัญญาณภาพผ่านพอร์ต HDMI ไปยัง <strong>Client PC / Monitor</strong> เพื่อแสดงผลภาพสด (Live View)
             </p>
+          </div>
+
+          {/* 3D Isometric Interactive Lab Area */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                <span>🖥️</span>
+                <span>โต๊ะทดลอง 3D Isometric Lab (Port-to-Port Auto Connection &amp; Live View)</span>
+              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-600/40">
+                  สายสัญญาณ: {correctLinksCount}/3 เส้น
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTriggerTest}
+                  disabled={!isFullSystemReady}
+                  className={`text-xs px-3 py-1 rounded-lg font-bold transition-all cursor-pointer shadow-md ${
+                    isFullSystemReady
+                      ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 animate-pulse'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                  }`}
+                >
+                  ⚡ ทดสอบระบบ (Test Data Flow)
+                </button>
+              </div>
+            </div>
+
+            <Room101Mission2IsometricCanvas
+              selectedCardId={selectedCardId}
+              onSelectCard={(id) => setSelectedCardId(id)}
+              onSlotClick={handleSlotClick}
+              isTestingFlow={isTestingFlow}
+              onTriggerTest={handleTriggerTest}
+            />
           </div>
 
           {/* Data Flow Diagram Flow Slots */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                ผังจัดเรียงลำดับการไหลของข้อมูล (คลิกการ์ดด้านล่าง แล้วคลิกที่ช่องเพื่อวาง)
+                ผังจัดเรียงลำดับอุปกรณ์บนแท่นทดลอง (คลิกการ์ดด้านล่าง หรือคลิกที่ช่อง 3D ด้านบน)
               </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={resetMission2Slots}
+                  onClick={() => {
+                    resetMission2Slots();
+                    setIsTestingFlow(false);
+                  }}
                   className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"
                 >
                   ↺ รีเซ็ตช่อง
@@ -181,7 +243,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
                       ) : (
                         <div className="h-20 flex flex-col items-center justify-center text-center text-slate-400 text-xs gap-1">
                           <span className="text-lg opacity-40">📥</span>
-                          <span>{isSelected ? 'คลิกเพื่อวางการ์ด' : 'ช่องว่าง (คลิกการ์ดด้านล่าง)'}</span>
+                          <span>{isSelected ? 'คลิกเพื่อวางอุปกรณ์' : 'ช่องว่าง (คลิกเลือกด้านล่าง)'}</span>
                         </div>
                       )}
                     </div>
@@ -207,7 +269,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
           {/* Available Cards Selection Area */}
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">
-              การ์ดอุปกรณ์ในเส้นทาง Data Flow (คลิกเลือกการ์ดที่ต้องการ)
+              อุปกรณ์ในระบบ Data Flow (คลิกเลือกอุปกรณ์ที่ต้องการนำไปติดตั้ง)
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -240,7 +302,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
                         <h4 className="text-xs font-bold text-white truncate">{card.nameTh}</h4>
                         {isPlaced ? (
                           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">
-                            วางแล้ว
+                            ติดตั้งแล้ว
                           </span>
                         ) : isSelected ? (
                           <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500 text-slate-950 animate-pulse">
@@ -288,7 +350,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
             <span className="text-xs text-slate-300 hidden sm:inline">
               {missionState.isCompleted
                 ? '✓ ผ่านภารกิจที่ 2 แล้ว สามารถไปต่อภารกิจที่ 3 ได้'
-                : 'จัดเรียงลำดับเส้นทางข้อมูลให้ถูกต้องครบ 4 ช่วง'}
+                : 'จัดเรียงอุปกรณ์และเชื่อมต่อสายข้อมูลให้ครบทั้ง 4 ลำดับ'}
             </span>
           </div>
 
