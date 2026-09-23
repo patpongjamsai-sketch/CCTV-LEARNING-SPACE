@@ -39,6 +39,17 @@ export const Room101Mission5Modal: React.FC<Room101Mission5ModalProps> = ({
   } | null>(null);
 
   const [wiringNotice, setWiringNotice] = useState<string | null>(null);
+  const [liveTime, setLiveTime] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setLiveTime(now.toLocaleString('th-TH', { hour12: false }));
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Check existing cables
   const hasCamToSwitch = connections.some(
@@ -461,44 +472,108 @@ export const Room101Mission5Modal: React.FC<Room101Mission5ModalProps> = ({
               หน้าจอแสดงผลสด CCTV Live View (ผลลัพธ์การทดสอบระบบ)
             </span>
 
-            <div className="w-full aspect-video max-h-72 rounded-2xl bg-slate-950 border-2 border-slate-800 overflow-hidden relative flex items-center justify-center shadow-2xl">
+            <div className="w-full aspect-video max-h-80 rounded-2xl bg-slate-950 border-2 border-slate-800 overflow-hidden relative flex items-center justify-center shadow-2xl">
               {topology.isLiveViewActive ? (
-                <div className="w-full h-full relative bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 flex flex-col justify-between p-4">
+                <div className="w-full h-full relative bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 flex flex-col justify-between p-4 overflow-hidden">
+                  {/* Subtle Scanlines effect */}
+                  <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-slate-950/20 to-black/60" />
+                  <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
+
                   {/* CCTV Stream OSD Header */}
-                  <div className="flex items-center justify-between text-xs font-mono text-emerald-400 font-bold drop-shadow">
+                  <div className="relative z-10 flex items-center justify-between text-xs font-mono text-emerald-400 font-bold drop-shadow">
                     <span className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                      <span>CAM 01: SMART MART ENTRANCE (LIVE)</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                      <span className="text-rose-400 font-black tracking-wider">[● REC]</span>
+                      <span className="text-white">CAM 01: ENTRANCE SMART MART</span>
                     </span>
-                    <span>1920x1080 @ 30FPS · H.265 · 4096 Kbps</span>
+                    <span className="text-[11px] text-slate-300 font-semibold hidden sm:inline">
+                      3840x2160 (4K UHD) @ 30FPS · H.265+ · 4096 Kbps
+                    </span>
+                    <span className="text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/50">
+                      {liveTime || 'LIVE'}
+                    </span>
                   </div>
 
-                  {/* Simulated Camera View Grid */}
-                  <div className="text-center space-y-1">
-                    <div className="text-5xl">🏪</div>
-                    <div className="text-sm font-bold text-white">ระบบบันทึกและแสดงภาพสดทำงานสมบูรณ์ 100%</div>
-                    <div className="text-xs text-emerald-300 font-mono">
-                      PoE 48V OK · NVR Video Stream Recorded · 0 Packet Loss
+                  {/* Simulated Camera View Center & AI Bounding Box */}
+                  <div className="relative z-10 text-center space-y-2 my-auto">
+                    <div className="inline-block relative p-4 border border-emerald-500/30 rounded-2xl bg-slate-950/40 backdrop-blur-sm shadow-xl">
+                      {/* Corner Target Markers */}
+                      <span className="absolute top-1 left-1 text-emerald-400 text-xs font-mono">┌</span>
+                      <span className="absolute top-1 right-1 text-emerald-400 text-xs font-mono">┐</span>
+                      <span className="absolute bottom-1 left-1 text-emerald-400 text-xs font-mono">└</span>
+                      <span className="absolute bottom-1 right-1 text-emerald-400 text-xs font-mono">┘</span>
+
+                      <div className="text-5xl animate-bounce duration-1000">🏪</div>
+                      <div className="text-sm font-bold text-white mt-1">
+                        สัญญาณภาพสดสมบูรณ์ (4K CCTV Live Stream Active)
+                      </div>
+                      <div className="text-xs text-emerald-300 font-mono">
+                        PoE 48V Linked · NVR Stream OK · HDMI 60Hz · 0 Packet Loss
+                      </div>
                     </div>
                   </div>
 
                   {/* OSD Footer */}
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <span>IP: 192.168.1.101</span>
-                    <span>STATUS: 🟢 ALL SERVICES ONLINE</span>
-                    <span>ROOM 101 PASSED (คะแนนเต็ม 25/25)</span>
+                  <div className="relative z-10 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-800/80">
+                    <span>IP: 192.168.1.101/24 (PoE: 7.5W)</span>
+                    <span className="text-emerald-400 font-bold">🟢 STATUS: ALL HARDWARE ONLINE &amp; RECORDING</span>
+                    <span className="text-sky-300 font-bold">คะแนนเต็ม 25/25 ✓</span>
                   </div>
                 </div>
               ) : (
-                <div className="text-center space-y-2 p-6">
-                  <div className="text-4xl opacity-30">📺</div>
-                  <div className="text-sm font-bold text-slate-400">
-                    [ NO SIGNAL / สัญญาณภาพขาดหาย ]
+                <div className="w-full h-full p-6 flex flex-col justify-between items-center text-center bg-slate-950">
+                  <div className="w-full flex items-center justify-between text-[11px] font-mono text-slate-500">
+                    <span>INPUT: HDMI 1</span>
+                    <span>MONITOR: {isMonitorPowered ? 'POWER ON' : 'STANDBY'}</span>
                   </div>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    กรุณาเชื่อมต่อสายสัญญาณให้ครบทั้ง 3 ช่วง (Camera ➔ PoE Switch ➔ NVR ➔ Monitor)
-                    และเปิดสวิตช์ Power ON อุปกรณ์ทุกตัว
-                  </p>
+
+                  <div className="space-y-3 max-w-lg mx-auto">
+                    <div className="text-4xl opacity-40">
+                      {hasNvrToMonitor ? '📺' : '🔌'}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-amber-300">
+                        {!hasNvrToMonitor
+                          ? '[ ยังไม่ได้เชื่อมต่อสาย HDMI สู่จอมอนิเตอร์ ]'
+                          : !isMonitorPowered || !isNvrPowered || !isSwitchPowered
+                          ? '[ สัญญาณ HDMI พร้อมแล้ว — รอเปิดสวิตช์ไฟอุปกรณ์ ]'
+                          : '[ รอสัญญาณภาพจากกล้องและ NVR ]'}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {!hasNvrToMonitor
+                          ? 'คลิกพอร์ต [HDMI In] ที่จอมอนิเตอร์ และ [HDMI Out] ที่เครื่อง NVR เพื่อเชื่อมโยงสัญญาณภาพ'
+                          : 'ต่อสาย HDMI เรียบร้อยแล้ว กรุณากดปุ่มเปิดสวิตช์ Power ON ให้ครบทุกเครื่อง'}
+                      </p>
+                    </div>
+
+                    {/* Step-by-Step Connection Status Indicators */}
+                    <div className="flex flex-wrap justify-center gap-2 text-[11px] font-mono">
+                      <span className={`px-2 py-1 rounded-lg border ${hasCamToSwitch ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+                        1. กล้อง ➔ Switch: {hasCamToSwitch ? '✓' : 'รอต่อ'}
+                      </span>
+                      <span className={`px-2 py-1 rounded-lg border ${hasSwitchToNvr ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+                        2. Switch ➔ NVR: {hasSwitchToNvr ? '✓' : 'รอต่อ'}
+                      </span>
+                      <span className={`px-2 py-1 rounded-lg border ${hasNvrToMonitor ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40' : 'bg-slate-900 text-slate-400 border-slate-800'}`}>
+                        3. NVR ➔ Monitor (HDMI): {hasNvrToMonitor ? '✓' : 'รอต่อ'}
+                      </span>
+                    </div>
+
+                    {/* Quick Power Button if cables are connected */}
+                    {hasCamToSwitch && hasSwitchToNvr && hasNvrToMonitor && (!isSwitchPowered || !isNvrPowered || !isMonitorPowered) && (
+                      <button
+                        type="button"
+                        onClick={handlePowerAll}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-black text-xs shadow-lg transition-transform active:scale-95 cursor-pointer"
+                      >
+                        ⚡ เปิดสวิตช์ไฟทุกอุปกรณ์ทันที เพื่อเริ่ม Live View
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="text-[10px] text-slate-600 font-mono">
+                    PRO-TIP: รองรับการคลิกเชื่อมต่อทั้งจากหน้าจอ 3D ด้านบนและผัง 2D ด้านล่าง
+                  </div>
                 </div>
               )}
             </div>

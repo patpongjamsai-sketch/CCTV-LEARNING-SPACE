@@ -92,9 +92,23 @@ export function evaluateSystemTopology(
         : camConnection.toPortId;
 
     const switchSpec = VIRTUAL_EQUIPMENT_CATALOG.POE_SWITCH_8P;
-    const portDef = switchSpec.ports.find((p) => p.id === switchPortId);
+    const isUplink =
+      switchPortId.toUpperCase().includes('UPLINK') ||
+      switchPortId === 'POE_SW_UPLINK1' ||
+      switchPortId === 'POE_SW_UPLINK2' ||
+      switchPortId === 'LAN_UPLINK' ||
+      switchPortId === 'UPLINK_1';
 
-    if (portDef && !portDef.isPoECapable) {
+    const rawPortDef = switchSpec.ports.find(
+      (p) =>
+        p.id === switchPortId ||
+        p.id.replace('POE_SW_', '') === switchPortId.replace('POE_', 'P') ||
+        p.id.replace('POE_SW_', '') === switchPortId.replace('POE_PORT_', 'P')
+    );
+
+    const isPoECapable = rawPortDef ? rawPortDef.isPoECapable : !isUplink;
+
+    if (!isPoECapable) {
       // Plugged into non-PoE Uplink port!
       events.push({
         timestamp: Date.now(),
@@ -103,7 +117,7 @@ export function evaluateSystemTopology(
         messageTh: 'พอร์ต Uplink ไม่รองรับการจ่ายไฟ PoE ทำให้กล้องไม่ได้รับไฟเลี้ยง กรุณาย้ายไปพอร์ต 1-8',
         severity: 'ERROR',
       });
-    } else if (portDef && portDef.isPoECapable) {
+    } else {
       if (!isSwitchPowered) {
         events.push({
           timestamp: Date.now(),
@@ -176,9 +190,34 @@ export function evaluateSystemTopology(
         (c.fromDeviceId === 'MONITOR' && c.toDeviceId === 'NVR_8CH'))
   );
 
-  if (isMonitorPlaced && isMonitorPowered && hdmiConnection && isNvrPowered) {
+  if (isMonitorPlaced && hdmiConnection) {
     isMonitorConnectedToNvr = true;
-    hdmiConnection.linkStatus = 'UP';
+    if (isMonitorPowered && isNvrPowered) {
+      hdmiConnection.linkStatus = 'UP';
+    } else {
+      hdmiConnection.linkStatus = 'DOWN';
+    }
+  }
+
+  if (hdmiConnection && isMonitorPlaced) {
+    if (!isMonitorPowered) {
+      events.push({
+        timestamp: Date.now(),
+        code: 'NO_POWER',
+        titleTh: 'จอมอนิเตอร์ยังไม่ได้เปิดไฟ',
+        messageTh: 'ต่อสายสัญญาณ HDMI เรียบร้อยแล้ว แต่จอมอนิเตอร์ยังไม่ได้เปิดสวิตช์ Power ON',
+        severity: 'WARNING',
+      });
+    }
+    if (!isNvrPowered) {
+      events.push({
+        timestamp: Date.now(),
+        code: 'NO_POWER',
+        titleTh: 'เครื่องบันทึก NVR ยังไม่ได้เปิดไฟ',
+        messageTh: 'ต่อสายสัญญาณ HDMI เรียบร้อยแล้ว แต่ NVR ยังไม่ได้เปิดสวิตช์ Power ON เพื่อส่งสัญญาณภาพ',
+        severity: 'WARNING',
+      });
+    }
   }
 
   // 5. Live View is active if Camera is Online, NVR is reachable, and either Monitor has HDMI from NVR or Client PC is reachable

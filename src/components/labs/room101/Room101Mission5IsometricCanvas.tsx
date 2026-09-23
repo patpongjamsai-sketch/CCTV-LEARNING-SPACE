@@ -104,17 +104,20 @@ const M5SplineCable: React.FC<{
 }> = ({ startPos, endPos, cableColor, glowColor, isFlowing, labelTh }) => {
   const particleRef = useRef<THREE.Mesh>(null);
 
-  const { curve, tubeGeometry } = useMemo(() => {
+  const { curve, tubeGeometry, midPos } = useMemo(() => {
     const p0 = new THREE.Vector3(...startPos);
     const p3 = new THREE.Vector3(...endPos);
     const midX = (p0.x + p3.x) / 2;
     const midZ = (p0.z + p3.z) / 2;
-    const droopY = Math.min(p0.y, p3.y) - 0.4;
-    const p1 = new THREE.Vector3(p0.x + 0.25, droopY, p0.z - 0.2);
-    const p2 = new THREE.Vector3(p3.x - 0.25, droopY, p3.z - 0.2);
-    const c = new THREE.CatmullRomCurve3([p0, p1, new THREE.Vector3(midX, droopY - 0.08, midZ), p2, p3]);
-    const geo = new THREE.TubeGeometry(c, 48, 0.04, 12, false);
-    return { curve: c, tubeGeometry: geo };
+    // Keep droop comfortably above the workbench surface (table top is y=0.02)
+    const droopY = Math.max(0.14, Math.min(p0.y, p3.y) - 0.1);
+    const dx = p3.x - p0.x;
+    const p1 = new THREE.Vector3(p0.x + dx * 0.25, droopY + 0.04, p0.z + 0.1);
+    const p2 = new THREE.Vector3(p3.x - dx * 0.25, droopY + 0.04, p3.z + 0.1);
+    const midVector = new THREE.Vector3(midX, droopY, midZ + 0.18);
+    const c = new THREE.CatmullRomCurve3([p0, p1, midVector, p2, p3]);
+    const geo = new THREE.TubeGeometry(c, 48, 0.055, 12, false);
+    return { curve: c, tubeGeometry: geo, midPos: [midX, droopY + 0.32, midZ + 0.18] as [number, number, number] };
   }, [startPos, endPos]);
 
   useFrame(({ clock }) => {
@@ -127,7 +130,7 @@ const M5SplineCable: React.FC<{
   return (
     <group>
       <mesh geometry={tubeGeometry} castShadow>
-        <meshStandardMaterial color={cableColor} roughness={0.35} metalness={0.3} />
+        <meshStandardMaterial color={cableColor} roughness={0.3} metalness={0.4} />
       </mesh>
       {isFlowing && (
         <mesh ref={particleRef}>
@@ -136,16 +139,16 @@ const M5SplineCable: React.FC<{
         </mesh>
       )}
       <Html
-        position={[(startPos[0] + endPos[0]) / 2, Math.min(startPos[1], endPos[1]) - 0.35, (startPos[2] + endPos[2]) / 2]}
+        position={midPos}
         center
         distanceFactor={11}
         style={{ pointerEvents: 'none' }}
       >
         <div
-          className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider border shadow whitespace-nowrap select-none flex items-center gap-1 ${
+          className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none flex items-center gap-1.5 ${
             isFlowing
-              ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400 animate-pulse'
-              : 'bg-slate-900/90 text-slate-300 border-slate-700'
+              ? 'bg-emerald-950/95 text-emerald-300 border-emerald-400 ring-1 ring-emerald-500/40 animate-pulse'
+              : 'bg-slate-900/95 text-slate-200 border-slate-600'
           }`}
         >
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: glowColor }} />
@@ -304,15 +307,15 @@ const Mission5Scene: React.FC<Mission53DCanvasProps> = ({ selectedPort, onPortCl
                   {/* Port Anchor */}
                   <PortAnchor3D
                     position={[0, 0.2, -0.45]}
-                    portId="LAN_POE"
+                    portId="RJ45_POE"
                     deviceId="CAMERA_BULLET"
                     portType="RJ45"
                     labelTh="RJ45 (PoE)"
                     isConnected={hasCamToSwitch}
                     isSelected={
-                      selectedPort?.deviceId === 'CAMERA_BULLET' && selectedPort?.portId === 'LAN_POE'
+                      selectedPort?.deviceId === 'CAMERA_BULLET' && selectedPort?.portId === 'RJ45_POE'
                     }
-                    onClick={() => onPortClick('CAMERA_BULLET', 'LAN_POE', 'RJ45')}
+                    onClick={() => onPortClick('CAMERA_BULLET', 'RJ45_POE', 'RJ45')}
                   />
                 </group>
               )}
@@ -326,30 +329,30 @@ const Mission5Scene: React.FC<Mission53DCanvasProps> = ({ selectedPort, onPortCl
                   {/* PoE Port 1 */}
                   <PortAnchor3D
                     position={[-0.4, 0.05, 0.58]}
-                    portId="POE_PORT_1"
+                    portId="POE_1"
                     deviceId="POE_SWITCH_8P"
                     portType="RJ45"
                     labelTh="PoE Port 1"
                     isConnected={hasCamToSwitch}
                     isSelected={
                       selectedPort?.deviceId === 'POE_SWITCH_8P' &&
-                      selectedPort?.portId === 'POE_PORT_1'
+                      selectedPort?.portId === 'POE_1'
                     }
-                    onClick={() => onPortClick('POE_SWITCH_8P', 'POE_PORT_1', 'RJ45')}
+                    onClick={() => onPortClick('POE_SWITCH_8P', 'POE_1', 'RJ45')}
                   />
                   {/* Uplink Port 1 */}
                   <PortAnchor3D
                     position={[0.4, 0.05, 0.58]}
-                    portId="UPLINK_1"
+                    portId="LAN_UPLINK"
                     deviceId="POE_SWITCH_8P"
                     portType="RJ45"
                     labelTh="GbE Uplink"
                     isConnected={hasSwitchToNvr}
                     isSelected={
                       selectedPort?.deviceId === 'POE_SWITCH_8P' &&
-                      selectedPort?.portId === 'UPLINK_1'
+                      selectedPort?.portId === 'LAN_UPLINK'
                     }
-                    onClick={() => onPortClick('POE_SWITCH_8P', 'UPLINK_1', 'RJ45')}
+                    onClick={() => onPortClick('POE_SWITCH_8P', 'LAN_UPLINK', 'RJ45')}
                   />
                 </group>
               )}
@@ -363,15 +366,15 @@ const Mission5Scene: React.FC<Mission53DCanvasProps> = ({ selectedPort, onPortCl
                   {/* LAN Port */}
                   <PortAnchor3D
                     position={[-0.45, 0.05, -0.68]}
-                    portId="LAN"
+                    portId="LAN_1"
                     deviceId="NVR_8CH"
                     portType="RJ45"
                     labelTh="LAN (WAN)"
                     isConnected={hasSwitchToNvr}
                     isSelected={
-                      selectedPort?.deviceId === 'NVR_8CH' && selectedPort?.portId === 'LAN'
+                      selectedPort?.deviceId === 'NVR_8CH' && selectedPort?.portId === 'LAN_1'
                     }
-                    onClick={() => onPortClick('NVR_8CH', 'LAN', 'RJ45')}
+                    onClick={() => onPortClick('NVR_8CH', 'LAN_1', 'RJ45')}
                   />
                   {/* HDMI Out Port */}
                   <PortAnchor3D
@@ -479,10 +482,10 @@ const Mission5Scene: React.FC<Mission53DCanvasProps> = ({ selectedPort, onPortCl
           <M5SplineCable
             startPos={[1.8, 0.35, -0.68]}
             endPos={[4.0, 0.2, -0.2]}
-            cableColor="#1e293b"
-            glowColor="#a855f7"
+            cableColor="#334155"
+            glowColor="#c084fc"
             isFlowing={isLiveActive}
-            labelTh="HDMI 4K Cable"
+            labelTh="HDMI 4K UltraHD"
           />
         )}
       </group>

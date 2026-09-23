@@ -823,7 +823,16 @@ export const useRoleplayStore = create<RoleplayStoreState>((set, get) => ({
       poeSupplied: false,
     };
 
-    const newConnections = [...get().connections, connection];
+    // Filter out previous cable between the same two devices if any
+    const existing = get().connections.filter(
+      (c) =>
+        !(
+          (c.fromDeviceId === fromDeviceId && c.toDeviceId === toDeviceId) ||
+          (c.fromDeviceId === toDeviceId && c.toDeviceId === fromDeviceId)
+        )
+    );
+
+    const newConnections = [...existing, connection];
     set({ connections: newConnections });
     get().recomputeRubric();
     return true;

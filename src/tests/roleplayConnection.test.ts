@@ -123,4 +123,58 @@ describe('Unit 1 Roleplay Cable & Port Connection Rules', () => {
     expect(result.isLiveViewActive).toBe(true);
     expect(result.diagnosticEvents.some((e) => e.code === 'LIVE_VIEW_ACTIVE')).toBe(true);
   });
+
+  it('activates Live View with UI port aliases and reverse HDMI wiring (MONITOR HDMI_IN -> NVR HDMI_OUT)', () => {
+    const placedDevices = {
+      CAMERA_BULLET: true,
+      POE_SWITCH_8P: true,
+      NVR_8CH: true,
+      MONITOR: true,
+    };
+    const poweredDevices = {
+      POE_SWITCH_8P: true,
+      NVR_8CH: true,
+      MONITOR: true,
+    };
+    // Reverse HDMI wiring (Monitor -> NVR) and alias ports (POE_1, LAN_UPLINK, LAN_1)
+    const connections: CableConnection[] = [
+      {
+        id: 'C1',
+        cableType: 'CAT6',
+        fromDeviceId: 'CAMERA_BULLET',
+        fromPortId: 'RJ45_POE',
+        toDeviceId: 'POE_SWITCH_8P',
+        toPortId: 'POE_1',
+        linkStatus: 'DOWN',
+        poeSupplied: false,
+      },
+      {
+        id: 'C2',
+        cableType: 'CAT6',
+        fromDeviceId: 'POE_SWITCH_8P',
+        fromPortId: 'LAN_UPLINK',
+        toDeviceId: 'NVR_8CH',
+        toPortId: 'LAN_1',
+        linkStatus: 'DOWN',
+        poeSupplied: false,
+      },
+      {
+        id: 'C3',
+        cableType: 'HDMI',
+        fromDeviceId: 'MONITOR',
+        fromPortId: 'HDMI_IN',
+        toDeviceId: 'NVR_8CH',
+        toPortId: 'HDMI_OUT',
+        linkStatus: 'DOWN',
+        poeSupplied: false,
+      },
+    ];
+
+    const result = evaluateSystemTopology(placedDevices, poweredDevices, connections);
+    expect(result.isCameraOnline).toBe(true);
+    expect(result.isNvrReachable).toBe(true);
+    expect(result.isMonitorConnectedToNvr).toBe(true);
+    expect(result.isLiveViewActive).toBe(true);
+    expect(result.diagnosticEvents.some((e) => e.code === 'LIVE_VIEW_ACTIVE')).toBe(true);
+  });
 });
