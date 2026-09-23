@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRoleplayStore } from '../../../store/useRoleplayStore';
 import { KNOWLEDGE_CARDS } from '../../../data/unit1RoleplayContent';
+import { Room101Mission1IsometricCanvas } from './Room101Mission1IsometricCanvas';
 
 interface Room101Mission1ModalProps {
   onClose: () => void;
@@ -109,6 +110,25 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
               กล้องโทรทัศน์วงจรปิดแบบ IP แตกต่างจากกล้องอนาล็อกยุคเดิม คือ ภายในตัวกล้องมีวงจรประมวลผลและบีบอัดวิดีโอดิจิทัล (SoC) ในตัว
               แสงจากภายนอกจะผ่านเลนส์ไปยังตัวรับภาพ CMOS จากนั้นชิป ISP จะแปลงเป็นสัญญาณดิจิทัล บีบอัดเป็นสตรีม H.264/H.265 แล้วส่งออกผ่านพอร์ต LAN ในรูป TCP/IP Packets
             </p>
+          </div>
+
+          {/* 3D Isometric-Style Interactive Workbench Canvas */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                <span>🛰️</span>
+                <span>เวิร์กเบนช์ผ่าตัดโครงสร้างกล้อง 3D (Isometric View &amp; Real-time Flow)</span>
+              </span>
+              <span className="text-[11px] text-slate-400">
+                คลิกชิ้นส่วน 3D ในถาดด้านล่าง ➔ คลิกช่อง Socket เพื่อประกอบ
+              </span>
+            </div>
+
+            <Room101Mission1IsometricCanvas
+              selectedCardId={selectedCardId}
+              onSelectCard={(id) => setSelectedCardId(id)}
+              onSlotClick={handleSlotClick}
+            />
           </div>
 
           {/* Pipeline Drop Slots */}

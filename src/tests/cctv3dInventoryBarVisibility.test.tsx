@@ -32,6 +32,7 @@ vi.mock('../components/labs/3d/props/Room105NvrConfigProps', () => ({ Room105Nvr
 vi.mock('../components/labs/3d/props/Room106StorageProps', () => ({ Room106StorageProps: () => null }));
 vi.mock('../components/labs/3d/props/Room107TroubleshootingProps', () => ({ Room107TroubleshootingProps: () => null }));
 vi.mock('../components/labs/3d/props/Room108CapstoneProps', () => ({ Room108CapstoneProps: () => null }));
+vi.mock('../components/labs/room101/Room101SmartMartLab', () => ({ Room101SmartMartLab: () => null }));
 vi.mock('../components/labs/room102/Room102SmartSchoolLab', () => ({ Room102SmartSchoolLab: () => null }));
 vi.mock('../components/labs/room103/Room103CablingLab', () => ({ Room103CablingLab: () => null }));
 vi.mock('../components/labs/room104/Room104NetworkingLab', () => ({ Room104NetworkingLab: () => null }));
