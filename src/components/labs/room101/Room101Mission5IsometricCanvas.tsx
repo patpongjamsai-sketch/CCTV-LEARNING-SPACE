@@ -76,9 +76,9 @@ const PortAnchor3D: React.FC<{
       </mesh>
 
       {/* Floating Port Badge */}
-      <Html position={[0, 0.22, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+      <Html position={[0, 0.22, 0]} center distanceFactor={4.8} style={{ pointerEvents: 'none' }}>
         <div
-          className={`px-1.5 py-0.5 rounded text-[8px] font-mono font-bold tracking-wider border shadow whitespace-nowrap select-none ${
+          className={`px-1 py-0.5 rounded text-[6.5px] font-mono font-bold tracking-wider border shadow-sm whitespace-nowrap select-none ${
             isSelected
               ? 'bg-amber-500 text-slate-950 border-amber-300 animate-pulse'
               : isConnected
@@ -141,11 +141,11 @@ const M5SplineCable: React.FC<{
       <Html
         position={midPos}
         center
-        distanceFactor={11}
+        distanceFactor={4.8}
         style={{ pointerEvents: 'none' }}
       >
         <div
-          className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none flex items-center gap-1.5 ${
+          className={`px-1.5 py-0.5 rounded-full text-[6.5px] font-bold font-mono tracking-wider border shadow-sm whitespace-nowrap select-none flex items-center gap-1 ${
             isFlowing
               ? 'bg-emerald-950/95 text-emerald-300 border-emerald-400 ring-1 ring-emerald-500/40 animate-pulse'
               : 'bg-slate-900/95 text-slate-200 border-slate-600'
@@ -260,16 +260,16 @@ const Mission5Scene: React.FC<Mission53DCanvasProps> = ({ selectedPort, onPortCl
               </mesh>
 
               {/* Station Label & Power Toggle Button */}
-              <Html position={[0, 0.12, 1.15]} center distanceFactor={10}>
-                <div className="flex items-center gap-1.5 select-none whitespace-nowrap">
-                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-900/90 text-white border border-slate-700 shadow">
+              <Html position={[0, 0.12, 1.15]} center distanceFactor={4.8}>
+                <div className="flex items-center gap-1 select-none whitespace-nowrap">
+                  <span className="px-1.5 py-0.5 rounded text-[7px] font-bold bg-slate-900/90 text-white border border-slate-700 shadow-sm">
                     {st.nameTh}
                   </span>
                   {st.hasPowerSwitch ? (
                     <button
                       type="button"
                       onClick={() => onPowerToggle(st.deviceId)}
-                      className={`px-2 py-0.5 rounded text-[9px] font-bold cursor-pointer transition-all shadow ${
+                      className={`px-1.5 py-0.5 rounded text-[7px] font-bold cursor-pointer transition-all shadow-sm ${
                         isPowerOn
                           ? 'bg-emerald-500 text-slate-950 font-black'
                           : 'bg-rose-950/80 text-rose-300 border border-rose-600/50 hover:bg-rose-900'
@@ -279,13 +279,13 @@ const Mission5Scene: React.FC<Mission53DCanvasProps> = ({ selectedPort, onPortCl
                     </button>
                   ) : (
                     <span
-                      className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${
+                      className={`px-1 py-0.5 rounded text-[6.5px] font-bold ${
                         isCameraOnline
                           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                           : 'bg-slate-800 text-slate-400'
                       }`}
                     >
-                      {isCameraOnline ? 'PoE 48V [ONLINE]' : 'PoE [WAITING]'}
+                      {isCameraOnline ? 'PoE [ONLINE]' : 'PoE [WAITING]'}
                     </span>
                   )}
                 </div>

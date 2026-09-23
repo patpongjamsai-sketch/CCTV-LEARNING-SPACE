@@ -431,11 +431,11 @@ const IsometricWorkbenchScene: React.FC<Mission13DCanvasProps> = ({
               <Html
                 position={[0, 0.12, 0.95]}
                 center
-                distanceFactor={10}
+                distanceFactor={4.8}
                 style={{ pointerEvents: 'none' }}
               >
                 <div
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono tracking-wider border shadow-lg whitespace-nowrap select-none ${
+                  className={`px-1.5 py-0.5 rounded-full text-[7px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none ${
                     isCorrect
                       ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400'
                       : isWrong
@@ -523,16 +523,16 @@ const IsometricWorkbenchScene: React.FC<Mission13DCanvasProps> = ({
                 )}
 
                 {/* HTML Label under tray part */}
-                <Html position={[0, -0.05, 0.5]} center distanceFactor={10}>
+                <Html position={[0, -0.05, 0.5]} center distanceFactor={4.8}>
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectCard(isSelected ? null : stage.cardId);
                     }}
-                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-transform cursor-pointer select-none ${
+                    className={`px-1.5 py-0.5 rounded-md text-[7px] font-bold whitespace-nowrap transition-transform cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-sky-500 text-slate-950 scale-105 shadow-md shadow-sky-500/50'
+                        ? 'bg-sky-500 text-slate-950 scale-105 shadow-sm shadow-sky-500/50'
                         : isPlaced
                         ? 'bg-slate-800/80 text-slate-500 line-through opacity-50'
                         : 'bg-slate-900 text-slate-200 hover:bg-slate-800 border border-slate-700'

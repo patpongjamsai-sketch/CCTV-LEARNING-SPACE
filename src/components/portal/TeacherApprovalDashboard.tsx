@@ -22,6 +22,8 @@ export type RosterStudent = {
     id: string;
     code: string;
     name: string;
+    groupId?: string;
+    orderNum?: number;
     unitProgress: Record<string, {
         lessons: number;
         lab: boolean;
@@ -35,42 +37,94 @@ export type RosterStudent = {
     }>;
 };
 
+const DEFAULT_CSV_STUDENTS = `email,student_code,display_name
+69219090001@cctv.local,69219090001,นางสาวบัณฑิตา เพ็งกลาง
+69219090002@cctv.local,69219090002,นายแทนคุณ ขันเงิน
+69219090003@cctv.local,69219090003,นายเทวา อาภรณ์ศรี
+69219090004@cctv.local,69219090004,นายโจ จิรวัฒน์ จันทร์ไพจิตร์
+69219090006@cctv.local,69219090006,นางสาวณฐาปนี แสวงวงศ์
+69219090007@cctv.local,69219090007,นางสาวศศิวิมล สกุลทอง
+69219090008@cctv.local,69219090008,นายภัทรพล คชรักษ์
+69219090009@cctv.local,69219090009,นายรวิกร พันธุ์นิล
+69219090011@cctv.local,69219090011,นายอภิภู เอราวรรณ์
+69219090012@cctv.local,69219090012,นางสาวกวินตรา บรรทอน
+69219090015@cctv.local,69219090015,นางสาวกนกวรรณ ชินะแสง
+69219090040@cctv.local,69219090040,นางสาวเปณิกา สุวรรณ
+69219090048@cctv.local,69219090048,นายหัสถกรณ์ แสงอาจหาญ
+69219090016@cctv.local,69219090016,นายกิตติโชค สาโสม
+69219090017@cctv.local,69219090017,นางสาวกนกวรรณ ประตังทะสา
+69219090018@cctv.local,69219090018,นางสาวพิชญดา คล้ายบุญมี
+69219090019@cctv.local,69219090019,นายณัฐอติกันต์ คำพะวัง
+69219090020@cctv.local,69219090020,นายพัสกร โพธิ์มั่น
+69219090021@cctv.local,69219090021,นางสาวกัญญาพร นารัตน์
+69219090022@cctv.local,69219090022,นายสรวิทย์ กาสีสอน
+69219090023@cctv.local,69219090023,นายธนกร พลราษฎร์
+69219090024@cctv.local,69219090024,นายอดิเทพ อนุคง
+69219090026@cctv.local,69219090026,นายภัทรธณพล เจ๊กทิม
+69219090027@cctv.local,69219090027,นายกิตติกานต์ จันทาโทอ่อน
+69219090042@cctv.local,69219090042,นายยุติธรรม ปุยคำ
+69219090043@cctv.local,69219090043,นายธีรพัฒน์ เฉวียงหงส์
+69219090046@cctv.local,69219090046,นางสาวอมรรัตน์ เดชห้วยไผ่
+69219090028@cctv.local,69219090028,นายหรรษา มัครมย์
+69219090029@cctv.local,69219090029,นายปิติ จตุพรพงศ์
+69219090030@cctv.local,69219090030,นายวชรวิทย์ ทองสว่าง
+69219090031@cctv.local,69219090031,นายนฤชยา จำปาพันธ์
+69219090032@cctv.local,69219090032,นางสาวกิตติกา เกษมสุข
+69219090033@cctv.local,69219090033,นายพลกฤต ทองดอนดู่
+69219090034@cctv.local,69219090034,นายศักดิ์ชัยรินทร์ จันทร์ผอง
+69219090035@cctv.local,69219090035,นายศตวพร ผลจันทร์
+69219090037@cctv.local,69219090037,นายจิรวัฒน์ อ่อนพันธ์
+69219090038@cctv.local,69219090038,นายก้องเกียรติ์ ศรีมาคำ
+69219090039@cctv.local,69219090039,นางสาวอัญธิญากร พันธ์เพ็ง
+69219090044@cctv.local,69219090044,นางสาวปภัสสร ผูกมิตร
+69219090045@cctv.local,69219090045,นายต้นตการณ์ โพสาวัง`;
+
 const DEFAULT_STUDENT_ROSTER: RosterStudent[] = [
-    {
-        id: '11111111-1111-4111-8111-111111111111',
-        code: '67301',
-        name: 'นายสมชาย ใจดี',
-        unitProgress: {
-            U01: { lessons: 10, lab: true, labScore: 95, exam: true, examScore: 90, passed: true },
-            U02: { lessons: 4, lab: false, exam: false, passed: false },
-        },
-    },
-    {
-        id: '22222222-2222-4222-8222-222222222222',
-        code: '67302',
-        name: 'นางสาวสมหญิง มั่นคง',
-        unitProgress: {
-            U01: { lessons: 10, lab: true, labScore: 88, exam: false, latestQuizStatus: 'submitted', passed: false },
-            U02: { lessons: 0, lab: false, exam: false, passed: false },
-        },
-    },
-    {
-        id: '33333333-3333-4333-8333-333333333333',
-        code: '67303',
-        name: 'นายกิตติพงษ์ ช่างกล้อง',
-        unitProgress: {
-            U01: { lessons: 10, lab: false, exam: false, passed: false },
-            U02: { lessons: 0, lab: false, exam: false, passed: false },
-        },
-    },
-    {
-        id: 'demo-trainee',
-        code: 'DEMO-TRAINEE',
-        name: 'ผู้ทดลองเรียน (Trainee Sandbox)',
-        unitProgress: {
-            U01: { lessons: 10, lab: true, labScore: 92, exam: true, examScore: 85, passed: true },
-        },
-    },
+    // กลุ่ม 692190901 (13 คน)
+    { id: '69219090001', code: '69219090001', name: 'นางสาวบัณฑิตา เพ็งกลาง', groupId: '692190901', orderNum: 1, unitProgress: { U01: { lessons: 10, lab: true, labScore: 95, exam: true, examScore: 90, passed: true }, U02: { lessons: 4, lab: false, exam: false, passed: false } } },
+    { id: '69219090002', code: '69219090002', name: 'นายแทนคุณ ขันเงิน', groupId: '692190901', orderNum: 2, unitProgress: { U01: { lessons: 10, lab: true, labScore: 88, exam: false, latestQuizStatus: 'submitted', passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090003', code: '69219090003', name: 'นายเทวา อาภรณ์ศรี', groupId: '692190901', orderNum: 3, unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090004', code: '69219090004', name: 'นายโจ จิรวัฒน์ จันทร์ไพจิตร์', groupId: '692190901', orderNum: 4, unitProgress: { U01: { lessons: 10, lab: true, labScore: 92, exam: true, examScore: 85, passed: true }, U02: { lessons: 2, lab: false, exam: false, passed: false } } },
+    { id: '69219090006', code: '69219090006', name: 'นางสาวณฐาปนี แสวงวงศ์', groupId: '692190901', orderNum: 5, unitProgress: { U01: { lessons: 8, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090007', code: '69219090007', name: 'นางสาวศศิวิมล สกุลทอง', groupId: '692190901', orderNum: 6, unitProgress: { U01: { lessons: 10, lab: true, labScore: 90, exam: true, examScore: 88, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090008', code: '69219090008', name: 'นายภัทรพล คชรักษ์', groupId: '692190901', orderNum: 7, unitProgress: { U01: { lessons: 10, lab: true, labScore: 84, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090009', code: '69219090009', name: 'นายรวิกร พันธุ์นิล', groupId: '692190901', orderNum: 8, unitProgress: { U01: { lessons: 6, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090011', code: '69219090011', name: 'นายอภิภู เอราวรรณ์', groupId: '692190901', orderNum: 9, unitProgress: { U01: { lessons: 10, lab: true, labScore: 96, exam: true, examScore: 94, passed: true }, U02: { lessons: 5, lab: false, exam: false, passed: false } } },
+    { id: '69219090012', code: '69219090012', name: 'นางสาวกวินตรา บรรทอน', groupId: '692190901', orderNum: 10, unitProgress: { U01: { lessons: 10, lab: true, labScore: 91, exam: true, examScore: 89, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090015', code: '69219090015', name: 'นางสาวกนกวรรณ ชินะแสง', groupId: '692190901', orderNum: 11, unitProgress: { U01: { lessons: 9, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090040', code: '69219090040', name: 'นางสาวเปณิกา สุวรรณ', groupId: '692190901', orderNum: 12, unitProgress: { U01: { lessons: 10, lab: true, labScore: 93, exam: true, examScore: 91, passed: true }, U02: { lessons: 1, lab: false, exam: false, passed: false } } },
+    { id: '69219090048', code: '69219090048', name: 'นายหัสถกรณ์ แสงอาจหาญ', groupId: '692190901', orderNum: 13, unitProgress: { U01: { lessons: 7, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+
+    // กลุ่ม 692190902 (14 คน)
+    { id: '69219090016', code: '69219090016', name: 'นายกิตติโชค สาโสม', groupId: '692190902', orderNum: 1, unitProgress: { U01: { lessons: 10, lab: true, labScore: 94, exam: true, examScore: 90, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090017', code: '69219090017', name: 'นางสาวกนกวรรณ ประตังทะสา', groupId: '692190902', orderNum: 2, unitProgress: { U01: { lessons: 10, lab: true, labScore: 89, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090018', code: '69219090018', name: 'นางสาวพิชญดา คล้ายบุญมี', groupId: '692190902', orderNum: 3, unitProgress: { U01: { lessons: 10, lab: true, labScore: 97, exam: true, examScore: 95, passed: true }, U02: { lessons: 3, lab: false, exam: false, passed: false } } },
+    { id: '69219090019', code: '69219090019', name: 'นายณัฐอติกันต์ คำพะวัง', groupId: '692190902', orderNum: 4, unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090020', code: '69219090020', name: 'นายพัสกร โพธิ์มั่น', groupId: '692190902', orderNum: 5, unitProgress: { U01: { lessons: 8, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090021', code: '69219090021', name: 'นางสาวกัญญาพร นารัตน์', groupId: '692190902', orderNum: 6, unitProgress: { U01: { lessons: 10, lab: true, labScore: 91, exam: true, examScore: 87, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090022', code: '69219090022', name: 'นายสรวิทย์ กาสีสอน', groupId: '692190902', orderNum: 7, unitProgress: { U01: { lessons: 10, lab: true, labScore: 85, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090023', code: '69219090023', name: 'นายธนกร พลราษฎร์', groupId: '692190902', orderNum: 8, unitProgress: { U01: { lessons: 10, lab: true, labScore: 93, exam: true, examScore: 92, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090024', code: '69219090024', name: 'นายอดิเทพ อนุคง', groupId: '692190902', orderNum: 9, unitProgress: { U01: { lessons: 5, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090026', code: '69219090026', name: 'นายภัทรธณพล เจ๊กทิม', groupId: '692190902', orderNum: 10, unitProgress: { U01: { lessons: 10, lab: true, labScore: 88, exam: true, examScore: 84, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090027', code: '69219090027', name: 'นายกิตติกานต์ จันทาโทอ่อน', groupId: '692190902', orderNum: 11, unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090042', code: '69219090042', name: 'นายยุติธรรม ปุยคำ', groupId: '692190902', orderNum: 12, unitProgress: { U01: { lessons: 10, lab: true, labScore: 90, exam: true, examScore: 89, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090043', code: '69219090043', name: 'นายธีรพัฒน์ เฉวียงหงส์', groupId: '692190902', orderNum: 13, unitProgress: { U01: { lessons: 8, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090046', code: '69219090046', name: 'นางสาวอมรรัตน์ เดชห้วยไผ่', groupId: '692190902', orderNum: 14, unitProgress: { U01: { lessons: 10, lab: true, labScore: 96, exam: true, examScore: 93, passed: true }, U02: { lessons: 2, lab: false, exam: false, passed: false } } },
+
+    // กลุ่ม 692190903 (13 คน)
+    { id: '69219090028', code: '69219090028', name: 'นายหรรษา มัครมย์', groupId: '692190903', orderNum: 1, unitProgress: { U01: { lessons: 10, lab: true, labScore: 92, exam: true, examScore: 88, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090029', code: '69219090029', name: 'นายปิติ จตุพรพงศ์', groupId: '692190903', orderNum: 2, unitProgress: { U01: { lessons: 10, lab: true, labScore: 86, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090030', code: '69219090030', name: 'นายวชรวิทย์ ทองสว่าง', groupId: '692190903', orderNum: 3, unitProgress: { U01: { lessons: 10, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090031', code: '69219090031', name: 'นายนฤชยา จำปาพันธ์', groupId: '692190903', orderNum: 4, unitProgress: { U01: { lessons: 10, lab: true, labScore: 90, exam: true, examScore: 86, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090032', code: '69219090032', name: 'นางสาวกิตติกา เกษมสุข', groupId: '692190903', orderNum: 5, unitProgress: { U01: { lessons: 10, lab: true, labScore: 95, exam: true, examScore: 92, passed: true }, U02: { lessons: 1, lab: false, exam: false, passed: false } } },
+    { id: '69219090033', code: '69219090033', name: 'นายพลกฤต ทองดอนดู่', groupId: '692190903', orderNum: 6, unitProgress: { U01: { lessons: 7, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090034', code: '69219090034', name: 'นายศักดิ์ชัยรินทร์ จันทร์ผอง', groupId: '692190903', orderNum: 7, unitProgress: { U01: { lessons: 10, lab: true, labScore: 89, exam: true, examScore: 85, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090035', code: '69219090035', name: 'นายศตวพร ผลจันทร์', groupId: '692190903', orderNum: 8, unitProgress: { U01: { lessons: 6, lab: false, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090037', code: '69219090037', name: 'นายจิรวัฒน์ อ่อนพันธ์', groupId: '692190903', orderNum: 9, unitProgress: { U01: { lessons: 10, lab: true, labScore: 91, exam: true, examScore: 88, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090038', code: '69219090038', name: 'นายก้องเกียรติ์ ศรีมาคำ', groupId: '692190903', orderNum: 10, unitProgress: { U01: { lessons: 10, lab: true, labScore: 88, exam: false, passed: false }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090039', code: '69219090039', name: 'นางสาวอัญธิญากร พันธ์เพ็ง', groupId: '692190903', orderNum: 11, unitProgress: { U01: { lessons: 10, lab: true, labScore: 94, exam: true, examScore: 91, passed: true }, U02: { lessons: 3, lab: false, exam: false, passed: false } } },
+    { id: '69219090044', code: '69219090044', name: 'นางสาวปภัสสร ผูกมิตร', groupId: '692190903', orderNum: 12, unitProgress: { U01: { lessons: 10, lab: true, labScore: 93, exam: true, examScore: 90, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
+    { id: '69219090045', code: '69219090045', name: 'นายต้นตการณ์ โพสาวัง', groupId: '692190903', orderNum: 13, unitProgress: { U01: { lessons: 10, lab: true, labScore: 90, exam: true, examScore: 87, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
 ];
 
 export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherApprovalDashboardProps) {
@@ -79,6 +133,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [submissions, setSubmissions] = useState<SubjectiveSubmission[]>([]);
     const [students, setStudents] = useState<RosterStudent[]>(DEFAULT_STUDENT_ROSTER);
     const [selectedUnitTab, setSelectedUnitTab] = useState<string>('U01');
+    const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>('ALL');
     const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
     const [lastSyncTime, setLastSyncTime] = useState<string>('เพิ่งอัปเดต');
     const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(false);
@@ -91,11 +146,9 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
 
     // CSV & Override Form State
     const [targetClassId, setTargetClassId] = useState(classId);
-    const [csvText, setCsvText] = useState(
-        'email,student_code,display_name\nstudent1@cctv.local,67301,สมชาย ใจดี\nstudent2@cctv.local,67302,สมหญิง มั่นคง\nstudent3@cctv.local,67303,กิตติพงษ์ ช่างกล้อง',
-    );
+    const [csvText, setCsvText] = useState(DEFAULT_CSV_STUDENTS);
     const [isImporting, setIsImporting] = useState(false);
-    const [overrideStudentId, setOverrideStudentId] = useState('67301');
+    const [overrideStudentId, setOverrideStudentId] = useState('69219090001');
     const [overrideUnitId, setOverrideUnitId] = useState('U01');
     const [overridePassed, setOverridePassed] = useState(true);
     const [overridePercent, setOverridePercent] = useState('100');
@@ -1003,12 +1056,43 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         })}
                     </div>
 
+                    {/* Group Filter Tabs (ALL / 692190901 / 692190902 / 692190903) */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                        <span className="text-xs font-mono font-bold text-slate-400 shrink-0 mr-1">
+                            กลุ่มเรียน:
+                        </span>
+                        {[
+                            { id: 'ALL', label: `ทั้งหมด (40 คน)` },
+                            { id: '692190901', label: `กลุ่ม 1 (13 คน)` },
+                            { id: '692190902', label: `กลุ่ม 2 (14 คน)` },
+                            { id: '692190903', label: `กลุ่ม 3 (13 คน)` },
+                        ].map((grp) => {
+                            const isGrpSelected = selectedGroupFilter === grp.id;
+                            return (
+                                <button
+                                    key={grp.id}
+                                    type="button"
+                                    onClick={() => setSelectedGroupFilter(grp.id)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                                        isGrpSelected
+                                            ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
+                                            : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                                    }`}
+                                >
+                                    {grp.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                             <thead>
                                 <tr className="border-b border-slate-800 text-slate-400 font-mono">
+                                    <th className="p-3 w-12 text-center">ลำดับ</th>
                                     <th className="p-3">รหัสผู้เรียน</th>
                                     <th className="p-3">ชื่อ - สกุล</th>
+                                    <th className="p-3">กลุ่ม</th>
                                     <th className="p-3">1. เนื้อหา 10 บท</th>
                                     <th className="p-3">2. ห้องแล็บ 3D</th>
                                     <th className="p-3">3. แบบทดสอบ</th>
@@ -1017,7 +1101,9 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
-                                {students.map((st) => {
+                                {students
+                                    .filter((st) => selectedGroupFilter === 'ALL' || st.groupId === selectedGroupFilter)
+                                    .map((st, idx) => {
                                     const currentUnitData = st.unitProgress[selectedUnitTab] || { lessons: 0, lab: false, exam: false, passed: false };
                                     const pendingSub = submissions.find(
                                         (s) =>
@@ -1028,11 +1114,19 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
 
                                     return (
                                         <tr key={st.code || st.id} className="hover:bg-slate-950/40 transition-colors">
+                                            <td className="p-3 text-center font-mono text-slate-400">
+                                                {st.orderNum || idx + 1}
+                                            </td>
                                             <td className="p-3 font-mono font-bold text-sky-400">
                                                 {st.code || st.id.slice(0, 8)}
                                             </td>
                                             <td className="p-3 font-semibold text-white">
                                                 {st.name}
+                                            </td>
+                                            <td className="p-3">
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
+                                                    {st.groupId ? `กลุ่ม ${st.groupId.slice(-1)}` : '-'}
+                                                </span>
                                             </td>
                                             <td className="p-3">
                                                 <span

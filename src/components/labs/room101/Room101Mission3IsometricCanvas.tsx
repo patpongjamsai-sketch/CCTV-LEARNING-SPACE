@@ -471,9 +471,9 @@ const Mission3Scene: React.FC<Mission33DCanvasProps> = ({ selectedDeviceId, onSe
               </group>
 
               {/* Status Badge */}
-              <Html position={[0, 0.12, 1.05]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+              <Html position={[0, 0.12, 1.05]} center distanceFactor={4.8} style={{ pointerEvents: 'none' }}>
                 <div
-                  className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none ${
+                  className={`px-1.5 py-0.5 rounded-full text-[7px] font-bold font-mono tracking-wider border shadow-sm whitespace-nowrap select-none ${
                     isCorrect
                       ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400'
                       : isWrong

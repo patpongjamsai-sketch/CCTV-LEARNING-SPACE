@@ -80,6 +80,7 @@ const DioramaCameraController: React.FC<{
 }> = ({ activeTab }) => {
   const { camera } = useThree();
   const controlsRef = useRef<OrbitControlsImpl>(null);
+  const isTransitioning = useRef<boolean>(true);
 
   const targetConfig = useMemo(() => {
     if (activeTab === 'OVERVIEW') {
@@ -95,22 +96,44 @@ const DioramaCameraController: React.FC<{
     };
   }, [activeTab]);
 
+  // Trigger smooth transition whenever activeTab changes
+  React.useEffect(() => {
+    isTransitioning.current = true;
+  }, [activeTab]);
+
   useFrame(() => {
     if (!controlsRef.current) return;
-    camera.position.lerp(targetConfig.camPos, 0.08);
-    controlsRef.current.target.lerp(targetConfig.targetPos, 0.08);
-    controlsRef.current.update();
+    if (isTransitioning.current) {
+      camera.position.lerp(targetConfig.camPos, 0.08);
+      controlsRef.current.target.lerp(targetConfig.targetPos, 0.08);
+      controlsRef.current.update();
+
+      const distCam = camera.position.distanceTo(targetConfig.camPos);
+      const distTarget = controlsRef.current.target.distanceTo(targetConfig.targetPos);
+      if (distCam < 0.05 && distTarget < 0.05) {
+        camera.position.copy(targetConfig.camPos);
+        controlsRef.current.target.copy(targetConfig.targetPos);
+        controlsRef.current.update();
+        isTransitioning.current = false;
+      }
+    }
   });
 
   return (
     <OrbitControls
       ref={controlsRef}
+      makeDefault
       enablePan={true}
       enableRotate={true}
-      maxPolarAngle={Math.PI / 2.1}
-      minPolarAngle={Math.PI / 6}
-      minDistance={3.5}
-      maxDistance={28}
+      enableDamping={true}
+      dampingFactor={0.05}
+      maxPolarAngle={Math.PI / 2.05}
+      minPolarAngle={Math.PI / 12}
+      minDistance={2.5}
+      maxDistance={35}
+      onStart={() => {
+        isTransitioning.current = false;
+      }}
     />
   );
 };
@@ -750,11 +773,11 @@ export const SchoolIndoor3DDiorama: React.FC<SchoolIndoor3DDioramaProps> = ({
                 )}
 
                 {/* Floating 3D Badge on Spot */}
-                <Html position={[0, 0.45, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+                <Html position={[0, 0.45, 0]} center distanceFactor={5.5} style={{ pointerEvents: 'none' }}>
                   <div
-                    className={`px-2 py-1 rounded-xl text-[10px] font-mono font-bold tracking-wider border shadow-2xl flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                    className={`px-1.5 py-0.5 rounded-lg text-[8px] font-mono font-bold tracking-wider border shadow-md flex items-center gap-1 whitespace-nowrap transition-all ${
                       isSelected
-                        ? 'bg-amber-500 text-slate-950 border-amber-300 ring-2 ring-amber-400 scale-110'
+                        ? 'bg-amber-500 text-slate-950 border-amber-300 ring-1 ring-amber-400 scale-105'
                         : camId
                         ? isCorrect
                           ? 'bg-emerald-950/95 text-emerald-300 border-emerald-400'
