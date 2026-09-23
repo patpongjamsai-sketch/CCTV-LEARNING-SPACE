@@ -7,6 +7,11 @@ import {
   ROOM102_CAMERA_CATALOG,
   Room102CameraId,
 } from '../../../shared/domain/room102Types';
+import {
+  SchoolIndoor3DDiorama,
+  IndoorTabId,
+  INDOOR_SPOT_3D_CONFIG,
+} from './SchoolIndoor3DDiorama';
 
 interface Room102IndoorStationModalProps {
   initialPlacements?: Partial<Record<IndoorSpotId, Room102CameraId>>;
@@ -19,6 +24,15 @@ interface Room102IndoorStationModalProps {
   onClose: () => void;
 }
 
+const INDOOR_TABS: { id: IndoorTabId; label: string; icon: string }[] = [
+  { id: 'OVERVIEW', label: 'ภาพรวม 3D', icon: '🏢' },
+  { id: 'IN_DIGITAL_LIBRARY', label: 'ห้องสมุดดิจิทัล', icon: '🏛️' },
+  { id: 'IN_CORRIDOR_STAIRS', label: 'โถงทางเดิน/บันได', icon: '🏃' },
+  { id: 'IN_CANTEEN', label: 'โรงอาหาร', icon: '🍱' },
+  { id: 'IN_SERVER_COMPUTER_LAB', label: 'ห้องเซิร์ฟเวอร์', icon: '💻' },
+  { id: 'IN_INFIRMARY_RESTROOM', label: 'พยาบาล/ห้องน้ำ', icon: '🏥' },
+];
+
 export const Room102IndoorStationModal: React.FC<Room102IndoorStationModalProps> = ({
   initialPlacements = {},
   initialPrivacyMask = false,
@@ -29,8 +43,10 @@ export const Room102IndoorStationModal: React.FC<Room102IndoorStationModalProps>
     initialPlacements
   );
   const [privacyMaskActive, setPrivacyMaskActive] = useState<boolean>(initialPrivacyMask);
-  const [selectedSpot, setSelectedSpot] = useState<IndoorSpotId>('IN_CORRIDOR_STAIRS');
-  const [showSimulate, setShowSimulate] = useState(false);
+  const [selectedSpot, setSelectedSpot] = useState<IndoorSpotId>('IN_DIGITAL_LIBRARY');
+  const [activeTab, setActiveTab] = useState<IndoorTabId>('IN_DIGITAL_LIBRARY');
+  const [viewMode, setViewMode] = useState<'3D' | '2D'>('3D');
+  const [showSimulate, setShowSimulate] = useState(true);
 
   const indoorCameraList: Room102CameraId[] = [
     'DOME_IK10',
@@ -116,28 +132,97 @@ export const Room102IndoorStationModal: React.FC<Room102IndoorStationModalProps>
 
         {/* Main Content Area */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-          {/* Left: 2D Indoor Floor Plan (7 cols) */}
-          <div className="lg:col-span-7 p-4 bg-slate-950/60 flex flex-col justify-between border-r border-slate-800/80 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono text-slate-400 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                แปลนอาคารเรียน 2 ชั้น (School Building Floor Plan)
-              </span>
-              <button
-                onClick={() => setShowSimulate(!showSimulate)}
-                className={`text-xs px-3 py-1 rounded-full font-medium transition-all ${
-                  showSimulate
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                {showSimulate ? '👁️ ปิดจำลอง FOV' : '📡 แสดงรัศมีมุมมอง FOV'}
-              </button>
+          {/* Left: 3D Scene / 2D Indoor Floor Plan (7 cols) */}
+          <div className="lg:col-span-7 p-3 sm:p-4 bg-slate-950/70 flex flex-col justify-between border-r border-slate-800/80 relative overflow-hidden">
+            {/* Room Tabs Bar */}
+            <div className="mb-2.5 flex items-center justify-between gap-2 overflow-x-auto pb-1 shrink-0">
+              <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-900/90 rounded-2xl border border-slate-800">
+                {INDOOR_TABS.map((tab) => {
+                  const isCurrent = activeTab === tab.id;
+                  const spotId = tab.id !== 'OVERVIEW' ? (tab.id as IndoorSpotId) : null;
+                  const camId = spotId ? placements[spotId] : null;
+                  const isCorrect = spotId && camId ? camId === INDOOR_SPOTS[spotId].correctCameraId : false;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        if (spotId) {
+                          setSelectedSpot(spotId);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer border ${
+                        isCurrent
+                          ? 'bg-emerald-500/25 border-emerald-400 text-white font-bold shadow-md ring-2 ring-emerald-500/30'
+                          : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">{tab.icon}</span>
+                      <span>{tab.label}</span>
+                      {spotId && (
+                        <span
+                          className={`w-2 h-2 rounded-full ml-0.5 ${
+                            camId
+                              ? isCorrect
+                                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+                                : 'bg-rose-500'
+                              : 'bg-slate-600'
+                          }`}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 3D / 2D View Switcher Button */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {viewMode === '2D' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSimulate((prev) => !prev)}
+                    className={`text-xs px-2.5 py-1.5 rounded-xl font-bold transition-all border cursor-pointer flex items-center gap-1 ${
+                      showSimulate
+                        ? 'bg-sky-600/30 text-sky-300 border-sky-500/50'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}
+                  >
+                    <span>{showSimulate ? '📡 ซ่อนมุมมอง FOV' : '📡 แสดงมุมมอง FOV'}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setViewMode(viewMode === '3D' ? '2D' : '3D')}
+                  className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border cursor-pointer flex items-center gap-1.5 shadow ${
+                    viewMode === '3D'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400/50'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                  }`}
+                >
+                  <span>{viewMode === '3D' ? '🕹️ โหมด 3D' : '🗺️ โหมดแปลน 2D'}</span>
+                  <span className="text-[10px] opacity-75 font-normal">(สลับ)</span>
+                </button>
+              </div>
             </div>
 
-            {/* Indoor SVG Map */}
-            <div className="relative flex-1 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden select-none">
-              <svg viewBox="0 0 500 360" className="w-full h-full object-cover">
+            {/* Main Interactive Screen (3D Diorama vs 2D Blueprint) */}
+            <div className="relative flex-1 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden select-none min-h-[360px]">
+              {viewMode === '3D' ? (
+                <SchoolIndoor3DDiorama
+                  activeTab={activeTab}
+                  selectedSpot={selectedSpot}
+                  placements={placements}
+                  privacyMaskActive={privacyMaskActive}
+                  onSelectSpot={(spotId) => {
+                    setSelectedSpot(spotId);
+                    setActiveTab(spotId);
+                  }}
+                />
+              ) : (
+                <div className="relative w-full h-full">
+                  <svg viewBox="0 0 500 360" className="w-full h-full object-cover">
                 {/* Background Building Floor */}
                 <rect x="0" y="0" width="500" height="360" fill="#0f172a" />
 
@@ -326,6 +411,8 @@ export const Room102IndoorStationModal: React.FC<Room102IndoorStationModalProps>
                 );
               })}
             </div>
+          )}
+        </div>
 
             {/* Privacy Mask Quick Toggle Bar */}
             <div className="mt-3 p-3 bg-slate-900/80 rounded-2xl border border-slate-800 flex items-center justify-between">
@@ -383,6 +470,17 @@ export const Room102IndoorStationModal: React.FC<Room102IndoorStationModalProps>
                   <div className="mt-2.5 p-2.5 bg-slate-900/80 rounded-xl border border-slate-700/80 text-xs text-emerald-200/90">
                     <strong className="text-emerald-400 block mb-0.5">โจทย์หน้างาน:</strong>
                     {INDOOR_SPOTS[selectedSpot].problemScenarioTh}
+                  </div>
+
+                  {/* Mounting Position Guide Box */}
+                  <div className="mt-2 p-2.5 bg-emerald-950/40 rounded-xl border border-emerald-500/30 text-xs shadow-inner">
+                    <div className="flex items-center gap-1.5 text-emerald-300 font-bold mb-0.5">
+                      <span>📌</span>
+                      <span>จุดติดตั้ง 3D: {INDOOR_SPOT_3D_CONFIG[selectedSpot].mountTypeTh}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {INDOOR_SPOT_3D_CONFIG[selectedSpot].mountHintTh}
+                    </p>
                   </div>
 
                   {/* Current Status on this spot */}
