@@ -596,14 +596,18 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
 
   return (
     <>
+      {/* Studio White-Gray Background */}
+      <color attach="background" args={['#f1f5f9']} />
+
       {/* Studio Lighting */}
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={0.9} />
       <directionalLight
-        position={[8, 14, 6]}
-        intensity={1.3}
+        position={[9, 16, 7]}
+        intensity={1.5}
         castShadow
         shadow-mapSize={[2048, 2048]}
       />
+      <directionalLight position={[-8, 10, -6]} intensity={0.5} color="#e2e8f0" />
       <pointLight position={[-4, 4, 3]} intensity={0.6} color="#06b6d4" />
       <pointLight position={[0, 4, 3]} intensity={0.6} color="#10b981" />
       <pointLight position={[4, 4, 3]} intensity={0.6} color="#8b5cf6" />
@@ -859,7 +863,7 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
 
 export const Room101Mission2IsometricCanvas: React.FC<Mission23DCanvasProps> = (props) => {
   return (
-    <div className="relative w-full h-[320px] sm:h-[380px] bg-slate-950 rounded-2xl overflow-hidden border border-emerald-500/30 shadow-inner">
+    <div className="relative w-full h-[320px] sm:h-[380px] bg-slate-100 rounded-2xl overflow-hidden border border-slate-300 shadow-inner">
       <Canvas
         shadows
         camera={{ position: [7.0, 9.0, 8.0], fov: 40 }}
@@ -870,11 +874,11 @@ export const Room101Mission2IsometricCanvas: React.FC<Mission23DCanvasProps> = (
 
       {/* Top Banner Guide in 3D Canvas */}
       <div className="absolute top-2.5 left-3 right-3 pointer-events-none flex items-center justify-between z-10 text-xs">
-        <div className="bg-slate-900/85 backdrop-blur-md px-3 py-1 rounded-xl border border-emerald-500/30 text-emerald-200 font-medium flex items-center gap-2 shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-xl border border-slate-300 text-slate-800 font-semibold flex items-center gap-2 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
           <span>3D Data Flow Lab · เลือกอุปกรณ์ 3D จากถาดล่างแล้ววางลงบนโต๊ะเพื่อเชื่อมต่อสายอัตโนมัติ</span>
         </div>
-        <div className="hidden sm:block bg-slate-900/85 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-700 text-[11px] text-slate-400">
+        <div className="hidden sm:block bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-300 text-[11px] text-slate-600 font-medium shadow-sm">
           หมุนมุมมอง 3D ได้อิสระ
         </div>
       </div>

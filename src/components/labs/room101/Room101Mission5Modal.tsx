@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRoleplayStore } from '../../../store/useRoleplayStore';
 import { DeviceId } from '../../../shared/domain/roleplayTypes';
+import { Room101Mission5IsometricCanvas } from './Room101Mission5IsometricCanvas';
 
 interface Room101Mission5ModalProps {
   onClose: () => void;
@@ -238,10 +239,29 @@ export const Room101Mission5Modal: React.FC<Room101Mission5ModalProps> = ({
             </div>
           )}
 
+          {/* 3D Isometric Interactive Cabling Lab Area */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                <span>🛰️</span>
+                <span>เวิร์กเบนช์ต่อสาย 3D Isometric Lab (คลิกพอร์ต 3D เพื่อต่อสาย Cat6 / HDMI &amp; เปิดสวิตช์ไฟ)</span>
+              </span>
+              <span className="text-[11px] font-mono text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-600/40">
+                สถานะ: {topology.isLiveViewActive ? '● ระบบออนไลน์สมบูรณ์ (4K Live View)' : 'รอการเชื่อมต่อสายและเปิดไฟ'}
+              </span>
+            </div>
+
+            <Room101Mission5IsometricCanvas
+              selectedPort={selectedPort}
+              onPortClick={handlePortClick}
+              onPowerToggle={toggleDevicePower}
+            />
+          </div>
+
           {/* Interactive 2D Wiring Schematic */}
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-3">
-              ผังอุปกรณ์และการเชื่อมต่อสายสัญญาณ (Schematic Wiring Diagram)
+              ผังสถานะพอร์ตและวงจรไฟฟ้า (Circuit Status &amp; Detail Diagram)
             </span>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">

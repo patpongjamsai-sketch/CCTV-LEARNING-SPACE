@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRoleplayStore } from '../../../store/useRoleplayStore';
 import { ConceptId, DeviceId } from '../../../shared/domain/roleplayTypes';
+import { Room101Mission3IsometricCanvas } from './Room101Mission3IsometricCanvas';
 
 interface Room101Mission3ModalProps {
   onClose: () => void;
@@ -35,6 +36,8 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
   const matchDeviceFunction = useRoleplayStore((s) => s.matchDeviceFunction);
   const missionState = useRoleplayStore((s) => s.missions.M3);
 
+  const [selectedDeviceId, setSelectedDeviceId] = useState<DeviceId | null>(null);
+
   const handleAutoSolve = () => {
     matchDeviceFunction('CAMERA_BULLET', 'FUNC_CAMERA');
     matchDeviceFunction('POE_SWITCH_8P', 'FUNC_POE_SWITCH');
@@ -51,7 +54,7 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md select-none animate-in fade-in zoom-in-95 duration-200">
-      <div className="w-full max-w-4xl max-h-[92vh] bg-slate-900 border border-amber-500/40 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="w-full max-w-5xl max-h-[94vh] bg-slate-900 border border-amber-500/40 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-3">
@@ -70,7 +73,7 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
                 )}
               </div>
               <h2 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                จับคู่อุปกรณ์กล้องวงจรปิดกับหน้าที่หลัก (Device Function Matching)
+                จับคู่อุปกรณ์กล้องวงจรปิดกับหน้าที่หลัก (3D Device Function Lab)
               </h2>
             </div>
           </div>
@@ -104,6 +107,26 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
             <p>
               ในระบบ IP CCTV ช่างติดตั้งต้องเข้าใจหน้าที่ของอุปกรณ์แต่ละตัวอย่างชัดเจน เพื่อเลือกวางตำแหน่ง ออกแบบแผนผังเครือข่าย และแก้ไขปัญหาได้อย่างตรงจุดเมื่อสัญญาณดับ
             </p>
+          </div>
+
+          {/* 3D Isometric Workbench Area */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                <span>🛰️</span>
+                <span>แท่นทดสอบอุปกรณ์ 3D Isometric (คลิกที่อุปกรณ์เพื่อจับคู่หน้าที่)</span>
+              </span>
+              <span className="text-[11px] text-slate-400">
+                {selectedDeviceId
+                  ? `เลือกอุปกรณ์: [${DEVICES_TO_MATCH.find((d) => d.id === selectedDeviceId)?.nameTh}]`
+                  : 'คลิกโมเดล 3D บนโต๊ะเพื่อเลือกอุปกรณ์'}
+              </span>
+            </div>
+
+            <Room101Mission3IsometricCanvas
+              selectedDeviceId={selectedDeviceId}
+              onSelectDevice={(id) => setSelectedDeviceId(id)}
+            />
           </div>
 
           {/* Matching Grid */}
@@ -141,16 +164,20 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
                   CLIENT_PC: 'FUNC_CLIENT_PC',
                 };
                 const isCorrect = currentMatch === expectedMap[dev.id];
+                const isSelected = selectedDeviceId === dev.id;
 
                 return (
                   <div
                     key={dev.id}
-                    className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                      isCorrect
+                    onClick={() => setSelectedDeviceId(isSelected ? null : dev.id)}
+                    className={`p-3.5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer ${
+                      isSelected
+                        ? 'border-amber-400 bg-amber-950/40 shadow-lg shadow-amber-500/20 ring-1 ring-amber-400'
+                        : isCorrect
                         ? 'border-emerald-500/60 bg-emerald-950/20'
                         : currentMatch
                         ? 'border-rose-500/50 bg-rose-950/20'
-                        : 'border-slate-800 bg-slate-950/40'
+                        : 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center gap-3">
