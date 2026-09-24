@@ -7,27 +7,69 @@ import { getServerDatabase, withTrustedTransaction } from '../database/client';
 import { progressOverrideInputSchema } from '../http/apiSchemas';
 
 export async function assertCanManageClass(actorId: string, classId: string): Promise<string> {
-  const sql = getServerDatabase();
+  try {
+    const sql = getServerDatabase();
 
-  const [actor] = await sql`
-    select p.role, cm.member_role, cm.active
-    from public.profiles as p
-    left join public.class_members as cm
-      on cm.profile_id = p.id and cm.class_id = ${classId}
-    where p.id = ${actorId} and p.active = true
-  `;
+    const [actor] = await sql`
+      select p.role, cm.member_role, cm.active
+      from public.profiles as p
+      left join public.class_members as cm
+        on cm.profile_id = p.id and cm.class_id = ${classId}
+      where p.id = ${actorId} and p.active = true
+    `;
 
-  if (
-    !actor ||
-    !canManageClass(
-      actor.role as ProfileRole,
-      actor.member_role ? { memberRole: actor.member_role, active: actor.active } : null,
-    )
-  ) {
-    throw new Error('Forbidden: only an active class teacher or admin can manage this class');
+    if (
+      !actor ||
+      !canManageClass(
+        actor.role as ProfileRole,
+        actor.member_role ? { memberRole: actor.member_role, active: actor.active } : null,
+      )
+    ) {
+      throw new Error('Forbidden: only an active class teacher or admin can manage this class');
+    }
+
+    return classId;
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('Forbidden:')) {
+      throw err;
+    }
+    // Fallback: Verify permissions via Supabase REST API if direct SQL connection fails
+    try {
+      const admin = createAdminSupabaseClient();
+      const { data: profile } = await admin
+        .from('profiles')
+        .select('role, active')
+        .eq('id', actorId)
+        .eq('active', true)
+        .single();
+
+      if (profile?.role === 'admin') return classId;
+
+      const { data: member } = await admin
+        .from('class_members')
+        .select('member_role, active')
+        .eq('class_id', classId)
+        .eq('profile_id', actorId)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (
+        profile &&
+        canManageClass(
+          profile.role as ProfileRole,
+          member ? { memberRole: member.member_role, active: member.active } : null,
+        )
+      ) {
+        return classId;
+      }
+      throw new Error('Forbidden: only an active class teacher or admin can manage this class');
+    } catch (fallbackErr) {
+      if (fallbackErr instanceof Error && fallbackErr.message.startsWith('Forbidden:')) {
+        throw fallbackErr;
+      }
+    }
+    throw err;
   }
-
-  return classId;
 }
 
 /**
@@ -178,62 +220,87 @@ export async function getClassStudentsService(
   classId: string,
 ): Promise<ClassStudentRecord[]> {
   await assertCanManageClass(actorId, classId);
-  const sql = getServerDatabase();
+  let rows: any[] = [];
+  try {
+    const sql = getServerDatabase();
 
-  const rows = await sql`
-    select
-      p.id as student_id,
-      p.student_code,
-      p.display_name,
-      u.id as unit_id,
-      u.sequence_no,
-      coalesce(up.progress_percent, 0) as progress_percent,
-      coalesce(up.passed, false) as passed,
-      coalesce(private.is_unit_unlocked(p.id, ${classId}, u.id), false) as unlocked,
-      up.approved_score,
-      latest_quiz.id as latest_quiz_id,
-      latest_quiz.approved_score as latest_quiz_score,
-      latest_quiz.passed as latest_quiz_passed,
-      latest_quiz.status as latest_quiz_status,
-      latest_quiz.submitted_at as latest_quiz_submitted_at,
-      latest_lab.id as latest_lab_id,
-      latest_lab.status as latest_lab_status,
-      latest_lab.passed as latest_lab_passed,
-      latest_lab.approved_score as latest_lab_approved_score,
-      latest_lab.reviewed_at as latest_lab_reviewed_at,
-      latest_lab.submitted_at as latest_lab_submitted_at
-    from public.class_members as cm
-    join public.profiles as p on p.id = cm.profile_id
-    join public.classes as c on c.id = cm.class_id
-    left join public.units as u on u.course_id = c.course_id and u.status = 'published'
-    left join public.unit_progress as up
-      on up.student_id = p.id
-     and up.class_id = cm.class_id
-     and up.unit_id = u.id
-    left join lateral (
-      select qa.id, qa.approved_score, qa.passed, qa.status, qa.submitted_at
-      from public.quiz_attempts as qa
-      join public.quizzes as q on q.id = qa.quiz_id
-      where qa.class_id = cm.class_id
-        and qa.student_id = p.id
-        and q.unit_id = u.id
-      order by qa.attempt_no desc
-      limit 1
-    ) as latest_quiz on true
-    left join lateral (
-      select ls.id, ls.status, ls.passed, ls.approved_score, ls.reviewed_at, ls.submitted_at
-      from public.lab_submissions as ls
-      where ls.class_id = cm.class_id
-        and ls.student_id = p.id
-        and ls.unit_id = u.id
-      order by ls.attempt_no desc
-      limit 1
-    ) as latest_lab on true
-    where cm.class_id = ${classId}
-      and cm.member_role = 'student'
-      and cm.active = true
-    order by p.student_code asc, u.sequence_no asc
-  `;
+    rows = await sql`
+      select
+        p.id as student_id,
+        p.student_code,
+        p.display_name,
+        u.id as unit_id,
+        u.sequence_no,
+        coalesce(up.progress_percent, 0) as progress_percent,
+        coalesce(up.passed, false) as passed,
+        coalesce(private.is_unit_unlocked(p.id, ${classId}, u.id), false) as unlocked,
+        up.approved_score,
+        latest_quiz.id as latest_quiz_id,
+        latest_quiz.approved_score as latest_quiz_score,
+        latest_quiz.passed as latest_quiz_passed,
+        latest_quiz.status as latest_quiz_status,
+        latest_quiz.submitted_at as latest_quiz_submitted_at,
+        latest_lab.id as latest_lab_id,
+        latest_lab.status as latest_lab_status,
+        latest_lab.passed as latest_lab_passed,
+        latest_lab.approved_score as latest_lab_approved_score,
+        latest_lab.reviewed_at as latest_lab_reviewed_at,
+        latest_lab.submitted_at as latest_lab_submitted_at
+      from public.class_members as cm
+      join public.profiles as p on p.id = cm.profile_id
+      join public.classes as c on c.id = cm.class_id
+      left join public.units as u on u.course_id = c.course_id and u.status = 'published'
+      left join public.unit_progress as up
+        on up.student_id = p.id
+       and up.class_id = cm.class_id
+       and up.unit_id = u.id
+      left join lateral (
+        select qa.id, qa.approved_score, qa.passed, qa.status, qa.submitted_at
+        from public.quiz_attempts as qa
+        join public.quizzes as q on q.id = qa.quiz_id
+        where qa.class_id = cm.class_id
+          and qa.student_id = p.id
+          and q.unit_id = u.id
+        order by qa.attempt_no desc
+        limit 1
+      ) as latest_quiz on true
+      left join lateral (
+        select ls.id, ls.status, ls.passed, ls.approved_score, ls.reviewed_at, ls.submitted_at
+        from public.lab_submissions as ls
+        where ls.class_id = cm.class_id
+          and ls.student_id = p.id
+          and ls.unit_id = u.id
+        order by ls.attempt_no desc
+        limit 1
+      ) as latest_lab on true
+      where cm.class_id = ${classId}
+        and cm.member_role = 'student'
+        and cm.active = true
+      order by p.student_code asc, u.sequence_no asc
+    `;
+  } catch (dbErr) {
+    try {
+      const admin = createAdminSupabaseClient();
+      const { data: members } = await admin
+        .from('class_members')
+        .select('profile_id, profiles(id, student_code, display_name, active)')
+        .eq('class_id', classId)
+        .eq('member_role', 'student')
+        .eq('active', true);
+
+      if (members && members.length > 0) {
+        return members.map((m: any) => ({
+          studentId: m.profiles?.id || m.profile_id,
+          studentCode: m.profiles?.student_code || '',
+          displayName: m.profiles?.display_name || 'ผู้เรียน',
+          unitProgress: {},
+        }));
+      }
+    } catch {
+      // rethrow original dbErr
+    }
+    throw dbErr;
+  }
 
   const map = new Map<string, ClassStudentRecord>();
 
