@@ -25,6 +25,42 @@ export async function GET(request: NextRequest) {
     );
 
     if (!error) {
+      if (data?.session?.user) {
+        const user = data.session.user;
+        const meta = user.user_metadata || {};
+        const rawName = (meta.full_name || meta.name || meta.display_name || '').trim();
+        const codeMatch = rawName.match(/^(\d{4,11})/);
+        const studentCode = codeMatch ? codeMatch[1] : null;
+
+        try {
+          const { createAdminSupabaseClient } = await import('../../../lib/supabase/admin');
+          const admin = createAdminSupabaseClient();
+
+          const profileUpdates: Record<string, unknown> = { active: true };
+          if (rawName) profileUpdates.display_name = rawName;
+          if (studentCode) profileUpdates.student_code = studentCode;
+
+          await admin
+            .from('profiles')
+            .update(profileUpdates)
+            .eq('id', user.id);
+
+          await admin
+            .from('class_members')
+            .upsert(
+              {
+                class_id: '22222222-2222-4222-8222-222222222222',
+                profile_id: user.id,
+                member_role: 'student',
+                active: true,
+              },
+              { onConflict: 'class_id,profile_id' },
+            );
+        } catch {
+          // Graceful fallback if admin client is not configured
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
