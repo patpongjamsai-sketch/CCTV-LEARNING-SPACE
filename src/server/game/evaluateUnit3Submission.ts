@@ -25,12 +25,25 @@ export function evaluateUnit3Submission(rawInput: unknown): CommonUnitEvaluation
     // -------------------------------------------------------------
     const st1 = payload.station1 || {};
     let t568bCorrectPins = 0;
-    const wireSeq = Array.isArray(st1.wireSequence) ? st1.wireSequence : [];
+    const wireSeqA = Array.isArray(st1.sideAWireSequence)
+      ? st1.sideAWireSequence
+      : Array.isArray(st1.wireSequence)
+      ? st1.wireSequence
+      : [];
+    const wireSeqB = Array.isArray(st1.sideBWireSequence) ? st1.sideBWireSequence : wireSeqA;
+
+    let correctA = 0;
+    let correctB = 0;
     for (let i = 0; i < 8; i++) {
-      if (wireSeq[i] === T568B_COLOR_SEQUENCE[i] || wireSeq[i] === T568B_STANDARD[i]) {
-        t568bCorrectPins++;
+      if (wireSeqA[i] === T568B_COLOR_SEQUENCE[i] || wireSeqA[i] === T568B_STANDARD[i]) {
+        correctA++;
+      }
+      if (wireSeqB[i] === T568B_COLOR_SEQUENCE[i] || wireSeqB[i] === T568B_STANDARD[i]) {
+        correctB++;
       }
     }
+    t568bCorrectPins = Math.round((correctA + correctB) / 2);
+
     // T568B RJ45 (12 pts)
     const t568bPoints = Math.round((t568bCorrectPins / 8) * 12);
     s1Score += t568bPoints;

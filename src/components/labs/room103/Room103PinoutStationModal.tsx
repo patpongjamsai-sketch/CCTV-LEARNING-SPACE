@@ -3,9 +3,13 @@
 import React, { useState } from 'react';
 import {
   T568B_COLOR_SEQUENCE,
-  COLOR_HEX_MAP,
   type Station1Payload,
+  type CoaxAssemblyDetails,
+  type WiringStandardType,
 } from '../../../shared/domain/room103Types';
+import { RJ45PinoutInteractive } from './RJ45PinoutInteractive';
+import { CoaxialBNCStepWorkshop } from './CoaxialBNCStepWorkshop';
+import { CableTesterSimulation } from './CableTesterSimulation';
 
 interface Room103PinoutStationModalProps {
   initialPayload?: Partial<Station1Payload>;
@@ -18,14 +22,20 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
   onSave,
   onClose,
 }) => {
-  const [activeTab, setActiveTab] = useState<'utp' | 'coax' | 'label_safety'>('utp');
+  const [activeTab, setActiveTab] = useState<'utp' | 'coax' | 'tester' | 'label_safety'>('utp');
 
-  // UTP State
-  const [wireSequence, setWireSequence] = useState<string[]>(() => {
+  // UTP Dual-End State
+  const [wiringStandard, setWiringStandard] = useState<WiringStandardType>(
+    initialPayload?.wiringStandard ?? 'T568B_STRAIGHT'
+  );
+
+  const [sideASequence, setSideASequence] = useState<string[]>(() => {
+    if (initialPayload?.sideAWireSequence && initialPayload.sideAWireSequence.length === 8) {
+      return [...initialPayload.sideAWireSequence];
+    }
     if (initialPayload?.wireSequence && initialPayload.wireSequence.length === 8) {
       return [...initialPayload.wireSequence];
     }
-    // Default jumbled wire sequence for training
     return [
       'Orange',
       'White-Orange',
@@ -37,26 +47,62 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
       'White-Brown',
     ];
   });
-  const [selectedWireIdx, setSelectedWireIdx] = useState<number | null>(null);
-  const [strippingLengthMm, setStrippingLengthMm] = useState<number>(
-    initialPayload?.strippingLengthMm ?? 14
+
+  const [sideBSequence, setSideBSequence] = useState<string[]>(() => {
+    if (initialPayload?.sideBWireSequence && initialPayload.sideBWireSequence.length === 8) {
+      return [...initialPayload.sideBWireSequence];
+    }
+    return [
+      'Orange',
+      'White-Orange',
+      'Blue',
+      'White-Green',
+      'Green',
+      'White-Blue',
+      'Brown',
+      'White-Brown',
+    ];
+  });
+
+  const [sideAStrippingMm, setSideAStrippingMm] = useState<number>(
+    initialPayload?.sideAStrippingMm ?? initialPayload?.strippingLengthMm ?? 14
   );
   const [jacketUnderStrainRelief, setJacketUnderStrainRelief] = useState<boolean>(
     initialPayload?.jacketUnderStrainRelief ?? true
   );
-  const [rj45Crimped, setRj45Crimped] = useState<boolean>(initialPayload?.rj45Crimped ?? false);
+  const [sideACrimped, setSideACrimped] = useState<boolean>(
+    initialPayload?.sideACrimped ?? initialPayload?.rj45Crimped ?? false
+  );
+  const [sideBCrimped, setSideBCrimped] = useState<boolean>(
+    initialPayload?.sideBCrimped ?? initialPayload?.rj45Crimped ?? false
+  );
 
-  // Coaxial State
-  const [coaxialStrippedProperly, setCoaxialStrippedProperly] = useState<boolean>(
-    initialPayload?.coaxialStrippedProperly ?? true
+  // Coaxial 4-Step State
+  const [coaxDetails, setCoaxDetails] = useState<CoaxAssemblyDetails>(() => {
+    if (initialPayload?.coaxDetails) {
+      return { ...initialPayload.coaxDetails };
+    }
+    return {
+      currentStep: 1,
+      jacketStripped: initialPayload?.coaxialStrippedProperly ?? true,
+      braidFoldedBack: true,
+      dielectricTrimmed: true,
+      centerConductorExposedMm: 6.5,
+      bncFitted: true,
+      bncType: initialPayload?.bncType ?? 'COMPRESSION',
+      shortCheckDone: true,
+      hasShort: initialPayload?.centerPinShortShieldCheck ?? false,
+      compressionCrimped: initialPayload?.bncCrimped ?? false,
+    };
+  });
+
+  // Tester Simulation Results
+  const [cableTesterPassed, setCableTesterPassed] = useState<boolean>(
+    initialPayload?.cableTesterPassed ?? false
   );
-  const [bncType, setBncType] = useState<'COMPRESSION' | 'CRIMP' | 'TWIST_ON'>(
-    initialPayload?.bncType ?? 'COMPRESSION'
+  const [videoSignalPassed, setVideoSignalPassed] = useState<boolean>(
+    initialPayload?.videoSignalOutputPassed ?? false
   );
-  const [centerPinShortShieldCheck, setCenterPinShortShieldCheck] = useState<boolean>(
-    initialPayload?.centerPinShortShieldCheck ?? false
-  );
-  const [bncCrimped, setBncCrimped] = useState<boolean>(initialPayload?.bncCrimped ?? false);
 
   // Labeling & Safety State
   const [cableId, setCableId] = useState<string>(initialPayload?.cableId || 'CAM-01-UTP-SW01');
@@ -76,71 +122,66 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
     initialPayload?.safetyChecklist?.cleanWorkArea ?? true
   );
 
-  // Handle wire click & swap
-  const handleWireClick = (idx: number) => {
-    if (selectedWireIdx === null) {
-      setSelectedWireIdx(idx);
-    } else {
-      if (selectedWireIdx !== idx) {
-        const next = [...wireSequence];
-        const temp = next[selectedWireIdx]!;
-        next[selectedWireIdx] = next[idx]!;
-        next[idx] = temp;
-        setWireSequence(next);
-      }
-      setSelectedWireIdx(null);
-    }
-  };
-
-  const autoAlignT568B = () => {
-    setWireSequence([...T568B_COLOR_SEQUENCE]);
-  };
-
-  // Calculate scores
-  let correctPinsCount = 0;
+  // Score Calculation
+  let correctPinsA = 0;
+  let correctPinsB = 0;
   for (let i = 0; i < 8; i++) {
-    if (wireSequence[i] === T568B_COLOR_SEQUENCE[i]) {
-      correctPinsCount++;
-    }
+    if (sideASequence[i] === T568B_COLOR_SEQUENCE[i]) correctPinsA++;
+    if (sideBSequence[i] === T568B_COLOR_SEQUENCE[i]) correctPinsB++;
   }
 
-  // 1. RJ45 T568B: 12 pts
-  const utpSequenceScore = Math.round((correctPinsCount / 8) * 8);
+  // 1. RJ45 T568B Dual-End Score (12 pts)
+  const utpPinScore = Math.round(((correctPinsA + correctPinsB) / 16) * 8);
   const utpPrepScore =
-    (strippingLengthMm >= 12 && strippingLengthMm <= 15 ? 2 : 0) +
+    (sideAStrippingMm >= 12 && sideAStrippingMm <= 15 ? 1 : 0) +
     (jacketUnderStrainRelief ? 1 : 0) +
-    (rj45Crimped ? 1 : 0);
-  const rj45TotalScore = utpSequenceScore + utpPrepScore; // Max 12
+    (sideACrimped && sideBCrimped ? 2 : sideACrimped || sideBCrimped ? 1 : 0);
+  const rj45TotalScore = Math.min(12, utpPinScore + utpPrepScore);
 
-  // 2. Coaxial BNC: 10 pts
+  // 2. Coaxial 4-Step Score (10 pts)
+  const isCoaxFullyPrepared =
+    coaxDetails.jacketStripped && coaxDetails.braidFoldedBack && coaxDetails.dielectricTrimmed;
   const bncScore =
-    (coaxialStrippedProperly ? 3 : 0) +
-    (bncType === 'COMPRESSION' ? 3 : bncType === 'CRIMP' ? 2 : 1) +
-    (!centerPinShortShieldCheck ? 2 : 0) +
-    (bncCrimped ? 2 : 0); // Max 10
+    (isCoaxFullyPrepared ? 3 : 0) +
+    (coaxDetails.bncType === 'COMPRESSION' ? 3 : coaxDetails.bncType === 'CRIMP' ? 2 : 1) +
+    (!coaxDetails.hasShort ? 2 : 0) +
+    (coaxDetails.compressionCrimped ? 2 : 0);
 
-  // 3. Labeling: 6 pts
+  // 3. Labeling Score (6 pts)
   const labelingScore =
     (cableId.trim().length >= 5 ? 2 : 0) +
     (sourceLabel.trim().length > 0 && destLabel.trim().length > 0 ? 2 : 0) +
-    (cableId.includes('CAM') || cableId.includes('01') ? 2 : 1); // Max 6
+    (cableId.includes('CAM') || cableId.includes('01') ? 2 : 1);
 
-  // 4. Safety & Tools: 7 pts
+  // 4. Safety Checklist (7 pts)
   const safetyScore =
-    (cutSafetyGloves ? 2 : 0) + (eyeProtection ? 2 : 0) + (cleanWorkArea ? 3 : 0); // Max 7
+    (cutSafetyGloves ? 2 : 0) + (eyeProtection ? 2 : 0) + (cleanWorkArea ? 3 : 0);
 
   const totalScore = Math.min(35, rj45TotalScore + bncScore + labelingScore + safetyScore);
 
   const handleFinish = () => {
     const payload: Station1Payload = {
-      wireSequence,
-      strippingLengthMm,
+      wiringStandard,
+      wireSequence: sideASequence,
+      sideAWireSequence: sideASequence,
+      sideBWireSequence: sideBSequence,
+      sideAStrippingMm,
+      sideBStrippingMm: sideAStrippingMm,
+      strippingLengthMm: sideAStrippingMm,
       jacketUnderStrainRelief,
-      rj45Crimped,
-      coaxialStrippedProperly,
-      bncType,
-      centerPinShortShieldCheck,
-      bncCrimped,
+      sideACrimped,
+      sideBCrimped,
+      rj45Crimped: sideACrimped && sideBCrimped,
+
+      coaxialStrippedProperly: isCoaxFullyPrepared,
+      bncType: coaxDetails.bncType,
+      centerPinShortShieldCheck: coaxDetails.hasShort,
+      bncCrimped: coaxDetails.compressionCrimped,
+      coaxDetails,
+
+      cableTesterPassed,
+      videoSignalOutputPassed: videoSignalPassed,
+
       cableId,
       sourceLabel,
       destLabel,
@@ -159,30 +200,31 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-      <div className="w-full max-w-4xl bg-slate-900 border border-sky-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-100">
+      <div className="w-full max-w-5xl bg-slate-900 border border-sky-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] text-slate-100">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-xl text-sky-400">
               🔌
             </div>
             <div>
               <span className="text-[10px] font-mono font-bold uppercase text-sky-400">
-                Station 1 of 3 · Structured Cabling Workshop
+                Station 1 of 3 · 3D Structured Cabling Workshop
               </span>
               <h2 className="text-lg font-black text-white">
-                การติดตั้งและเข้าหัวสาย UTP/RJ45 & Coaxial/BNC พร้อมติด Label
+                การเข้าหัวสาย RJ45 Cat6 (2 ฝั่ง), Coaxial RG6 4 ขั้นตอน & ทดสอบสัญญาณ
               </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1 bg-slate-800 rounded-xl border border-slate-700 text-xs font-mono">
+            <div className="px-3.5 py-1 bg-slate-800 rounded-xl border border-slate-700 text-xs font-mono">
               คะแนนสถานี: <strong className="text-sky-400">{totalScore}</strong> / 35
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="text-slate-400 hover:text-white text-lg font-bold p-1"
+              className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer"
             >
               ✕
             </button>
@@ -190,255 +232,103 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-800 bg-slate-950/30 px-6 pt-2 gap-2 text-xs font-semibold">
+        <div className="flex border-b border-slate-800 bg-slate-950/30 px-6 pt-2 gap-2 text-xs font-semibold overflow-x-auto">
           <button
+            type="button"
             onClick={() => setActiveTab('utp')}
-            className={`py-2 px-4 rounded-t-xl transition-colors ${
+            className={`py-2 px-4 rounded-t-xl transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'utp'
                 ? 'bg-slate-800 text-sky-400 border-t-2 border-sky-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            1.1 สาย UTP & หัวต่อ RJ45 (T568B) ({rj45TotalScore}/12)
+            1.1 RJ45 Dual-End (A-B) ({rj45TotalScore}/12)
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('coax')}
-            className={`py-2 px-4 rounded-t-xl transition-colors ${
+            className={`py-2 px-4 rounded-t-xl transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'coax'
                 ? 'bg-slate-800 text-sky-400 border-t-2 border-sky-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            1.2 สาย Coaxial RG6 & ขั้วต่อ BNC ({bncScore}/10)
+            1.2 Coaxial RG6 & BNC 4 สเต็ป ({bncScore}/10)
           </button>
           <button
+            type="button"
+            onClick={() => setActiveTab('tester')}
+            className={`py-2 px-4 rounded-t-xl transition-colors cursor-pointer whitespace-nowrap ${
+              activeTab === 'tester'
+                ? 'bg-slate-800 text-sky-400 border-t-2 border-sky-400 font-bold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            1.3 Simulation วัดสาย & สัญญาณ CCTV
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('label_safety')}
-            className={`py-2 px-4 rounded-t-xl transition-colors ${
+            className={`py-2 px-4 rounded-t-xl transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === 'label_safety'
                 ? 'bg-slate-800 text-sky-400 border-t-2 border-sky-400 font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            1.3 การติด Label & ความปลอดภัย ({labelingScore + safetyScore}/13)
+            1.4 Cable Tag & ความปลอดภัย ({labelingScore + safetyScore}/13)
           </button>
         </div>
 
         {/* Tab Contents */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* TAB 1: UTP & RJ45 */}
+          {/* TAB 1: UTP & RJ45 DUAL END */}
           {activeTab === 'utp' && (
-            <div className="space-y-6">
-              <div className="bg-sky-950/30 border border-sky-500/20 rounded-2xl p-4 text-xs text-sky-200 leading-relaxed">
-                <strong>คำแนะนำมาตรฐาน TIA/EIA-568B:</strong> คลิกเลือกคู่สายเพื่อสลับตำแหน่ง (Swap)
-                ให้ได้ลำดับสีมาตรฐาน T568B ที่ถูกต้อง ป้องกันปัญหาข้ามคู่สาย (NEXT Crosstalk)
-                และตรวจสอบระยะปอกเปลือกนอกให้เดือยรัดหนีบสาย (Strain Relief)
-              </div>
-
-              {/* Pinout Sequencer */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-200">
-                    ลำดับสีพิน 1 ถึง 8 (ถูกต้อง: {correctPinsCount}/8 พิน):
-                  </span>
-                  <button
-                    onClick={autoAlignT568B}
-                    className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold underline"
-                  >
-                    ⚡ เรียงอัตโนมัติตามมาตรฐาน T568B
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
-                  {wireSequence.map((colorName, idx) => {
-                    const isSelected = selectedWireIdx === idx;
-                    const isCorrect = colorName === T568B_COLOR_SEQUENCE[idx];
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => handleWireClick(idx)}
-                        className={`p-3 rounded-2xl border text-center transition-all ${
-                          isSelected
-                            ? 'border-sky-400 bg-sky-500/20 scale-105 shadow-lg'
-                            : isCorrect
-                            ? 'border-emerald-500/50 bg-emerald-950/30'
-                            : 'border-slate-800 bg-slate-900/80 hover:border-slate-600'
-                        }`}
-                      >
-                        <div
-                          className="w-5 h-5 rounded-full mx-auto mb-1.5 border border-black/40 shadow-inner"
-                          style={{ backgroundColor: COLOR_HEX_MAP[colorName] || '#ffffff' }}
-                        />
-                        <span className="text-[10px] block font-mono text-slate-400">
-                          Pin {idx + 1}
-                        </span>
-                        <strong className="text-[11px] block font-semibold text-slate-200 truncate">
-                          {colorName}
-                        </strong>
-                        <span
-                          className={`text-[9px] block font-mono mt-1 ${
-                            isCorrect ? 'text-emerald-400' : 'text-amber-400'
-                          }`}
-                        >
-                          {isCorrect ? '✓ ถูกต้อง' : 'สลับสี'}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Cable Stripping & Crimping Options */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-2 text-xs">
-                  <label className="font-bold text-slate-300 block">
-                    ระยะปอกเปลือกสาย UTP นอก (Stripping Length): {strippingLengthMm} mm
-                  </label>
-                  <input
-                    type="range"
-                    min="8"
-                    max="30"
-                    value={strippingLengthMm}
-                    onChange={(e) => setStrippingLengthMm(Number(e.target.value))}
-                    className="w-full accent-sky-400 cursor-pointer"
-                  />
-                  <p className="text-[11px] text-slate-400">
-                    {strippingLengthMm >= 12 && strippingLengthMm <= 15
-                      ? '✓ ระยะเหมาะสม (12-15mm) ช่วยรักษาเกลียวคู่สายให้ชิดหัวต่อที่สุด'
-                      : strippingLengthMm < 12
-                      ? '⚠️ ปอกสั้นเกินไป ทองแดงอาจไม่ชนสุดปลายขั้วต่อ'
-                      : '⚠️ ปอกยาวเกินไป คลายเกลียวมากเกินไป เสี่ยงต่อสัญญาณรบกวน Crosstalk'}
-                  </p>
-                </div>
-
-                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-3 text-xs">
-                  <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={jacketUnderStrainRelief}
-                      onChange={(e) => setJacketUnderStrainRelief(e.target.checked)}
-                      className="rounded accent-sky-400 w-4 h-4"
-                    />
-                    <span>สอดเปลือกสาย (Jacket) ลึกถึงเดือยรัดป้องกันสายหลุด (Strain Relief)</span>
-                  </label>
-
-                  <button
-                    onClick={() => setRj45Crimped(true)}
-                    className={`w-full py-2.5 rounded-xl font-bold transition-all ${
-                      rj45Crimped
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg'
-                    }`}
-                  >
-                    {rj45Crimped ? '✓ ย้ำหัวต่อ RJ45 ด้วยคีมเรียบร้อยแล้ว' : '🔧 กดคีมย้ำหัวต่อ RJ45 (Crimp Tool)'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <RJ45PinoutInteractive
+              sideASequence={sideASequence}
+              sideBSequence={sideBSequence}
+              onChangeSideA={setSideASequence}
+              onChangeSideB={setSideBSequence}
+              strippingMm={sideAStrippingMm}
+              onChangeStrippingMm={setSideAStrippingMm}
+              jacketUnderStrainRelief={jacketUnderStrainRelief}
+              onChangeJacketStrainRelief={setJacketUnderStrainRelief}
+              sideACrimped={sideACrimped}
+              sideBCrimped={sideBCrimped}
+              onCrimpSideA={() => setSideACrimped(true)}
+              onCrimpSideB={() => setSideBCrimped(true)}
+              wiringStandard={wiringStandard}
+              onChangeWiringStandard={setWiringStandard}
+            />
           )}
 
-          {/* TAB 2: Coaxial & BNC */}
+          {/* TAB 2: COAXIAL RG6 & BNC 4-STEP */}
           {activeTab === 'coax' && (
-            <div className="space-y-6">
-              <div className="bg-sky-950/30 border border-sky-500/20 rounded-2xl p-4 text-xs text-sky-200 leading-relaxed">
-                <strong>การเตรียมและเข้าหัว BNC สำหรับสาย Coaxial RG6:</strong> ต้องปอกเปลือกและชิลด์ถัก
-                95% ให้เรียบร้อย ห้ามไม่ให้เส้นชิลด์ฝอยสัมผัสแกนทองแดงกลาง (Center Conductor)
-                เด็ดขาดเพื่อป้องกันการลัดวงจรภาพมืด (No Video/Short)
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-3">
-                  <strong className="block text-slate-200 text-sm">การเลือกชนิดขั้วต่อ BNC:</strong>
-                  <div className="space-y-2">
-                    {[
-                      {
-                        id: 'COMPRESSION',
-                        name: 'BNC แบบบีบอัด (Compression Type - แนะนำสูงสุด)',
-                        desc: 'แน่นหนา กันน้ำ ความต้านทานคงที่ เหมาะกับงานช่างมืออาชีพ',
-                      },
-                      {
-                        id: 'CRIMP',
-                        name: 'BNC แบบย้ำหกเหลี่ยม (Hex Crimp)',
-                        desc: 'ใช้ปลอกย้ำ แน่นปานกลาง ต้องใช้คีมเฉพาะทาง',
-                      },
-                      {
-                        id: 'TWIST_ON',
-                        name: 'BNC แบบเกลียวหมุน (Twist-On)',
-                        desc: 'หลุดง่าย สัญญาณสะท้อนสูง ไม่แนะนำสำหรับระยะไกล',
-                      },
-                    ].map((opt) => (
-                      <label
-                        key={opt.id}
-                        className={`block p-3 rounded-xl border cursor-pointer transition-all ${
-                          bncType === opt.id
-                            ? 'border-sky-500 bg-sky-500/10'
-                            : 'border-slate-800 bg-slate-900/60'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="bncType"
-                          value={opt.id}
-                          checked={bncType === opt.id}
-                          onChange={() => setBncType(opt.id as any)}
-                          className="mr-2 accent-sky-400"
-                        />
-                        <strong className="text-slate-200">{opt.name}</strong>
-                        <p className="text-[11px] text-slate-400 mt-1">{opt.desc}</p>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 space-y-4">
-                  <strong className="block text-slate-200 text-sm">การตรวจสอบคุณภาพทางกายภาพ:</strong>
-
-                  <label className="flex items-start gap-2 cursor-pointer text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={coaxialStrippedProperly}
-                      onChange={(e) => setCoaxialStrippedProperly(e.target.checked)}
-                      className="rounded accent-sky-400 w-4 h-4 mt-0.5"
-                    />
-                    <span>
-                      ปอกฉนวนไดอิเล็กทริกและพับชิลด์ถัก 95% แนบสนิท ไม่ขาดกระจุย
-                    </span>
-                  </label>
-
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1.5">
-                    <span className="font-bold text-slate-300 block">
-                      การทดสอบการลัดวงจรแกนทองแดงกับชิลด์ (Short Check):
-                    </span>
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-400">
-                      <input
-                        type="checkbox"
-                        checked={centerPinShortShieldCheck}
-                        onChange={(e) => setCenterPinShortShieldCheck(e.target.checked)}
-                        className="rounded accent-rose-500 w-4 h-4"
-                      />
-                      <span className={centerPinShortShieldCheck ? 'text-rose-400 font-bold' : ''}>
-                        {centerPinShortShieldCheck
-                          ? '⚠️ ตรวจพบแกนกลางแตะชิลด์ (ลัดวงจร - ไม่ผ่าน)'
-                          : '✓ แกนกลางแยกฉนวนจากชิลด์สมบูรณ์ (ไม่มีการลัดวงจร)'}
-                      </span>
-                    </label>
-                  </div>
-
-                  <button
-                    onClick={() => setBncCrimped(true)}
-                    className={`w-full py-2.5 rounded-xl font-bold transition-all ${
-                      bncCrimped
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg'
-                    }`}
-                  >
-                    {bncCrimped ? '✓ บีบอัดขั้วต่อ BNC แน่นหนาแล้ว' : '🔧 บีบอัดขั้วต่อ BNC (Compression Tool)'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CoaxialBNCStepWorkshop
+              details={coaxDetails}
+              onChangeDetails={setCoaxDetails}
+              onFinishCoax={() => setActiveTab('tester')}
+            />
           )}
 
-          {/* TAB 3: Labeling & Safety */}
+          {/* TAB 3: TESTER SIMULATION */}
+          {activeTab === 'tester' && (
+            <CableTesterSimulation
+              sideASequence={sideASequence}
+              sideBSequence={sideBSequence}
+              sideACrimped={sideACrimped}
+              sideBCrimped={sideBCrimped}
+              sideAStrippingMm={sideAStrippingMm}
+              jacketUnderStrainRelief={jacketUnderStrainRelief}
+              coaxDetails={coaxDetails}
+              wiringStandard={wiringStandard}
+              onTestComplete={(utpPass, coaxPass) => {
+                setCableTesterPassed(utpPass);
+                setVideoSignalPassed(coaxPass);
+              }}
+            />
+          )}
+
+          {/* TAB 4: LABELING & SAFETY */}
           {activeTab === 'label_safety' && (
             <div className="space-y-6 text-xs">
               <div className="bg-sky-950/30 border border-sky-500/20 rounded-2xl p-4 text-sky-200 leading-relaxed">
@@ -494,7 +384,7 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
                         type="checkbox"
                         checked={cutSafetyGloves}
                         onChange={(e) => setCutSafetyGloves(e.target.checked)}
-                        className="rounded accent-sky-400 w-4 h-4"
+                        className="rounded accent-sky-400 w-4 h-4 cursor-pointer"
                       />
                       <span>สวมถุงมือป้องกันใบมีดคัตเตอร์บาดขณะปอกเปลือกสาย</span>
                     </label>
@@ -504,7 +394,7 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
                         type="checkbox"
                         checked={eyeProtection}
                         onChange={(e) => setEyeProtection(e.target.checked)}
-                        className="rounded accent-sky-400 w-4 h-4"
+                        className="rounded accent-sky-400 w-4 h-4 cursor-pointer"
                       />
                       <span>สวมแว่นตานิรภัยป้องกันเศษลวดทองแดงและเปลือกกระเด็น</span>
                     </label>
@@ -514,7 +404,7 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
                         type="checkbox"
                         checked={cleanWorkArea}
                         onChange={(e) => setCleanWorkArea(e.target.checked)}
-                        className="rounded accent-sky-400 w-4 h-4"
+                        className="rounded accent-sky-400 w-4 h-4 cursor-pointer"
                       />
                       <span>จัดเก็บเศษสายและรักษาความสะอาดโต๊ะปฏิบัติงานเรียบร้อย</span>
                     </label>
@@ -532,19 +422,26 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
           <div className="text-xs text-slate-400">
-            {correctPinsCount === 8 && rj45Crimped && bncCrimped
-              ? '✓ ภารกิจสถานีที่ 1 ผ่านเกณฑ์พร้อมส่งผลประเมิน'
-              : 'กรุณาตรวจสอบการเรียงสาย T568B และกดย้ำหัวต่อให้ครบทั้ง UTP และ Coaxial'}
+            {correctPinsA === 8 &&
+            correctPinsB === 8 &&
+            sideACrimped &&
+            sideBCrimped &&
+            coaxDetails.compressionCrimped &&
+            !coaxDetails.hasShort
+              ? '✓ ภารกิจสถานีที่ 1 ผ่านเกณฑ์มาตรฐานสูงสุด พร้อมส่งผลประเมิน'
+              : 'กรุณาตรวจสอบการเรียงสาย T568B ทั้ง 2 ฝั่ง และกดย้ำหัวต่อให้ครบทั้ง RJ45 และ BNC'}
           </div>
 
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
             >
               ปิดหน้าต่าง
             </button>
             <button
+              type="button"
               onClick={handleFinish}
               className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
             >
@@ -556,3 +453,4 @@ export const Room103PinoutStationModal: React.FC<Room103PinoutStationModalProps>
     </div>
   );
 };
+

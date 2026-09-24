@@ -127,6 +127,19 @@ const DEFAULT_STUDENT_ROSTER: RosterStudent[] = [
     { id: '69219090045', code: '69219090045', name: 'นายต้นตการณ์ โพสาวัง', groupId: '692190903', orderNum: 13, unitProgress: { U01: { lessons: 10, lab: true, labScore: 90, exam: true, examScore: 87, passed: true }, U02: { lessons: 0, lab: false, exam: false, passed: false } } },
 ];
 
+const DEFAULT_CLASS_UUID = '22222222-2222-4222-8222-222222222222';
+
+export const resolveClassUuid = (cid: string): string => {
+    if (!cid) return DEFAULT_CLASS_UUID;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
+        return cid;
+    }
+    if (cid === 'CLASS-2569-CCTV-01' || cid === '21909-2020') {
+        return DEFAULT_CLASS_UUID;
+    }
+    return cid;
+};
+
 export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherApprovalDashboardProps) {
     const [activeTab, setActiveTab] = useState<ActiveTab>('approvals');
     const [approvals, setApprovals] = useState<TeacherApprovals>(DEFAULT_TEACHER_APPROVALS);
@@ -154,52 +167,65 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [overridePercent, setOverridePercent] = useState('100');
     const [overrideReason, setOverrideReason] = useState('');
 
+    const [fetchError, setFetchError] = useState<string | null>(null);
+
     const fetchStudents = async (cid: string) => {
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid);
-        if (!isUuid) return;
+        const effectiveUuid = resolveClassUuid(cid);
+        if (!effectiveUuid || effectiveUuid.trim() === '') return;
         setIsLoadingStudents(true);
+        setFetchError(null);
         try {
-            const res = await fetch(`/api/classes/${cid}/students`);
+            const res = await fetch(`/api/classes/${encodeURIComponent(effectiveUuid.trim())}/students`);
             if (res.ok) {
                 const data = await res.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    const mapped: RosterStudent[] = data.map((st: {
-                        studentId: string;
-                        studentCode: string;
-                        displayName: string;
-                        unitProgress?: Record<string, {
-                            progressPercent: number;
-                            passed: boolean;
-                            unlocked: boolean;
-                            approvedScore?: number | null;
-                            latestQuiz?: { id: string; score: number | null; passed: boolean | null; status: string; submittedAt: string | null } | null;
-                            latestLab?: { id: string; status: string; passed: boolean | null; approvedScore: number | null; reviewedAt: string | null; submittedAt: string | null } | null;
-                        }>;
-                    }) => ({
-                        id: st.studentId,
-                        code: st.studentCode || '',
-                        name: st.displayName || 'ผู้เรียน',
-                        unitProgress: Object.entries(st.unitProgress || {}).reduce((acc, [uk, uv]) => {
-                            acc[uk] = {
-                                lessons: uv.progressPercent >= 40 ? 10 : Math.round((uv.progressPercent / 40) * 10),
-                                lab: uv.latestLab?.passed ?? uv.unlocked,
-                                labScore: uv.latestLab?.approvedScore ?? (uv.passed ? 90 : null),
-                                exam: uv.latestQuiz?.passed ?? uv.passed,
-                                examScore: uv.latestQuiz?.score ?? uv.approvedScore,
-                                passed: uv.passed,
-                                latestQuizStatus: uv.latestQuiz?.status,
-                                latestQuizSubmittedAt: uv.latestQuiz?.submittedAt,
-                                latestLabStatus: uv.latestLab?.status,
-                            };
-                            return acc;
-                        }, {} as RosterStudent['unitProgress']),
-                    }));
-                    setStudents(mapped);
+                if (Array.isArray(data)) {
+                    if (data.length > 0) {
+                        const mapped: RosterStudent[] = data.map((st: {
+                            studentId: string;
+                            studentCode: string;
+                            displayName: string;
+                            unitProgress?: Record<string, {
+                                progressPercent: number;
+                                passed: boolean;
+                                unlocked: boolean;
+                                approvedScore?: number | null;
+                                latestQuiz?: { id: string; score: number | null; passed: boolean | null; status: string; submittedAt: string | null } | null;
+                                latestLab?: { id: string; status: string; passed: boolean | null; approvedScore: number | null; reviewedAt: string | null; submittedAt: string | null } | null;
+                            }>;
+                        }) => ({
+                            id: st.studentId,
+                            code: st.studentCode || '',
+                            name: st.displayName || 'ผู้เรียน',
+                            unitProgress: Object.entries(st.unitProgress || {}).reduce((acc, [uk, uv]) => {
+                                acc[uk] = {
+                                    lessons: uv.progressPercent >= 40 ? 10 : Math.round((uv.progressPercent / 40) * 10),
+                                    lab: uv.latestLab?.passed ?? uv.unlocked,
+                                    labScore: uv.latestLab?.approvedScore ?? (uv.passed ? 90 : null),
+                                    exam: uv.latestQuiz?.passed ?? uv.passed,
+                                    examScore: uv.latestQuiz?.score ?? uv.approvedScore,
+                                    passed: uv.passed,
+                                    latestQuizStatus: uv.latestQuiz?.status,
+                                    latestQuizSubmittedAt: uv.latestQuiz?.submittedAt,
+                                    latestLabStatus: uv.latestLab?.status,
+                                };
+                                return acc;
+                            }, {} as RosterStudent['unitProgress']),
+                        }));
+                        setStudents(mapped);
+                    } else {
+                        setStudents([]);
+                    }
                     setLastSyncTime(new Date().toLocaleTimeString('th-TH'));
+                    setFetchError(null);
                 }
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const errMessage = errData.error || `HTTP ${res.status}: ${res.statusText}`;
+                setFetchError(`เกิดข้อผิดพลาดในการโหลดรายชื่อนักเรียนจากฐานข้อมูล (${errMessage})`);
             }
-        } catch {
-            // fallback gracefully
+        } catch (err) {
+            const errMessage = err instanceof Error ? err.message : 'Network error';
+            setFetchError(`ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่อโหลดรายชื่อได้ (${errMessage})`);
         } finally {
             setIsLoadingStudents(false);
         }
@@ -394,13 +420,13 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             }),
         );
 
-        const isClassUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
+        const effectiveClassUuid = resolveClassUuid(classId);
         const isStudentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(student.id);
 
-        if (isClassUuid && isStudentUuid) {
+        if (effectiveClassUuid && isStudentUuid) {
             try {
                 const unitUuid = '33333333-3333-4333-8333-333333333333';
-                const res = await fetch(`/api/classes/${classId}/students/${student.id}/progress/${unitUuid}`, {
+                const res = await fetch(`/api/classes/${encodeURIComponent(effectiveClassUuid.trim())}/students/${student.id}/progress/${unitUuid}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -435,14 +461,14 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         setApprovals(updated);
         saveTeacherApprovals(updated);
 
-        const isClassUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(classId);
+        const effectiveClassUuid = resolveClassUuid(classId);
         const targetStudent = students.find((s) => s.code === overrideStudentId || s.id === overrideStudentId);
         const isStudentUuid = targetStudent && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetStudent.id);
 
-        if (isClassUuid && isStudentUuid && targetStudent) {
+        if (effectiveClassUuid && isStudentUuid && targetStudent) {
             try {
                 const unitUuid = '33333333-3333-4333-8333-333333333333';
-                const res = await fetch(`/api/classes/${classId}/students/${targetStudent.id}/progress/${unitUuid}`, {
+                const res = await fetch(`/api/classes/${encodeURIComponent(effectiveClassUuid.trim())}/students/${targetStudent.id}/progress/${unitUuid}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1056,16 +1082,38 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         })}
                     </div>
 
-                    {/* Group Filter Tabs (ALL / 692190901 / 692190902 / 692190903) */}
+                    {/* Error Banner if API sync failed */}
+                    {fetchError && (
+                        <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/60 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg shadow-amber-950/30">
+                            <div className="flex items-start sm:items-center gap-2.5">
+                                <span className="text-xl">⚠️</span>
+                                <div>
+                                    <p className="font-bold text-amber-100 m-0">{fetchError}</p>
+                                    <p className="text-[11px] text-amber-300/80 m-0 mt-0.5">
+                                        ระบบจะแสดงผลเฉพาะข้อมูลที่ดึงได้ หรือกรุณาตรวจสอบสิทธิ์ครูผู้สอนและตาราง <code className="font-mono bg-amber-900/40 px-1 py-0.5 rounded">class_members</code> ใน Supabase
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => fetchStudents(classId)}
+                                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 transition-all cursor-pointer shadow"
+                            >
+                                🔄 โหลดใหม่อีกครั้ง
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Group Filter Tabs */}
                     <div className="flex items-center gap-2 overflow-x-auto pb-2">
                         <span className="text-xs font-mono font-bold text-slate-400 shrink-0 mr-1">
                             กลุ่มเรียน:
                         </span>
                         {[
-                            { id: 'ALL', label: `ทั้งหมด (40 คน)` },
-                            { id: '692190901', label: `กลุ่ม 1 (13 คน)` },
-                            { id: '692190902', label: `กลุ่ม 2 (14 คน)` },
-                            { id: '692190903', label: `กลุ่ม 3 (13 คน)` },
+                            { id: 'ALL', label: `ทั้งหมด (${students.length} คน)` },
+                            { id: '692190901', label: `กลุ่ม 1 (${students.filter((s) => s.groupId === '692190901').length} คน)` },
+                            { id: '692190902', label: `กลุ่ม 2 (${students.filter((s) => s.groupId === '692190902').length} คน)` },
+                            { id: '692190903', label: `กลุ่ม 3 (${students.filter((s) => s.groupId === '692190903').length} คน)` },
                         ].map((grp) => {
                             const isGrpSelected = selectedGroupFilter === grp.id;
                             return (

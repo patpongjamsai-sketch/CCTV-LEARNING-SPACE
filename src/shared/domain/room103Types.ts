@@ -36,7 +36,7 @@ export const ROOM103_3D_POSITIONS = {
 } as const;
 
 // ==========================================
-// 2. Station 1: Termination & T568B Standard
+// 2. Station 1: Termination & Standards (RJ45 Dual-End & Coaxial BNC)
 // ==========================================
 
 export const T568B_COLOR_SEQUENCE = [
@@ -50,7 +50,20 @@ export const T568B_COLOR_SEQUENCE = [
   'Brown',
 ] as const;
 
+export const T568A_COLOR_SEQUENCE = [
+  'White-Green',
+  'Green',
+  'White-Orange',
+  'Blue',
+  'White-Blue',
+  'Orange',
+  'White-Brown',
+  'Brown',
+] as const;
+
 export type T568BColor = (typeof T568B_COLOR_SEQUENCE)[number];
+export type T568AColor = (typeof T568A_COLOR_SEQUENCE)[number];
+export type WiringStandardType = 'T568B_STRAIGHT' | 'T568A_STRAIGHT' | 'CROSSOVER';
 
 export const COLOR_HEX_MAP: Record<string, string> = {
   'White-Orange': '#fed7aa',
@@ -88,18 +101,55 @@ export const ROOM103_DEFAULT_CABLE_ID = 'CAM-01-UTP';
 export const ROOM103_DEFAULT_SOURCE_LABEL = 'Rack-01 / Patch Panel Port 08';
 export const ROOM103_DEFAULT_DEST_LABEL = 'Outdoor Gate Bullet Cam 01';
 
+export type CoaxAssemblyStep = 1 | 2 | 3 | 4;
+
+export interface CoaxAssemblyDetails {
+  currentStep: CoaxAssemblyStep;
+  jacketStripped: boolean;
+  braidFoldedBack: boolean;
+  dielectricTrimmed: boolean;
+  centerConductorExposedMm: number; // 6.5mm optimal
+  bncFitted: boolean;
+  bncType: 'COMPRESSION' | 'CRIMP' | 'TWIST_ON';
+  shortCheckDone: boolean;
+  hasShort: boolean;
+  compressionCrimped: boolean;
+}
+
+export interface CableTesterSimulationState {
+  isActive: boolean;
+  isPassed: boolean;
+  activePinIndex: number; // 0-7
+  masterLeds: boolean[]; // 8 pins
+  remoteLeds: boolean[]; // 8 pins
+  statusMessage: string;
+  videoSignalStatus: 'HD_CLEAR' | 'NO_SIGNAL' | 'NOISY' | 'STANDBY';
+}
+
 export interface Station1Payload {
-  // UTP Termination
-  wireSequence: string[];
+  // UTP Dual-End Termination
+  wiringStandard?: WiringStandardType;
+  wireSequence: string[]; // Side A sequence (backwards compatible)
+  sideAWireSequence?: string[];
+  sideBWireSequence?: string[];
+  sideAStrippingMm?: number;
+  sideBStrippingMm?: number;
   strippingLengthMm: number; // optimal: 12 - 15 mm
   jacketUnderStrainRelief: boolean;
+  sideACrimped?: boolean;
+  sideBCrimped?: boolean;
   rj45Crimped: boolean;
 
-  // Coaxial Termination
+  // Coaxial 4-Step Termination
   coaxialStrippedProperly: boolean;
   bncType: 'COMPRESSION' | 'CRIMP' | 'TWIST_ON';
   centerPinShortShieldCheck: boolean; // must be false (no short)
   bncCrimped: boolean;
+  coaxDetails?: CoaxAssemblyDetails;
+
+  // Cable Testing & Signal Simulation
+  cableTesterPassed?: boolean;
+  videoSignalOutputPassed?: boolean;
 
   // Cable Labeling
   cableId: string;

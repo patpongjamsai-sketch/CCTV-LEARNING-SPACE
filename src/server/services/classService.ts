@@ -6,7 +6,7 @@ import { parseStudentCsv } from '../classes/parseStudentCsv';
 import { getServerDatabase, withTrustedTransaction } from '../database/client';
 import { progressOverrideInputSchema } from '../http/apiSchemas';
 
-export async function assertCanManageClass(actorId: string, classId: string): Promise<void> {
+export async function assertCanManageClass(actorId: string, classId: string): Promise<string> {
   const sql = getServerDatabase();
 
   const [actor] = await sql`
@@ -26,6 +26,8 @@ export async function assertCanManageClass(actorId: string, classId: string): Pr
   ) {
     throw new Error('Forbidden: only an active class teacher or admin can manage this class');
   }
+
+  return classId;
 }
 
 /**
@@ -38,7 +40,7 @@ export async function importStudentsFromCsvService(
   csvContent: string,
 ): Promise<{ success: true; count: number }> {
   const students = parseStudentCsv(csvContent);
-  await assertCanManageClass(actorId, classId);
+  const resolvedClassId = await assertCanManageClass(actorId, classId);
   const adminClient = createAdminSupabaseClient();
   const sql = getServerDatabase();
   let count = 0;
@@ -92,7 +94,7 @@ export async function importStudentsFromCsvService(
       insert into public.class_members (
         class_id, profile_id, member_role, active
       ) values (
-        ${classId}, ${studentProfileId}, 'student', true
+        ${resolvedClassId}, ${studentProfileId}, 'student', true
       )
       on conflict (class_id, profile_id) do update
       set active = true, member_role = 'student'
@@ -116,13 +118,13 @@ export async function overrideStudentProgressService(
   rawInput: unknown,
 ): Promise<{ success: true; progressId: string }> {
   const input = progressOverrideInputSchema.parse(rawInput);
-  await assertCanManageClass(actorId, classId);
+  const resolvedClassId = await assertCanManageClass(actorId, classId);
 
   return withTrustedTransaction(async (tx) => {
     const [result] = await tx`
       select private.override_unit_progress(
         ${studentId},
-        ${classId},
+        ${resolvedClassId},
         ${unitId},
         ${input.progressPercent},
         ${input.passed},

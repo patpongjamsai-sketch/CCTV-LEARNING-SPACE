@@ -149,6 +149,24 @@ describe('Room 103: Server-Authoritative 3-Station Evaluation', () => {
     expect(evaluation.isPassed).toBe(true);
   });
 
+  it('evaluates dual-end side A and side B sequences correctly', () => {
+    const dualEndPayload = {
+      ...perfectRoom103Payload,
+      station1: {
+        ...perfectRoom103Payload.station1,
+        sideAWireSequence: [...T568B_COLOR_SEQUENCE],
+        sideBWireSequence: [...T568B_COLOR_SEQUENCE],
+        sideACrimped: true,
+        sideBCrimped: true,
+      },
+    };
+
+    const evaluation = evaluateUnit3Submission(dualEndPayload);
+    expect(evaluation.resultDetails.station1Score).toBe(35);
+    expect(evaluation.resultDetails.t568bCorrectPins).toBe(8);
+    expect(evaluation.isPassed).toBe(true);
+  });
+
   it('maintains backwards compatibility with legacy workstation schema', () => {
     const legacyPayload = {
       wireSequence: [
