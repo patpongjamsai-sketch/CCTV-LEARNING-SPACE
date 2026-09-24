@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAdminSupabaseClient } from '../../lib/supabase/admin';
+import { createServerSupabaseClient } from '../../lib/supabase/server';
 import { canManageClass, type ProfileRole } from '../auth/authorizationRules';
 import { parseStudentCsv } from '../classes/parseStudentCsv';
 import { getServerDatabase, withTrustedTransaction } from '../database/client';
@@ -33,25 +34,33 @@ export async function assertCanManageClass(actorId: string, classId: string): Pr
     if (err instanceof Error && err.message.startsWith('Forbidden:')) {
       throw err;
     }
-    // Fallback: Verify permissions via Supabase REST API if direct SQL connection fails
+    // Fallback: verify the same user and class membership through the cookie-backed
+    // Supabase client, so RLS remains the authority when the database URL is unavailable.
     try {
-      const admin = createAdminSupabaseClient();
-      const { data: profile } = await admin
+      const supabase = await createServerSupabaseClient();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || authData.user?.id !== actorId) {
+        throw new Error('Forbidden: only an active class teacher or admin can manage this class');
+      }
+
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, active')
         .eq('id', actorId)
         .eq('active', true)
-        .single();
+        .maybeSingle();
+      if (profileError) throw err;
 
       if (profile?.role === 'admin') return classId;
 
-      const { data: member } = await admin
+      const { data: member, error: memberError } = await supabase
         .from('class_members')
         .select('member_role, active')
         .eq('class_id', classId)
         .eq('profile_id', actorId)
         .eq('active', true)
         .maybeSingle();
+      if (memberError) throw err;
 
       if (
         profile &&
@@ -280,25 +289,28 @@ export async function getClassStudentsService(
     `;
   } catch (dbErr) {
     try {
-      const admin = createAdminSupabaseClient();
-      const { data: members } = await admin
+      // Reuse the verified teacher session and RLS for the fallback read.
+      const supabase = await createServerSupabaseClient();
+      const { data: members, error: membersError } = await supabase
         .from('class_members')
         .select('profile_id, profiles(id, student_code, display_name, active)')
         .eq('class_id', classId)
         .eq('member_role', 'student')
         .eq('active', true);
+      if (membersError) throw dbErr;
 
-      if (members && members.length > 0) {
-        return members.map((m: any) => ({
-          studentId: m.profiles?.id || m.profile_id,
-          studentCode: m.profiles?.student_code || '',
-          displayName: m.profiles?.display_name || 'ผู้เรียน',
+      if (members) {
+        return members.flatMap((member: any) => {
+          const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+          if (!profile || profile.active !== true) return [];
+          return [{
+          studentId: profile.id || member.profile_id,
+          studentCode: profile.student_code || '',
+          displayName: profile.display_name || 'ผู้เรียน',
           unitProgress: {},
-        }));
+          }];
+        });
       }
-
-      // An empty class stays empty; never leak students from other classes.
-      if (members && members.length === 0) return [];
     } catch {
       // rethrow original dbErr
     }
@@ -341,15 +353,3 @@ export async function getClassStudentsService(
               id: row.latest_lab_id,
               status: row.latest_lab_status,
               passed: row.latest_lab_passed !== null ? Boolean(row.latest_lab_passed) : null,
-              approvedScore: row.latest_lab_approved_score !== null ? Number(row.latest_lab_approved_score) : null,
-              reviewedAt: row.latest_lab_reviewed_at,
-              submittedAt: row.latest_lab_submitted_at,
-            }
-          : null,
-      };
-    }
-  }
-
-  return Array.from(map.values());
-}
-
