@@ -11,7 +11,7 @@ function getSupabaseSecretKey(): string {
   )?.trim();
 
   if (!secretKey) {
-    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkaHlqaXJtemp4eGVrZXpsY3hsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTQ3NjI5NSwiZXhwIjoyMTA1MDUyMjk1fQ.145vPL0y6EiRGRSOspxBDAqbz91RdJJwrvceS1vmkpg';
+    throw new Error('Missing required Supabase configuration: SUPABASE_SECRET_KEY');
   }
 
   return secretKey;
