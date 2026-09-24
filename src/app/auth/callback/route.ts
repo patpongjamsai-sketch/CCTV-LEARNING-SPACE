@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createServerSupabaseClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(
+    const { data, error } = await supabase.auth.exchangeCodeForSession(
       code,
       flowId ? { flowId } : undefined,
     );
