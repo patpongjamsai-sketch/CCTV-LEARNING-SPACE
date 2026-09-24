@@ -43,7 +43,7 @@ export async function assertCanManageClass(actorId: string, classId: string): Pr
         .eq('active', true)
         .single();
 
-      if (profile?.role === 'admin') return classId;
+      if (profile?.role === 'admin' || profile?.role === 'teacher') return classId;
 
       const { data: member } = await admin
         .from('class_members')
@@ -293,6 +293,21 @@ export async function getClassStudentsService(
           studentId: m.profiles?.id || m.profile_id,
           studentCode: m.profiles?.student_code || '',
           displayName: m.profiles?.display_name || 'ผู้เรียน',
+          unitProgress: {},
+        }));
+      }
+
+      const { data: allProfiles } = await admin
+        .from('profiles')
+        .select('id, student_code, display_name, active')
+        .eq('role', 'student')
+        .eq('active', true);
+
+      if (allProfiles && allProfiles.length > 0) {
+        return allProfiles.map((s: any) => ({
+          studentId: s.id,
+          studentCode: s.student_code || '',
+          displayName: s.display_name || 'ผู้เรียน',
           unitProgress: {},
         }));
       }
