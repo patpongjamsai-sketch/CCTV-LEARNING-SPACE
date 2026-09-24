@@ -13,15 +13,11 @@ type LaunchPageProps = {
 export default async function LaunchPage({ searchParams }: LaunchPageProps) {
   const params = await searchParams;
   const target = params.target || '/labs';
-  const studentCode = params.student_code;
-  const studentName = params.student_name;
   const returnUrl = params.return_url;
 
-  // If launched with explicit target or student_code, redirect with query parameters
-  if (studentCode || params.target) {
+  // If launched with explicit target, redirect preserving return_url
+  if (params.target) {
     const redirectUrl = new URL(target, 'http://localhost:3000');
-    if (studentCode) redirectUrl.searchParams.set('student_code', studentCode);
-    if (studentName) redirectUrl.searchParams.set('student_name', studentName);
     if (returnUrl) redirectUrl.searchParams.set('return_url', returnUrl);
 
     redirect(`${redirectUrl.pathname}${redirectUrl.search}`);

@@ -116,19 +116,37 @@ describe('3D Lab Page Gating & Permissions', () => {
     mockRoomSlug.value = 'room-202';
   });
 
-  it('uses server progression result to unlock a non-preview room', async () => {
-    mockAuthUser = { userId: '11111111-1111-4111-8111-111111111111' };
-    mockProgression.mockResolvedValueOnce({ unlocked: true });
+  it('blocks unauthenticated access attempts even if student_code and student_name query params are supplied', async () => {
+    mockAuthUser = null;
 
-    const jsx = await LabPage({ params: Promise.resolve({ roomId: 'room-202' }) });
+    await expect(
+      LabPage({
+        params: Promise.resolve({ roomId: 'room-102' }),
+        searchParams: Promise.resolve({
+          student_code: 'STD-SPOOF',
+          student_name: 'Imposter User',
+        } as any),
+      }),
+    ).rejects.toThrow('REDIRECT:/login?next=%2Flabs%2F3d%2Froom-102');
+
+    expect(mockRedirect).toHaveBeenCalledWith('/login?next=%2Flabs%2F3d%2Froom-102');
+  });
+
+  it('binds identity strictly from DB profile and ignores URL identity spoofing for authenticated users', async () => {
+    mockAuthUser = { userId: '11111111-1111-4111-8111-111111111111' };
+    mockRoomSlug.value = 'room-101';
+
+    const jsx = await LabPage({
+      params: Promise.resolve({ roomId: 'room-101' }),
+      searchParams: Promise.resolve({
+        student_code: 'FAKE-999',
+        student_name: 'Hacked Name',
+      } as any),
+    });
     const html = renderToStaticMarkup(jsx);
 
-    expect(mockProgression).toHaveBeenCalledWith(
-      '11111111-1111-4111-8111-111111111111',
-      '22222222-2222-4222-8222-222222222222',
-      '11111111-1111-4111-8111-111111111111',
-      '33333333-3333-4333-8333-333333333333',
-    );
-    expect(html).toContain('data-testid="lab-client-container"');
+    // Should display verified name from DB ('ผู้เรียนทดสอบ'), NOT 'Hacked Name'
+    expect(html).toContain('ผู้เรียนทดสอบ');
+    expect(html).not.toContain('Hacked Name');
   });
 });

@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { getVerifiedAuthContext } from '../../../../lib/auth/claims';
 import { createAdminSupabaseClient } from '../../../../lib/supabase/admin';
 import { getStudentUnitProgressService } from '../../../../server/services/progressionService';
@@ -10,8 +9,6 @@ type LabPageProps = {
   params: Promise<{ roomId: string }>;
   searchParams?: Promise<{
     return_url?: string;
-    student_code?: string;
-    student_name?: string;
   }>;
 };
 
@@ -19,39 +16,14 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
   const { roomId } = await params;
   const search = searchParams ? await searchParams : {};
 
-  // Check for external session cookie from /launch
-  let rawSession: string | undefined;
-  try {
-    const cookieStore = await cookies();
-    rawSession = cookieStore.get('cctv_external_session')?.value;
-  } catch {
-    // cookies() unavailable in unit test context
-  }
-
-  let externalSession: {
-    studentCode?: string;
-    studentName?: string;
-    returnUrl?: string | null;
-  } | null = null;
-
-  if (rawSession) {
-    try {
-      externalSession = JSON.parse(rawSession);
-    } catch {
-      // ignore JSON parse error
-    }
-  }
-
-  const returnUrl = search.return_url || externalSession?.returnUrl || null;
-  const externalStudentCode = search.student_code || externalSession?.studentCode;
-  const externalStudentName = search.student_name || externalSession?.studentName;
-
-  // 1. Authenticate user or allow external launch session
+  // 1. Authenticate user strictly using verified Supabase session
   const authContext = await getVerifiedAuthContext();
 
-  if (!authContext && !externalStudentCode) {
+  if (!authContext) {
     redirect(`/login?next=${encodeURIComponent(`/labs/3d/${roomId}`)}`);
   }
+
+  const returnUrl = search.return_url || null;
 
   // Resolve room number and unit metadata
   const roomNum = parseInt(roomId.replace(/[^0-9]/g, ''), 10) || 101;
@@ -62,17 +34,13 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
   try {
     const supabase = createAdminSupabaseClient();
 
-    // 2. Fetch user profile if authenticated
-    let profile = null;
-    if (authContext) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, display_name, role, student_code')
-        .eq('id', authContext.userId)
-        .eq('active', true)
-        .maybeSingle();
-      profile = data;
-    }
+    // 2. Fetch verified user profile from database only
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, display_name, role, student_code')
+      .eq('id', authContext.userId)
+      .eq('active', true)
+      .maybeSingle();
 
     // 3. Fetch game room
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roomId);
@@ -89,11 +57,11 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
 
     const { data: room } = await roomQuery.maybeSingle();
 
-    // 4. If student has active class membership
+    // 4. Check active class membership
     let classId = '00000000-0000-0000-0000-000000000000';
     let isStaff = false;
 
-    if (authContext && profile) {
+    if (profile) {
       const { data: membership } = await supabase
         .from('class_members')
         .select('class_id, member_role')
@@ -106,7 +74,7 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
     }
 
     // 5. Progression gate check
-    if (room && authContext && !isStaff && classId !== '00000000-0000-0000-0000-000000000000') {
+    if (room && !isStaff && classId !== '00000000-0000-0000-0000-000000000000') {
       const progression = await getStudentUnitProgressService(
         authContext.userId,
         classId,
@@ -143,9 +111,9 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
     return (
       <LabClientContainer
         learner={{
-          id: authContext?.userId || externalStudentCode || 'external-guest',
-          displayName: profile?.display_name || externalStudentName || 'ผู้เรียนผ่านระบบหลัก',
-          studentCode: profile?.student_code || externalStudentCode || 'EXT-STD',
+          id: authContext.userId,
+          displayName: profile?.display_name || 'ผู้เรียน',
+          studentCode: profile?.student_code || null,
         }}
         roomId={room?.id || roomId}
         classId={classId}
@@ -156,13 +124,13 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
       />
     );
   } catch {
-    // Fallback for preview / external launch / when DB credentials are mock
+    // Fallback when DB credentials are mock/unavailable in dev
     return (
       <LabClientContainer
         learner={{
-          id: authContext?.userId || externalStudentCode || 'demo-preview',
-          displayName: externalStudentName || (authContext ? 'ผู้เรียน (Preview)' : 'ผู้เรียนผ่านระบบหลัก'),
-          studentCode: externalStudentCode || 'DEMO',
+          id: authContext.userId,
+          displayName: 'ผู้เรียน (Preview)',
+          studentCode: null,
         }}
         roomId={roomId}
         classId="22222222-2222-4222-8222-222222222222"
