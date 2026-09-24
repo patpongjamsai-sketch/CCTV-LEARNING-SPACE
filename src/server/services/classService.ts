@@ -43,7 +43,7 @@ export async function assertCanManageClass(actorId: string, classId: string): Pr
         .eq('active', true)
         .single();
 
-      if (profile?.role === 'admin' || profile?.role === 'teacher') return classId;
+      if (profile?.role === 'admin') return classId;
 
       const { data: member } = await admin
         .from('class_members')
@@ -297,20 +297,8 @@ export async function getClassStudentsService(
         }));
       }
 
-      const { data: allProfiles } = await admin
-        .from('profiles')
-        .select('id, student_code, display_name, active')
-        .eq('role', 'student')
-        .eq('active', true);
-
-      if (allProfiles && allProfiles.length > 0) {
-        return allProfiles.map((s: any) => ({
-          studentId: s.id,
-          studentCode: s.student_code || '',
-          displayName: s.display_name || 'ผู้เรียน',
-          unitProgress: {},
-        }));
-      }
+      // An empty class stays empty; never leak students from other classes.
+      if (members && members.length === 0) return [];
     } catch {
       // rethrow original dbErr
     }
