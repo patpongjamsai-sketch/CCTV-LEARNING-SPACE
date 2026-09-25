@@ -2,6 +2,17 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
+vi.mock('../lib/auth/currentProfile', () => ({
+  getCurrentProfile: vi.fn(async () => ({
+    status: 'authenticated',
+    profile: {
+      id: 'teacher-1',
+      role: 'teacher',
+      display_name: 'ครูผู้สอน',
+      student_code: null,
+    },
+  })),
+}));
 
 import TeacherPage from '../app/teacher/page';
 import { TeacherApprovalDashboard } from '../components/portal/TeacherApprovalDashboard';

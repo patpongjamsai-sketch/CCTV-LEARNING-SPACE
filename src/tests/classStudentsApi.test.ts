@@ -67,6 +67,16 @@ describe('GET /api/classes/[classId]/students route contract', () => {
         passed: true,
         unlocked: true,
         approved_score: '85',
+        latest_mission_id: '99999999-9999-4999-8999-999999999999',
+        latest_mission_code: 'M01',
+        latest_mission_title: 'ภารกิจติดตั้งสายสัญญาณและ BNC',
+        latest_mission_max_score: '100',
+        latest_mission_best_score: '95',
+        latest_mission_attempt_count: 2,
+        latest_mission_hints_used: 1,
+        latest_mission_passed: true,
+        latest_mission_first_passed_at: '2026-09-25T00:00:00Z',
+        latest_mission_latest_attempt_id: '88888888-8888-4888-8888-888888888888',
       },
       {
         student_id: '55555555-5555-4555-8555-555555555555',
@@ -78,6 +88,7 @@ describe('GET /api/classes/[classId]/students route contract', () => {
         passed: false,
         unlocked: false,
         approved_score: null,
+        latest_mission_id: null,
       },
     ]);
 
@@ -95,9 +106,22 @@ describe('GET /api/classes/[classId]/students route contract', () => {
     expect(students[0].displayName).toBe('นาย ก ช่างกล้อง');
     expect(students[0].unitProgress.U01.passed).toBe(true);
     expect(students[0].unitProgress.U01.unlocked).toBe(true);
+    expect(students[0].unitProgress.U01.latestMission).toEqual({
+      missionId: '99999999-9999-4999-8999-999999999999',
+      code: 'M01',
+      title: 'ภารกิจติดตั้งสายสัญญาณและ BNC',
+      maxScore: 100,
+      bestScore: 95,
+      attemptCount: 2,
+      hintsUsed: 1,
+      passed: true,
+      firstPassedAt: '2026-09-25T00:00:00Z',
+      latestAttemptId: '88888888-8888-4888-8888-888888888888',
+    });
 
     expect(students[1].studentCode).toBe('67302');
     expect(students[1].displayName).toBe('นาย ข ปฏิบัติการ');
     expect(students[1].unitProgress.U01.passed).toBe(false);
+    expect(students[1].unitProgress.U01.latestMission).toBeNull();
   });
 });

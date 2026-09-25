@@ -26,15 +26,30 @@ export type RosterStudent = {
     groupId?: string;
     orderNum?: number;
     unitProgress: Record<string, {
+        unitId?: string;
         lessons: number;
+        progressPercent: number;
         lab: boolean;
         labScore?: number | null;
         exam: boolean;
         examScore?: number | null;
         passed: boolean;
+        unlocked: boolean;
         latestQuizStatus?: string;
         latestQuizSubmittedAt?: string | null;
         latestLabStatus?: string;
+        latestMission?: {
+            missionId: string;
+            code: string;
+            title: string;
+            maxScore: number;
+            bestScore: number;
+            attemptCount: number;
+            hintsUsed: number;
+            passed: boolean;
+            firstPassedAt: string | null;
+            latestAttemptId: string;
+        } | null;
     }>;
 };
 
@@ -139,12 +154,25 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             studentCode: string;
                             displayName: string;
                             unitProgress?: Record<string, {
+                                unitId?: string;
                                 progressPercent: number;
                                 passed: boolean;
                                 unlocked: boolean;
                                 approvedScore?: number | null;
                                 latestQuiz?: { id: string; score: number | null; passed: boolean | null; status: string; submittedAt: string | null } | null;
                                 latestLab?: { id: string; status: string; passed: boolean | null; approvedScore: number | null; reviewedAt: string | null; submittedAt: string | null } | null;
+                                latestMission?: {
+                                    missionId: string;
+                                    code: string;
+                                    title: string;
+                                    maxScore: number;
+                                    bestScore: number;
+                                    attemptCount: number;
+                                    hintsUsed: number;
+                                    passed: boolean;
+                                    firstPassedAt: string | null;
+                                    latestAttemptId: string;
+                                } | null;
                             }>;
                         }) => ({
                             id: st.studentId,
@@ -152,15 +180,19 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             name: st.displayName || 'ผู้เรียน',
                             unitProgress: Object.entries(st.unitProgress || {}).reduce((acc, [uk, uv]) => {
                                 acc[uk] = {
-                                    lessons: uv.progressPercent >= 40 ? 10 : Math.round((uv.progressPercent / 40) * 10),
-                                    lab: uv.latestLab?.passed ?? uv.unlocked,
-                                    labScore: uv.latestLab?.approvedScore ?? (uv.passed ? 90 : null),
-                                    exam: uv.latestQuiz?.passed ?? uv.passed,
-                                    examScore: uv.latestQuiz?.score ?? uv.approvedScore,
-                                    passed: uv.passed,
+                                    unitId: uv.unitId,
+                                    lessons: (uv.progressPercent || 0) >= 100 ? 10 : Math.floor(((uv.progressPercent || 0) / 100) * 10),
+                                    progressPercent: uv.progressPercent || 0,
+                                    lab: uv.latestLab?.passed === true,
+                                    labScore: uv.latestLab?.approvedScore ?? null,
+                                    exam: uv.latestQuiz?.passed === true,
+                                    examScore: uv.latestQuiz?.score ?? uv.approvedScore ?? null,
+                                    passed: Boolean(uv.passed),
+                                    unlocked: Boolean(uv.unlocked),
                                     latestQuizStatus: uv.latestQuiz?.status,
                                     latestQuizSubmittedAt: uv.latestQuiz?.submittedAt,
                                     latestLabStatus: uv.latestLab?.status,
+                                    latestMission: uv.latestMission ?? null,
                                 };
                                 return acc;
                             }, {} as RosterStudent['unitProgress']),
@@ -404,7 +436,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
 
         if (effectiveClassUuid && isStudentUuid) {
             try {
-                const unitUuid = '33333333-3333-4333-8333-333333333333';
+                const unitUuid = student.unitProgress[unitKey]?.unitId || '33333333-3333-4333-8333-333333333333';
                 const res = await fetch(`/api/classes/${encodeURIComponent(effectiveClassUuid.trim())}/students/${student.id}/progress/${unitUuid}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -1138,9 +1170,10 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                     <th className="p-3">รหัสผู้เรียน</th>
                                     <th className="p-3">ชื่อ - สกุล</th>
                                     <th className="p-3">กลุ่ม</th>
-                                    <th className="p-3">1. เนื้อหา 10 บท</th>
-                                    <th className="p-3">2. ห้องแล็บ 3D</th>
-                                    <th className="p-3">3. แบบทดสอบ</th>
+                                    <th className="p-3">1. เนื้อหา</th>
+                                    <th className="p-3">2. ภารกิจ 3D (Sim)</th>
+                                    <th className="p-3">3. ห้องแล็บ & หลักฐาน</th>
+                                    <th className="p-3">4. แบบทดสอบ</th>
                                     <th className="p-3">ผลการอนุมัติ</th>
                                     <th className="p-3 text-right">การจัดการ</th>
                                 </tr>
@@ -1149,7 +1182,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                 {students
                                     .filter((st) => selectedGroupFilter === 'ALL' || st.groupId === selectedGroupFilter)
                                     .map((st, idx) => {
-                                    const currentUnitData = st.unitProgress[selectedUnitTab] || { lessons: 0, lab: false, exam: false, passed: false };
+                                    const currentUnitData = st.unitProgress[selectedUnitTab] || { lessons: 0, progressPercent: 0, lab: false, exam: false, passed: false, unlocked: false };
                                     const pendingSub = submissions.find(
                                         (s) =>
                                             (s.studentCode === st.code || s.studentName === st.name) &&
@@ -1176,18 +1209,43 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                             <td className="p-3">
                                                 <span
                                                     className={`px-2 py-0.5 rounded text-[11px] font-mono ${
-                                                        currentUnitData.lessons >= 10
-                                                            ? 'bg-emerald-500/20 text-emerald-300'
+                                                        currentUnitData.progressPercent >= 100
+                                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                                            : currentUnitData.progressPercent > 0
+                                                            ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
                                                             : 'bg-slate-800 text-slate-400'
                                                     }`}
                                                 >
-                                                    {currentUnitData.lessons}/10 บท
+                                                    {currentUnitData.progressPercent}%
                                                 </span>
+                                            </td>
+                                            <td className="p-3">
+                                                {currentUnitData.latestMission ? (
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span
+                                                            className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold inline-flex items-center gap-1 w-fit ${
+                                                                currentUnitData.latestMission.passed
+                                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                                                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                                            }`}
+                                                        >
+                                                            {currentUnitData.latestMission.passed ? '✓ ผ่าน' : '⏳ กำลังทำ'}
+                                                            <span>({currentUnitData.latestMission.bestScore}/{currentUnitData.latestMission.maxScore})</span>
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 font-mono">
+                                                            {currentUnitData.latestMission.attemptCount} รอบ · คำใบ้ {currentUnitData.latestMission.hintsUsed}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-400">
+                                                        ยังไม่เริ่ม
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="p-3">
                                                 {currentUnitData.lab ? (
                                                     <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                                        ✓ ผ่านแล็บ 3D {currentUnitData.labScore ? `(${currentUnitData.labScore}/100)` : ''}
+                                                        ✓ ผ่านแล็บ {currentUnitData.labScore !== null && currentUnitData.labScore !== undefined ? `(${currentUnitData.labScore}/100)` : ''}
                                                     </span>
                                                 ) : currentUnitData.latestLabStatus === 'submitted' || currentUnitData.latestLabStatus === 'reviewing' ? (
                                                     <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
@@ -1215,7 +1273,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                                     </button>
                                                 ) : currentUnitData.exam ? (
                                                     <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                                        ✓ สอบแล้ว {currentUnitData.examScore ? `(${currentUnitData.examScore}/100)` : ''}
+                                                        ✓ สอบแล้ว {currentUnitData.examScore !== null && currentUnitData.examScore !== undefined ? `(${currentUnitData.examScore}/100)` : ''}
                                                     </span>
                                                 ) : currentUnitData.latestQuizStatus === 'submitted' ? (
                                                     <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">

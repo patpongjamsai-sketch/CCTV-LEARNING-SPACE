@@ -218,6 +218,18 @@ export type ClassStudentRecord = {
       reviewedAt: string | null;
       submittedAt: string | null;
     } | null;
+    latestMission?: {
+      missionId: string;
+      code: string;
+      title: string;
+      maxScore: number;
+      bestScore: number;
+      attemptCount: number;
+      hintsUsed: number;
+      passed: boolean;
+      firstPassedAt: string | null;
+      latestAttemptId: string;
+    } | null;
   }>;
 };
 
@@ -254,7 +266,17 @@ export async function getClassStudentsService(
         latest_lab.passed as latest_lab_passed,
         latest_lab.approved_score as latest_lab_approved_score,
         latest_lab.reviewed_at as latest_lab_reviewed_at,
-        latest_lab.submitted_at as latest_lab_submitted_at
+        latest_lab.submitted_at as latest_lab_submitted_at,
+        latest_mission.mission_id as latest_mission_id,
+        latest_mission.code as latest_mission_code,
+        latest_mission.title as latest_mission_title,
+        latest_mission.max_score as latest_mission_max_score,
+        latest_mission.best_score as latest_mission_best_score,
+        latest_mission.attempt_count as latest_mission_attempt_count,
+        latest_mission.hints_used as latest_mission_hints_used,
+        latest_mission.passed as latest_mission_passed,
+        latest_mission.first_passed_at as latest_mission_first_passed_at,
+        latest_mission.latest_attempt_id as latest_mission_latest_attempt_id
       from public.class_members as cm
       join public.profiles as p on p.id = cm.profile_id
       join public.classes as c on c.id = cm.class_id
@@ -282,6 +304,26 @@ export async function getClassStudentsService(
         order by ls.attempt_no desc
         limit 1
       ) as latest_lab on true
+      left join lateral (
+        select
+          m.id as mission_id,
+          m.code,
+          m.title,
+          m.max_score,
+          gmr.best_score,
+          gmr.attempt_count,
+          gmr.hints_used,
+          gmr.passed,
+          gmr.first_passed_at,
+          gmr.latest_attempt_id
+        from public.game_mission_results as gmr
+        join public.missions as m on m.id = gmr.mission_id
+        where gmr.class_id = cm.class_id
+          and gmr.student_id = p.id
+          and m.unit_id = u.id
+        order by gmr.updated_at desc
+        limit 1
+      ) as latest_mission on true
       where cm.class_id = ${classId}
         and cm.member_role = 'student'
         and cm.active = true
@@ -356,6 +398,20 @@ export async function getClassStudentsService(
               approvedScore: row.latest_lab_approved_score !== null ? Number(row.latest_lab_approved_score) : null,
               reviewedAt: row.latest_lab_reviewed_at,
               submittedAt: row.latest_lab_submitted_at,
+            }
+          : null,
+        latestMission: row.latest_mission_id
+          ? {
+              missionId: row.latest_mission_id,
+              code: row.latest_mission_code,
+              title: row.latest_mission_title,
+              maxScore: Number(row.latest_mission_max_score),
+              bestScore: Number(row.latest_mission_best_score),
+              attemptCount: Number(row.latest_mission_attempt_count),
+              hintsUsed: Number(row.latest_mission_hints_used),
+              passed: Boolean(row.latest_mission_passed),
+              firstPassedAt: row.latest_mission_first_passed_at,
+              latestAttemptId: row.latest_mission_latest_attempt_id,
             }
           : null,
       };
