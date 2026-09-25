@@ -1,14 +1,7 @@
 begin;
 
 -- ----------------------------------------------------------------------
--- 1. One active teacher per class
--- ----------------------------------------------------------------------
-create unique index if not exists class_members_one_active_teacher_idx
-  on public.class_members (class_id)
-  where member_role = 'teacher' and active = true;
-
--- ----------------------------------------------------------------------
--- 2. Unit completion rules table
+-- Unit completion rules table. Class teacher memberships are managed separately.
 -- ----------------------------------------------------------------------
 create table if not exists public.unit_completion_rules (
   id uuid primary key default gen_random_uuid(),

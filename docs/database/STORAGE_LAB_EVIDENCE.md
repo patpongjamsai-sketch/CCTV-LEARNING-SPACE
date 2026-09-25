@@ -1,6 +1,6 @@
 # แนวทาง Supabase Storage: `lab-evidence`
 
-ตอนนี้สร้างตาราง `public.evidence_files` และ Bucket ส่วนตัว `lab-evidence` แล้ว โดย migration `20260916130000_008_lab_evidence_storage.sql` กำหนดขนาดและ MIME type ที่อนุญาตให้ตรงกับฐานข้อมูล
+ตอนนี้สร้างตาราง `public.evidence_files` และ Bucket ส่วนตัว `lab-evidence` แล้ว โดย migration `20260925043738_lab_evidence_storage.sql` กำหนดขนาดและ MIME type ที่อนุญาตให้ตรงกับฐานข้อมูล
 
 การอัปโหลดใช้ Server API ที่ตรวจสอบตัวตน การเป็นสมาชิกชั้นเรียน และเจ้าของ LAB ก่อนเรียก Supabase Storage ด้วย service-role client ฝั่ง server จึงไม่เปิด public URL และไม่ให้ browser เขียน metadata ที่เชื่อถือได้โดยตรง
 

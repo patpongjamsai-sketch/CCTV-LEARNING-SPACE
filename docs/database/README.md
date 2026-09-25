@@ -8,17 +8,20 @@
 
 รันตามลำดับเท่านั้น:
 
-1. `supabase/migrations/001_core.sql`
-2. `supabase/migrations/002_assessment.sql`
-3. `supabase/migrations/003_game.sql`
-4. `supabase/migrations/004_security.sql`
-5. `supabase/migrations/005_functions_triggers.sql`
-6. `supabase/migrations/006_performance_indexes.sql`
-7. `supabase/migrations/007_learning_progression_rules.sql`
-8. `supabase/migrations/008_lab_evidence_storage.sql`
-9. `supabase/migrations/009_connect_lab_unit1_progress.sql`
-10. `supabase/migrations/20260916143702_fix_progression_audit_timestamp.sql`
-11. `supabase/migrations/20260916144233_lab_pass_unlocks_unit.sql`
+1. `supabase/migrations/20260915154506_001_core.sql`
+2. `supabase/migrations/20260915154535_002_assessment.sql`
+3. `supabase/migrations/20260915154541_003_game.sql`
+4. `supabase/migrations/20260915154556_004_security.sql`
+5. `supabase/migrations/20260915154559_005_functions_triggers.sql`
+6. `supabase/migrations/20260915154841_006_performance_indexes.sql`
+7. `supabase/migrations/20260924094700_enable_class_members_realtime.sql`
+8. `supabase/migrations/20260925043723_learning_progression_rules.sql`
+9. `supabase/migrations/20260925043738_lab_evidence_storage.sql`
+10. `supabase/migrations/20260925043742_connect_lab_unit1_progress.sql`
+11. `supabase/migrations/20260925043746_fix_progression_audit_timestamp.sql`
+12. `supabase/migrations/20260925043749_lab_pass_unlocks_unit.sql`
+
+Production ใช้ version ตามรายการนี้แล้ว migration ของระบบความก้าวหน้าไม่กำหนดจำนวนครูต่อชั้นเรียน เพื่อคงสิทธิ์ครูที่ใช้งานอยู่
 
 ไฟล์ที่ 6 เป็น migration เสริมจากผล Supabase Performance Advisor หลังติดตั้ง 001–005 เพื่อปิดคำเตือน Foreign Key ที่ไม่มี covering index โดยไม่แก้ประวัติ migration ย้อนหลัง
 
@@ -89,4 +92,4 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\tests\run-tests.ps1
 
 ใช้ migration ชุดเดียวกันกับ Development, Staging และ Production แต่ต้องเป็น Supabase Project แยกกัน ห้าม copy Auth user หรือหลักฐานผู้เรียนจริงจาก Production ลง Development และต้องทดสอบบน Staging ก่อน Production เสมอ
 
-Bucket ส่วน LAB ใช้ `lab-evidence` แบบ Private ตาม migration `20260916130000_008_lab_evidence_storage.sql`; การอัปโหลดผ่าน Server API เท่านั้น ส่วน Storage Policy สำหรับ direct browser upload ยังไม่เปิดใช้งาน
+Bucket ส่วน LAB ใช้ `lab-evidence` แบบ Private ตาม migration `20260925043738_lab_evidence_storage.sql`; การอัปโหลดผ่าน Server API เท่านั้น ส่วน Storage Policy สำหรับ direct browser upload ยังไม่เปิดใช้งาน
