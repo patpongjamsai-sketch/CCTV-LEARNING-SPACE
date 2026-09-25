@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRoleplayStore } from '../../../store/useRoleplayStore';
 import { ConceptId } from '../../../shared/domain/roleplayTypes';
 
@@ -23,18 +23,13 @@ const COMPARISON_CARDS: { id: ConceptId; nameTh: string; desc: string; expected:
 
 export const Room101Mission4Modal: React.FC<Room101Mission4ModalProps> = ({
   onClose,
-  onNext,
-  onPrev,
 }) => {
   const mission4Cards = useRoleplayStore((s) => s.mission4Cards);
   const placeComparisonCard = useRoleplayStore((s) => s.placeComparisonCard);
   const missionState = useRoleplayStore((s) => s.missions.M4);
 
-  const handleAutoSolve = () => {
-    COMPARISON_CARDS.forEach((c) => {
-      placeComparisonCard(c.id, c.expected);
-    });
-  };
+  // Randomized card order so Analog and IP items aren't predictable
+  const [shuffledCards] = useState(() => [...COMPARISON_CARDS].sort(() => Math.random() - 0.5));
 
   const handleReset = () => {
     useRoleplayStore.setState({
@@ -124,19 +119,12 @@ export const Room101Mission4Modal: React.FC<Room101Mission4ModalProps> = ({
                 >
                   ↺ ล้างคำตอบ
                 </button>
-                <button
-                  type="button"
-                  onClick={handleAutoSolve}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-700/60 transition-colors cursor-pointer font-medium"
-                >
-                  ⚡ เฉลยครบทั้ง 8 ข้อ
-                </button>
               </div>
             </div>
 
             {/* Cards List with Toggle Buttons */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {COMPARISON_CARDS.map((c) => {
+              {shuffledCards.map((c) => {
                 const isAnalog = mission4Cards.analogCards.includes(c.id);
                 const isIp = mission4Cards.ipCards.includes(c.id);
                 const isChosen = isAnalog || isIp;
@@ -224,18 +212,9 @@ export const Room101Mission4Modal: React.FC<Room101Mission4ModalProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-2">
-            {onPrev && (
-              <button
-                type="button"
-                onClick={onPrev}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                ◀ ย้อนกลับภารกิจที่ 3
-              </button>
-            )}
             <span className="text-xs text-slate-300 hidden sm:inline">
               {missionState.isCompleted
-                ? '✓ ผ่านภารกิจที่ 4 แล้ว สามารถไปต่อภารกิจสุดท้าย (ภารกิจที่ 5) ได้'
+                ? '✓ ผ่านภารกิจที่ 4 แล้ว! ปิดหน้าต่างแล้วเดินไปที่ โต๊ะ 5 (ส่งมอบงาน)'
                 : 'จำแนกคุณสมบัติให้ถูกต้องอย่างน้อย 6 ใน 8 ข้อ'}
             </span>
           </div>
@@ -248,13 +227,14 @@ export const Room101Mission4Modal: React.FC<Room101Mission4ModalProps> = ({
             >
               ปิดหน้าต่าง
             </button>
-            {missionState.isCompleted && onNext && (
+            {missionState.isCompleted && (
               <button
                 type="button"
-                onClick={onNext}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-emerald-500 hover:from-purple-400 hover:to-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 via-pink-500 to-emerald-500 hover:from-purple-400 hover:to-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer flex items-center gap-1.5"
               >
-                ไปภารกิจที่ 5 (ประกอบสาย & เปิดระบบ) ➜
+                <span>✓ สำเร็จภารกิจ! เดินไปโต๊ะ 5 (เปิดระบบ & สรุปผล)</span>
+                <span>➜</span>
               </button>
             )}
           </div>

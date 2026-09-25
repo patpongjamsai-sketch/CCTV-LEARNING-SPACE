@@ -62,12 +62,16 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
     let isStaff = false;
 
     if (profile) {
-      const { data: membership } = await supabase
+      const { data: memberships } = await supabase
         .from('class_members')
         .select('class_id, member_role')
         .eq('profile_id', authContext.userId)
-        .eq('active', true)
-        .maybeSingle();
+        .eq('active', true);
+
+      const membership =
+        memberships?.find((m) => m.member_role === 'teacher') ||
+        memberships?.find((m) => m.member_role === 'student') ||
+        memberships?.[0];
 
       classId = membership?.class_id || classId;
       isStaff = profile.role === 'teacher' || profile.role === 'admin';

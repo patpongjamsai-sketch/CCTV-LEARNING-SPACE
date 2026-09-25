@@ -140,6 +140,13 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
   const isStarted = useRoleplayStore((s) => s.isStarted);
   const isModalActive = activeStation101Modal !== null;
 
+  let activeTargetStation: 1 | 2 | 3 | 4 | 5 = 1;
+  if (!missions.M1.isCompleted) activeTargetStation = 1;
+  else if (!missions.M2.isCompleted) activeTargetStation = 2;
+  else if (!missions.M3.isCompleted) activeTargetStation = 3;
+  else if (!missions.M4.isCompleted) activeTargetStation = 4;
+  else if (!missions.M5.isCompleted) activeTargetStation = 5;
+
   return (
     <group dispose={null}>
       {/* ========================================================
@@ -315,7 +322,7 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
         </mesh>
       </group>
 
-      {/* สถานีทดสอบกล้อง IP (Zone B ที่ X = -6, Z = -8) -> ภารกิจ 1 */}
+      {/* 2.2 สถานีทดสอบกล้อง IP (Zone B ที่ X = -6, Z = -8) -> ภารกิจ 1 */}
       <group
         position={[-6, 0, -8]}
         onClick={(e) => {
@@ -327,6 +334,15 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <boxGeometry args={[1.8, 0.9, 1.0]} />
           <meshStandardMaterial color="#334155" roughness={0.5} />
         </mesh>
+
+        {/* Waypoint Beacon Beam for Station 1 */}
+        {activeTargetStation === 1 && !missions.M1.isCompleted && (
+          <mesh position={[0, 2.0, 0]}>
+            <cylinderGeometry args={[0.04, 0.35, 2.2, 16]} />
+            <meshBasicMaterial color="#38bdf8" transparent opacity={0.4} />
+          </mesh>
+        )}
+
         {isStarted && !isModalActive && (
           <Html position={[0, 1.6, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
             <button
@@ -335,18 +351,26 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
                 e.stopPropagation();
                 setActiveStation101Modal(1);
               }}
-              className="bg-slate-900/95 hover:bg-sky-950 border border-sky-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+              className={`bg-slate-900/95 hover:bg-sky-950 border border-sky-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform ${
+                activeTargetStation === 1 && !missions.M1.isCompleted
+                  ? 'ring-2 ring-sky-400 animate-pulse scale-110 shadow-sky-500/50'
+                  : ''
+              }`}
             >
               <span className="w-5 h-5 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center font-bold text-xs">
                 {missions.M1.isCompleted ? '✓' : '1'}
               </span>
-              <span className="font-bold text-[11px] text-sky-200">โต๊ะ 1: ภาพดิจิทัล</span>
+              <span className="font-bold text-[11px] text-sky-200">
+                {activeTargetStation === 1 && !missions.M1.isCompleted
+                  ? '👉 โต๊ะ 1: ภาพดิจิทัล [คลิกเพื่อเริ่ม]'
+                  : 'โต๊ะ 1: ภาพดิจิทัล'}
+              </span>
             </button>
           </Html>
         )}
       </group>
 
-      {/* ตู้แร็คเครือข่าย PoE (Zone C ที่ X = 6, Z = -8) -> ภารกิจ 2 */}
+      {/* 2.3 ตู้แร็คเครือข่าย PoE (Zone C ที่ X = 6, Z = -8) -> ภารกิจ 2 */}
       <group
         position={[6, 0, -8]}
         onClick={(e) => {
@@ -358,6 +382,15 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <boxGeometry args={[0.9, 2.0, 0.8]} />
           <meshStandardMaterial color="#0f172a" metalness={0.7} roughness={0.3} />
         </mesh>
+
+        {/* Waypoint Beacon Beam for Station 2 */}
+        {activeTargetStation === 2 && !missions.M2.isCompleted && (
+          <mesh position={[0, 2.5, 0]}>
+            <cylinderGeometry args={[0.04, 0.35, 2.2, 16]} />
+            <meshBasicMaterial color="#10b981" transparent opacity={0.4} />
+          </mesh>
+        )}
+
         {isStarted && !isModalActive && (
           <Html position={[0, 2.3, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
             <button
@@ -366,18 +399,26 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
                 e.stopPropagation();
                 setActiveStation101Modal(2);
               }}
-              className="bg-slate-900/95 hover:bg-emerald-950 border border-emerald-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+              className={`bg-slate-900/95 hover:bg-emerald-950 border border-emerald-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform ${
+                activeTargetStation === 2 && !missions.M2.isCompleted
+                  ? 'ring-2 ring-emerald-400 animate-pulse scale-110 shadow-emerald-500/50'
+                  : ''
+              }`}
             >
               <span className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
                 {missions.M2.isCompleted ? '✓' : '2'}
               </span>
-              <span className="font-bold text-[11px] text-emerald-200">โต๊ะ 2: Data Flow</span>
+              <span className="font-bold text-[11px] text-emerald-200">
+                {activeTargetStation === 2 && !missions.M2.isCompleted
+                  ? '👉 โต๊ะ 2: Data Flow [คลิกเพื่อเริ่ม]'
+                  : 'โต๊ะ 2: Data Flow'}
+              </span>
             </button>
           </Html>
         )}
       </group>
 
-      {/* เครื่องบันทึกภาพ NVR (Zone D ที่ X = -6, Z = 4) -> ภารกิจ 3 */}
+      {/* 2.4 เครื่องบันทึกภาพ NVR (Zone D ที่ X = -6, Z = 4) -> ภารกิจ 3 */}
       <group
         position={[-6, 0, 4]}
         onClick={(e) => {
@@ -389,6 +430,15 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <boxGeometry args={[1.8, 0.9, 1.0]} />
           <meshStandardMaterial color="#334155" roughness={0.5} />
         </mesh>
+
+        {/* Waypoint Beacon Beam for Station 3 */}
+        {activeTargetStation === 3 && !missions.M3.isCompleted && (
+          <mesh position={[0, 2.0, 0]}>
+            <cylinderGeometry args={[0.04, 0.35, 2.2, 16]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.4} />
+          </mesh>
+        )}
+
         {isStarted && !isModalActive && (
           <Html position={[0, 1.6, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
             <button
@@ -397,53 +447,26 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
                 e.stopPropagation();
                 setActiveStation101Modal(3);
               }}
-              className="bg-slate-900/95 hover:bg-amber-950 border border-amber-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+              className={`bg-slate-900/95 hover:bg-amber-950 border border-amber-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform ${
+                activeTargetStation === 3 && !missions.M3.isCompleted
+                  ? 'ring-2 ring-amber-400 animate-pulse scale-110 shadow-amber-500/50'
+                  : ''
+              }`}
             >
               <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">
                 {missions.M3.isCompleted ? '✓' : '3'}
               </span>
-              <span className="font-bold text-[11px] text-amber-200">โต๊ะ 3: หน้าที่อุปกรณ์</span>
-            </button>
-          </Html>
-        )}
-      </group>
-
-      {/* โต๊ะคอมพิวเตอร์ควบคุม Client PC (Zone E ที่ X = 6, Z = 4) -> ภารกิจ 5 */}
-      <group
-        position={[6, 0, 4]}
-        onClick={(e) => {
-          e.stopPropagation();
-          setActiveStation101Modal(5);
-        }}
-      >
-        <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.0, 0.9, 1.0]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.4} />
-        </mesh>
-        <mesh position={[0, 1.15, 0]}>
-          <boxGeometry args={[0.6, 0.45, 0.04]} />
-          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.5} />
-        </mesh>
-        {isStarted && !isModalActive && (
-          <Html position={[0, 1.8, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveStation101Modal(5);
-              }}
-              className="bg-slate-900/95 hover:bg-sky-950 border border-sky-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
-            >
-              <span className="w-5 h-5 rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
-                {missions.M5.isCompleted ? '✓' : '5'}
+              <span className="font-bold text-[11px] text-amber-200">
+                {activeTargetStation === 3 && !missions.M3.isCompleted
+                  ? '👉 โต๊ะ 3: หน้าที่อุปกรณ์ [คลิกเพื่อเริ่ม]'
+                  : 'โต๊ะ 3: หน้าที่อุปกรณ์'}
               </span>
-              <span className="font-bold text-[11px] text-sky-200">โต๊ะ 5: ต่อสาย &amp; Live View</span>
             </button>
           </Html>
         )}
       </group>
 
-      {/* โต๊ะเปรียบเทียบระบบ Analog vs IP (Zone F ที่ X = 0, Z = 9) -> ภารกิจ 4 */}
+      {/* 2.5 โต๊ะเปรียบเทียบระบบ Analog vs IP (Zone F ที่ X = 0, Z = 9) -> ภารกิจ 4 */}
       <group
         position={[0, 0, 9]}
         onClick={(e) => {
@@ -459,6 +482,15 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <boxGeometry args={[2.4, 0.9, 1.4]} />
           <meshStandardMaterial color="#0284c7" roughness={0.4} />
         </mesh>
+
+        {/* Waypoint Beacon Beam for Station 4 */}
+        {activeTargetStation === 4 && !missions.M4.isCompleted && (
+          <mesh position={[0, 2.0, 0]}>
+            <cylinderGeometry args={[0.04, 0.35, 2.2, 16]} />
+            <meshBasicMaterial color="#a855f7" transparent opacity={0.4} />
+          </mesh>
+        )}
+
         {isStarted && !isModalActive && (
           <Html position={[0, 1.6, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
             <button
@@ -467,12 +499,72 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
                 e.stopPropagation();
                 setActiveStation101Modal(4);
               }}
-              className="bg-slate-900/95 hover:bg-purple-950 border border-purple-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform"
+              className={`bg-slate-900/95 hover:bg-purple-950 border border-purple-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform ${
+                activeTargetStation === 4 && !missions.M4.isCompleted
+                  ? 'ring-2 ring-purple-400 animate-pulse scale-110 shadow-purple-500/50'
+                  : ''
+              }`}
             >
               <span className="w-5 h-5 rounded-full bg-purple-500 text-slate-950 flex items-center justify-center font-bold text-xs">
                 {missions.M4.isCompleted ? '✓' : '4'}
               </span>
-              <span className="font-bold text-[11px] text-purple-200">โต๊ะ 4: Analog vs IP</span>
+              <span className="font-bold text-[11px] text-purple-200">
+                {activeTargetStation === 4 && !missions.M4.isCompleted
+                  ? '👉 โต๊ะ 4: Analog vs IP [คลิกเพื่อเริ่ม]'
+                  : 'โต๊ะ 4: Analog vs IP'}
+              </span>
+            </button>
+          </Html>
+        )}
+      </group>
+
+      {/* 2.6 โต๊ะคอมพิวเตอร์ควบคุม Client PC (Zone E ที่ X = 6, Z = 4) -> ภารกิจ 5 */}
+      <group
+        position={[6, 0, 4]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setActiveStation101Modal(5);
+        }}
+      >
+        <mesh position={[0, 0.45, 0]} castShadow receiveShadow>
+          <boxGeometry args={[2.0, 0.9, 1.0]} />
+          <meshStandardMaterial color="#1e293b" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, 1.15, 0]}>
+          <boxGeometry args={[0.6, 0.45, 0.04]} />
+          <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.5} />
+        </mesh>
+
+        {/* Waypoint Beacon Beam for Station 5 */}
+        {activeTargetStation === 5 && !missions.M5.isCompleted && (
+          <mesh position={[0, 2.2, 0]}>
+            <cylinderGeometry args={[0.04, 0.35, 2.2, 16]} />
+            <meshBasicMaterial color="#10b981" transparent opacity={0.4} />
+          </mesh>
+        )}
+
+        {isStarted && !isModalActive && (
+          <Html position={[0, 1.8, 0]} center distanceFactor={8} zIndexRange={[10, 0]}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStation101Modal(5);
+              }}
+              className={`bg-slate-900/95 hover:bg-sky-950 border border-sky-400 py-1 px-2.5 rounded-full shadow-2xl backdrop-blur text-center flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none hover:scale-105 transition-transform ${
+                activeTargetStation === 5 && !missions.M5.isCompleted
+                  ? 'ring-2 ring-emerald-400 animate-pulse scale-110 shadow-emerald-500/50'
+                  : ''
+              }`}
+            >
+              <span className="w-5 h-5 rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 flex items-center justify-center font-bold text-xs">
+                {missions.M5.isCompleted ? '✓' : '5'}
+              </span>
+              <span className="font-bold text-[11px] text-sky-200">
+                {activeTargetStation === 5 && !missions.M5.isCompleted
+                  ? '👉 โต๊ะ 5: ต่อสาย & Live View [คลิกเพื่อเริ่ม]'
+                  : 'โต๊ะ 5: ต่อสาย & Live View'}
+              </span>
             </button>
           </Html>
         )}

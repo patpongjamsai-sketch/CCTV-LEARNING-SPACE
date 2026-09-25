@@ -10,7 +10,7 @@ interface Room101Mission1ModalProps {
   onNext?: () => void;
 }
 
-const AVAILABLE_CARDS = [
+const INITIAL_CARDS = [
   { id: 'M1_LENS', card: KNOWLEDGE_CARDS.M1_LENS },
   { id: 'M1_SENSOR', card: KNOWLEDGE_CARDS.M1_SENSOR },
   { id: 'M1_PROCESSOR', card: KNOWLEDGE_CARDS.M1_PROCESSOR },
@@ -19,7 +19,6 @@ const AVAILABLE_CARDS = [
 
 export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
   onClose,
-  onNext,
 }) => {
   const mission1Slots = useRoleplayStore((s) => s.mission1Slots);
   const setMission1SlotCardDirect = useRoleplayStore((s) => s.setMission1SlotCardDirect);
@@ -27,6 +26,8 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
   const missionState = useRoleplayStore((s) => s.missions.M1);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  // Randomized shuffled card order so answers aren't in 1-2-3-4 order
+  const [shuffledCards] = useState(() => [...INITIAL_CARDS].sort(() => Math.random() - 0.5));
 
   const handleSlotClick = (index: number) => {
     if (!selectedCardId) {
@@ -40,13 +41,6 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
     // Place card into slot
     setMission1SlotCardDirect(index, selectedCardId);
     setSelectedCardId(null);
-  };
-
-  const handleAutoSolve = () => {
-    setMission1SlotCardDirect(0, 'M1_LENS');
-    setMission1SlotCardDirect(1, 'M1_SENSOR');
-    setMission1SlotCardDirect(2, 'M1_PROCESSOR');
-    setMission1SlotCardDirect(3, 'M1_LAN');
   };
 
   // Find cards that have already been placed
@@ -145,13 +139,6 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
                 >
                   ↺ รีเซ็ตช่อง
                 </button>
-                <button
-                  type="button"
-                  onClick={handleAutoSolve}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-sky-950/80 hover:bg-sky-900 text-sky-300 border border-sky-700/60 transition-colors cursor-pointer font-medium"
-                >
-                  ⚡ วางเรียงเฉลย
-                </button>
               </div>
             </div>
 
@@ -233,7 +220,7 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {AVAILABLE_CARDS.map(({ id, card }) => {
+              {shuffledCards.map(({ id, card }) => {
                 if (!card) return null;
                 const isPlaced = placedCardIds.includes(card.id);
                 const isSelected = selectedCardId === id;
@@ -299,7 +286,7 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/60">
           <span className="text-xs text-slate-300">
             {missionState.isCompleted
-              ? '✓ ผ่านภารกิจที่ 1 แล้ว สามารถไปต่อภารกิจที่ 2 ได้'
+              ? '✓ ผ่านภารกิจที่ 1 แล้ว! ปิดหน้าต่างแล้วเดินไปที่ โต๊ะ 2 (Data Flow)'
               : 'กรุณาวางการ์ดให้ครบและถูกลำดับทั้ง 4 ขั้นตอน'}
           </span>
 
@@ -311,13 +298,14 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
             >
               ปิดหน้าต่าง
             </button>
-            {missionState.isCompleted && onNext && (
+            {missionState.isCompleted && (
               <button
                 type="button"
-                onClick={onNext}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer flex items-center gap-1.5"
               >
-                ไปภารกิจที่ 2 (Data Flow) ➜
+                <span>✓ สำเร็จภารกิจ! เดินไปโต๊ะ 2 (Data Flow)</span>
+                <span>➜</span>
               </button>
             )}
           </div>

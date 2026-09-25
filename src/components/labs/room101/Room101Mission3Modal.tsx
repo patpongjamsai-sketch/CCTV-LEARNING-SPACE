@@ -29,8 +29,6 @@ const FUNCTIONS_LIST: { id: ConceptId; labelTh: string; detailTh: string }[] = [
 
 export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
   onClose,
-  onNext,
-  onPrev,
 }) => {
   const mission3Matches = useRoleplayStore((s) => s.mission3Matches);
   const matchDeviceFunction = useRoleplayStore((s) => s.matchDeviceFunction);
@@ -38,13 +36,9 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
 
   const [selectedDeviceId, setSelectedDeviceId] = useState<DeviceId | null>(null);
 
-  const handleAutoSolve = () => {
-    matchDeviceFunction('CAMERA_BULLET', 'FUNC_CAMERA');
-    matchDeviceFunction('POE_SWITCH_8P', 'FUNC_POE_SWITCH');
-    matchDeviceFunction('NVR_8CH', 'FUNC_NVR');
-    matchDeviceFunction('ROUTER', 'FUNC_ROUTER');
-    matchDeviceFunction('CLIENT_PC', 'FUNC_CLIENT_PC');
-  };
+  // Randomized order for devices and functions dropdown so answers are not in predictable 1-to-1 order
+  const [shuffledDevices] = useState(() => [...DEVICES_TO_MATCH].sort(() => Math.random() - 0.5));
+  const [shuffledFunctions] = useState(() => [...FUNCTIONS_LIST].sort(() => Math.random() - 0.5));
 
   const handleReset = () => {
     DEVICES_TO_MATCH.forEach((dev) => {
@@ -143,18 +137,11 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
                 >
                   ↺ ล้างคำตอบ
                 </button>
-                <button
-                  type="button"
-                  onClick={handleAutoSolve}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-700/60 transition-colors cursor-pointer font-medium"
-                >
-                  ⚡ เฉลยครบทุกข้อ
-                </button>
               </div>
             </div>
 
             <div className="space-y-2.5">
-              {DEVICES_TO_MATCH.map((dev) => {
+              {shuffledDevices.map((dev) => {
                 const currentMatch = mission3Matches[dev.id];
                 const expectedMap: Partial<Record<DeviceId, ConceptId>> = {
                   CAMERA_BULLET: 'FUNC_CAMERA',
@@ -208,7 +195,7 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
                         }`}
                       >
                         <option value="">-- เลือกหน้าที่ที่ตรงกัน --</option>
-                        {FUNCTIONS_LIST.map((fn) => (
+                        {shuffledFunctions.map((fn) => (
                           <option key={fn.id} value={fn.id}>
                             {fn.labelTh}
                           </option>
@@ -239,18 +226,9 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-2">
-            {onPrev && (
-              <button
-                type="button"
-                onClick={onPrev}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                ◀ ย้อนกลับภารกิจที่ 2
-              </button>
-            )}
             <span className="text-xs text-slate-300 hidden sm:inline">
               {missionState.isCompleted
-                ? '✓ ผ่านภารกิจที่ 3 แล้ว สามารถไปต่อภารกิจที่ 4 ได้'
+                ? '✓ ผ่านภารกิจที่ 3 แล้ว! ปิดหน้าต่างแล้วเดินไปที่ โต๊ะ 4 (เปรียบเทียบระบบ)'
                 : 'จับคู่อุปกรณ์ให้ถูกต้องครบทั้ง 5 ตัว'}
             </span>
           </div>
@@ -263,13 +241,14 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
             >
               ปิดหน้าต่าง
             </button>
-            {missionState.isCompleted && onNext && (
+            {missionState.isCompleted && (
               <button
                 type="button"
-                onClick={onNext}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer flex items-center gap-1.5"
               >
-                ไปภารกิจที่ 4 (Analog vs IP) ➜
+                <span>✓ สำเร็จภารกิจ! เดินไปโต๊ะ 4 (Analog vs IP)</span>
+                <span>➜</span>
               </button>
             )}
           </div>

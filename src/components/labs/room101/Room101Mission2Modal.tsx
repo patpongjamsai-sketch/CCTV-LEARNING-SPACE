@@ -11,7 +11,7 @@ interface Room101Mission2ModalProps {
   onPrev?: () => void;
 }
 
-const AVAILABLE_CARDS = [
+const INITIAL_CARDS = [
   { id: 'M2_CAM', card: KNOWLEDGE_CARDS.M2_CAM },
   { id: 'M2_POE_SW', card: KNOWLEDGE_CARDS.M2_POE_SW },
   { id: 'M2_NVR', card: KNOWLEDGE_CARDS.M2_NVR },
@@ -20,8 +20,6 @@ const AVAILABLE_CARDS = [
 
 export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
   onClose,
-  onNext,
-  onPrev,
 }) => {
   const mission2Slots = useRoleplayStore((s) => s.mission2Slots);
   const setMission2SlotCardDirect = useRoleplayStore((s) => s.setMission2SlotCardDirect);
@@ -30,6 +28,8 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [isTestingFlow, setIsTestingFlow] = useState<boolean>(false);
+  // Randomized shuffled card order
+  const [shuffledCards] = useState(() => [...INITIAL_CARDS].sort(() => Math.random() - 0.5));
 
   const handleSlotClick = (index: number) => {
     if (!selectedCardId) {
@@ -41,14 +41,6 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
 
     setMission2SlotCardDirect(index, selectedCardId);
     setSelectedCardId(null);
-  };
-
-  const handleAutoSolve = () => {
-    setMission2SlotCardDirect(0, 'M2_CAM');
-    setMission2SlotCardDirect(1, 'M2_POE_SW');
-    setMission2SlotCardDirect(2, 'M2_NVR');
-    setMission2SlotCardDirect(3, 'M2_CLIENT');
-    setIsTestingFlow(true);
   };
 
   const handleTriggerTest = () => {
@@ -185,13 +177,6 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
                 >
                   ↺ รีเซ็ตช่อง
                 </button>
-                <button
-                  type="button"
-                  onClick={handleAutoSolve}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/60 transition-colors cursor-pointer font-medium"
-                >
-                  ⚡ วางเรียงเฉลย
-                </button>
               </div>
             </div>
 
@@ -273,7 +258,7 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {AVAILABLE_CARDS.map(({ id, card }) => {
+              {shuffledCards.map(({ id, card }) => {
                 if (!card) return null;
                 const isPlaced = placedCardIds.includes(card.id);
                 const isSelected = selectedCardId === id;
@@ -338,18 +323,9 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/60">
           <div className="flex items-center gap-2">
-            {onPrev && (
-              <button
-                type="button"
-                onClick={onPrev}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                ◀ ย้อนกลับภารกิจที่ 1
-              </button>
-            )}
             <span className="text-xs text-slate-300 hidden sm:inline">
               {missionState.isCompleted
-                ? '✓ ผ่านภารกิจที่ 2 แล้ว สามารถไปต่อภารกิจที่ 3 ได้'
+                ? '✓ ผ่านภารกิจที่ 2 แล้ว! ปิดหน้าต่างแล้วเดินไปที่ โต๊ะ 3 (NVR & อุปกรณ์)'
                 : 'จัดเรียงอุปกรณ์และเชื่อมต่อสายข้อมูลให้ครบทั้ง 4 ลำดับ'}
             </span>
           </div>
@@ -362,13 +338,14 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
             >
               ปิดหน้าต่าง
             </button>
-            {missionState.isCompleted && onNext && (
+            {missionState.isCompleted && (
               <button
                 type="button"
-                onClick={onNext}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-400 hover:to-sky-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer"
+                onClick={onClose}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-400 hover:to-sky-400 text-slate-950 text-xs font-bold transition-all shadow-lg cursor-pointer flex items-center gap-1.5"
               >
-                ไปภารกิจที่ 3 (หน้าที่อุปกรณ์) ➜
+                <span>✓ สำเร็จภารกิจ! เดินไปโต๊ะ 3 (NVR & อุปกรณ์)</span>
+                <span>➜</span>
               </button>
             )}
           </div>
