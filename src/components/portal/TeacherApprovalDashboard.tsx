@@ -12,6 +12,8 @@ import {
     type SubjectiveSubmission,
 } from '../../lib/progressionState';
 import { allUnitsContent } from '../../content/courses/21909-2020';
+import { StudentAttemptHistoryModal } from './StudentAttemptHistoryModal';
+import { PendingReviewInbox } from './PendingReviewInbox';
 
 export type TeacherApprovalDashboardProps = {
     classId?: string;
@@ -125,6 +127,11 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [selectedSubmission, setSelectedSubmission] = useState<SubjectiveSubmission | null>(null);
     const [gradeScore, setGradeScore] = useState<string>('8');
     const [gradeFeedback, setGradeFeedback] = useState<string>('ตอบได้ตรงประเด็นตามเกณฑ์วิชาชีพ มีการเชื่อมโยงระบบได้ถูกต้อง');
+
+    // Attempt history modal & student filter state
+    const [selectedHistoryStudent, setSelectedHistoryStudent] = useState<{ id: string; name: string; code: string } | null>(null);
+    const [studentSearchTerm, setStudentSearchTerm] = useState<string>('');
+    const [studentStatusFilter, setStudentStatusFilter] = useState<'ALL' | 'PASSED' | 'IN_PROGRESS' | 'PENDING'>('ALL');
 
     // CSV & Override Form State
     const [targetClassId, setTargetClassId] = useState(classId);
@@ -478,7 +485,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
 
         if (effectiveClassUuid && isStudentUuid && targetStudent) {
             try {
-                const unitUuid = '33333333-3333-4333-8333-333333333333';
+                const unitUuid = targetStudent.unitProgress[overrideUnitId]?.unitId || '33333333-3333-4333-8333-333333333333';
                 const res = await fetch(`/api/classes/${encodeURIComponent(effectiveClassUuid.trim())}/students/${targetStudent.id}/progress/${unitUuid}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -538,6 +545,117 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         }, 800);
     };
 
+    // Filtered students for roster display and CSV export
+    const filteredStudents = students.filter((st) => {
+        const matchesGroup = selectedGroupFilter === 'ALL' || st.groupId === selectedGroupFilter;
+        if (!matchesGroup) return false;
+
+        if (studentSearchTerm.trim()) {
+            const term = studentSearchTerm.trim().toLowerCase();
+            const matchesCode = (st.code || '').toLowerCase().includes(term);
+            const matchesName = (st.name || '').toLowerCase().includes(term);
+            if (!matchesCode && !matchesName) return false;
+        }
+
+        const currentUnitData = st.unitProgress[selectedUnitTab] || {
+            lessons: 0,
+            progressPercent: 0,
+            lab: false,
+            exam: false,
+            passed: false,
+            unlocked: false,
+        };
+
+        if (studentStatusFilter === 'PASSED') {
+            return currentUnitData.passed;
+        }
+        if (studentStatusFilter === 'IN_PROGRESS') {
+            return currentUnitData.progressPercent > 0 && !currentUnitData.passed;
+        }
+        if (studentStatusFilter === 'PENDING') {
+            return (
+                currentUnitData.latestLabStatus === 'submitted' ||
+                currentUnitData.latestLabStatus === 'reviewing' ||
+                currentUnitData.latestQuizStatus === 'submitted' ||
+                submissions.some(
+                    (s) =>
+                        (s.studentCode === st.code || s.studentName === st.name) &&
+                        s.unitId === selectedUnitTab &&
+                        s.status === 'pending'
+                )
+            );
+        }
+
+        return true;
+    });
+
+    // Handler to export filtered students to CSV with UTF-8 BOM (Thai Excel support)
+    const handleExportCsv = () => {
+        const headers = [
+            'ลำดับ',
+            'รหัสผู้เรียน',
+            'ชื่อ - สกุล',
+            'กลุ่ม',
+            'หน่วยการเรียนรู้',
+            'ความก้าวหน้าเนื้อหา(%)',
+            'ภารกิจ3D_รหัส',
+            'ภารกิจ3D_สถานะ',
+            'ภารกิจ3D_คะแนน',
+            'ภารกิจ3D_คะแนนเต็ม',
+            'ภารกิจ3D_จำนวนครั้ง',
+            'ภารกิจ3D_คำใบ้',
+            'ห้องแล็บ3D_สถานะ',
+            'คะแนนแล็บ',
+            'แบบทดสอบ_สถานะ',
+            'คะแนนสอบ',
+            'ผลการอนุมัติหน่วย'
+        ];
+
+        const rows = filteredStudents.map((st, idx) => {
+            const u = st.unitProgress[selectedUnitTab] || {
+                lessons: 0,
+                progressPercent: 0,
+                lab: false,
+                exam: false,
+                passed: false,
+                unlocked: false,
+            };
+            const mission = u.latestMission;
+
+            return [
+                String(st.orderNum || idx + 1),
+                `"${st.code || st.id}"`,
+                `"${(st.name || '').replace(/"/g, '""')}"`,
+                `"${st.groupId || '-'}"`,
+                selectedUnitTab,
+                String(u.progressPercent),
+                `"${mission?.code || '-'}"`,
+                mission ? (mission.passed ? 'ผ่าน' : 'กำลังทำ') : 'ยังไม่เริ่ม',
+                mission ? String(mission.bestScore) : '-',
+                mission ? String(mission.maxScore) : '-',
+                mission ? String(mission.attemptCount) : '0',
+                mission ? String(mission.hintsUsed) : '0',
+                u.lab ? 'ผ่านแล็บ' : (u.latestLabStatus === 'submitted' ? 'ส่งแล้ว(รอตรวจ)' : 'ยังไม่ส่ง'),
+                u.labScore !== null && u.labScore !== undefined ? String(u.labScore) : '-',
+                u.exam ? 'สอบผ่าน' : (u.latestQuizStatus === 'submitted' ? 'ส่งแล้ว(รอตรวจ)' : 'ยังไม่สอบ'),
+                u.examScore !== null && u.examScore !== undefined ? String(u.examScore) : '-',
+                u.passed ? 'ผ่าน' : 'ไม่ผ่าน'
+            ].join(',');
+        });
+
+        // Prefix with \uFEFF BOM for Excel Thai compatibility
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `cctv_roster_${selectedUnitTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showNotice(`✓ ส่งออกไฟล์ CSV รายชื่อและผลการเรียนหน่วย ${selectedUnitTab} สำเร็จ (รองรับ Excel ภาษาไทย)`, 'success');
+    };
 
     return (
         <section className="portal-teacher-dashboard bg-slate-900/95 border border-sky-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl my-8 text-slate-100">
@@ -851,22 +969,33 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                 </div>
             )}
 
-            {/* TAB 2: SUBJECTIVE EXAM GRADING HUB */}
+            {/* TAB 2: REVIEW INBOX & SUBJECTIVE EXAM GRADING */}
             {activeTab === 'grading' && (
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="text-lg font-bold text-white m-0">
-                                รายการข้อสอบอัตนัยที่รอครูตรวจ (Subjective Examination Submissions)
-                            </h3>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                ตรวจสอบการวิเคราะห์ คำนวณ และการแก้ปัญหาตามสถานการณ์จริงของผู้เรียน
-                            </p>
+                <div className="space-y-8">
+                    {/* Unified Server-Authoritative Pending Review Inbox (Labs & Quizzes) */}
+                    <PendingReviewInbox
+                        classId={resolveClassUuid(classId)}
+                        onReviewCompleted={() => {
+                            fetchStudents(classId);
+                            setSubmissions(getSubjectiveSubmissions());
+                        }}
+                    />
+
+                    {/* Local Offline Submissions (Legacy / Fallback) */}
+                    <div className="border-t border-slate-800 pt-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-300 m-0">
+                                    รายการข้อสอบอัตนัยออฟไลน์ (Local Submissions)
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    บันทึกผลการทำข้อสอบอัตนัยที่ค้างอยู่ในเครื่องผู้เรียน
+                                </p>
+                            </div>
+                            <span className="px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                ออฟไลน์ {submissions.length} รายการ
+                            </span>
                         </div>
-                        <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            ส่งตรวจแล้ว {submissions.length} รายการ
-                        </span>
-                    </div>
 
                     {submissions.length === 0 ? (
                         <div className="p-12 rounded-3xl bg-slate-950/60 border border-slate-800 text-center space-y-3">
@@ -1020,6 +1149,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             </div>
                         </div>
                     )}
+                    </div>
                 </div>
             )}
 
@@ -1162,6 +1292,59 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         })}
                     </div>
 
+                    {/* Search & Status Filters & Export Toolbar (Phase 7) */}
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs">
+                        <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            {/* Search Box */}
+                            <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                                <input
+                                    type="text"
+                                    value={studentSearchTerm}
+                                    onChange={(e) => setStudentSearchTerm(e.target.value)}
+                                    placeholder="ค้นหาด้วยรหัส หรือ ชื่อ-สกุล..."
+                                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                                />
+                                {studentSearchTerm && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setStudentSearchTerm('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Status Filter */}
+                            <select
+                                value={studentStatusFilter}
+                                onChange={(e) => setStudentStatusFilter(e.target.value as 'ALL' | 'PASSED' | 'IN_PROGRESS' | 'PENDING')}
+                                className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-sky-400 focus:outline-none focus:border-sky-500 cursor-pointer"
+                            >
+                                <option value="ALL">สถานะทั้งหมด</option>
+                                <option value="PASSED">✓ ผ่านหน่วยแล้ว</option>
+                                <option value="IN_PROGRESS">⏳ กำลังดำเนินการ</option>
+                                <option value="PENDING">🔔 มีงานรอตรวจ</option>
+                            </select>
+                        </div>
+
+                        {/* Export to CSV Button (Phase 7 UTF-8 BOM) */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[11px] font-mono text-slate-400">
+                                พบ {filteredStudents.length} คน
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleExportCsv}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow shadow-emerald-950 cursor-pointer"
+                                title="ส่งออกข้อมูลเป็น CSV รองรับ Excel ภาษาไทย (UTF-8 BOM)"
+                            >
+                                <span>📥 ส่งออก CSV (Excel ภาษาไทย)</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                             <thead>
@@ -1179,9 +1362,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60">
-                                {students
-                                    .filter((st) => selectedGroupFilter === 'ALL' || st.groupId === selectedGroupFilter)
-                                    .map((st, idx) => {
+                                {filteredStudents.map((st, idx) => {
                                     const currentUnitData = st.unitProgress[selectedUnitTab] || { lessons: 0, progressPercent: 0, lab: false, exam: false, passed: false, unlocked: false };
                                     const pendingSub = submissions.find(
                                         (s) =>
@@ -1198,8 +1379,16 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                             <td className="p-3 font-mono font-bold text-sky-400">
                                                 {st.code || st.id.slice(0, 8)}
                                             </td>
-                                            <td className="p-3 font-semibold text-white">
-                                                {st.name}
+                                            <td className="p-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedHistoryStudent({ id: st.id, name: st.name, code: st.code })}
+                                                    className="text-left font-semibold text-white hover:text-sky-300 transition-colors cursor-pointer inline-flex items-center gap-1 group"
+                                                    title="คลิกเพื่อดูประวัติความพยายามและผลวิเคราะห์ระบบ"
+                                                >
+                                                    <span>{st.name}</span>
+                                                    <span className="opacity-0 group-hover:opacity-100 text-sky-400 text-[11px] transition-opacity">📊</span>
+                                                </button>
                                             </td>
                                             <td className="p-3">
                                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
@@ -1222,24 +1411,33 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                             <td className="p-3">
                                                 {currentUnitData.latestMission ? (
                                                     <div className="flex flex-col gap-0.5">
-                                                        <span
-                                                            className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold inline-flex items-center gap-1 w-fit ${
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedHistoryStudent({ id: st.id, name: st.name, code: st.code })}
+                                                            className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold inline-flex items-center gap-1 w-fit transition-transform hover:scale-105 cursor-pointer ${
                                                                 currentUnitData.latestMission.passed
-                                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                                                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
+                                                                    : 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
                                                             }`}
+                                                            title="คลิกเพื่อดูประวัติความพยายามและการวิเคราะห์ระบบ"
                                                         >
                                                             {currentUnitData.latestMission.passed ? '✓ ผ่าน' : '⏳ กำลังทำ'}
                                                             <span>({currentUnitData.latestMission.bestScore}/{currentUnitData.latestMission.maxScore})</span>
-                                                        </span>
+                                                            <span className="text-[10px]">🔍</span>
+                                                        </button>
                                                         <span className="text-[10px] text-slate-400 font-mono">
                                                             {currentUnitData.latestMission.attemptCount} รอบ · คำใบ้ {currentUnitData.latestMission.hintsUsed}
                                                         </span>
                                                     </div>
                                                 ) : (
-                                                    <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-400">
-                                                        ยังไม่เริ่ม
-                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedHistoryStudent({ id: st.id, name: st.name, code: st.code })}
+                                                        className="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                                                        title="คลิกเพื่อดูประวัติ"
+                                                    >
+                                                        ยังไม่เริ่ม 🔍
+                                                    </button>
                                                 )}
                                             </td>
                                             <td className="p-3">
@@ -1299,13 +1497,23 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                                 </span>
                                             </td>
                                             <td className="p-3 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleApproveStudent(st, selectedUnitTab)}
-                                                    className="px-3 py-1.5 rounded-lg bg-sky-600/80 hover:bg-sky-500 text-white text-xs font-semibold transition-colors cursor-pointer"
-                                                >
-                                                    อนุมัติผ่านด่าน
-                                                </button>
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedHistoryStudent({ id: st.id, name: st.name, code: st.code })}
+                                                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
+                                                        title="ดูประวัติความพยายามและการวินิจฉัย"
+                                                    >
+                                                        📊 ประวัติ
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleApproveStudent(st, selectedUnitTab)}
+                                                        className="px-3 py-1.5 rounded-lg bg-sky-600/80 hover:bg-sky-500 text-white text-xs font-semibold transition-colors cursor-pointer"
+                                                    >
+                                                        อนุมัติผ่านด่าน
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );
@@ -1447,6 +1655,18 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         </button>
                     </div>
                 </form>
+            )}
+
+            {/* Student Attempt History Modal (Phase 3) */}
+            {selectedHistoryStudent && (
+                <StudentAttemptHistoryModal
+                    isOpen={Boolean(selectedHistoryStudent)}
+                    studentId={selectedHistoryStudent.id}
+                    studentName={selectedHistoryStudent.name}
+                    studentCode={selectedHistoryStudent.code}
+                    classId={resolveClassUuid(classId)}
+                    onClose={() => setSelectedHistoryStudent(null)}
+                />
             )}
         </section>
     );

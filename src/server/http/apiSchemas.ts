@@ -112,3 +112,16 @@ export const classPathSchema = z.object({
   classId: z.string().uuid(),
 });
 
+export const classStudentPathSchema = z.object({
+  classId: z.string().uuid(),
+  studentId: z.string().uuid(),
+});
+
+export const quizReviewInputSchema = z
+  .object({
+    status: z.enum(['approved', 'rejected']),
+    approvedScore: z.number().min(0).max(100),
+    feedback: z.string().trim().max(5_000).optional(),
+  })
+  .strict();
+

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { canSubmitForStudent } from '../auth/authorizationRules';
+import { assertCanManageClass } from './classService';
 import { getServerDatabase, withTrustedTransaction } from '../database/client';
 import { evaluateRoomSubmission } from '../game/evaluateRoomSubmission';
 import {
@@ -227,4 +228,91 @@ export async function finalizeGameSessionService(
       mandatoryChecks: evaluation.mandatoryChecks,
     };
   });
+}
+
+export type GameAttemptHistoryItem = {
+  id: string;
+  attemptNo: number;
+  missionId: string;
+  missionCode: string;
+  missionTitle: string;
+  unitId: string;
+  approvedScore: number;
+  maxScoreSnapshot: number;
+  passed: boolean;
+  hintsUsed: number;
+  resultDetails: Record<string, unknown>;
+  evaluatedAt: string;
+  createdAt: string;
+};
+
+export async function getStudentGameAttemptsHistoryService(
+  actorId: string,
+  classId: string,
+  studentId: string,
+  unitId?: string,
+): Promise<GameAttemptHistoryItem[]> {
+  await assertCanManageClass(actorId, classId);
+  const sql = getServerDatabase();
+
+  const rows = unitId
+    ? await sql`
+        select
+          ga.id,
+          ga.attempt_no,
+          ga.mission_id,
+          m.code as mission_code,
+          m.title as mission_title,
+          m.unit_id,
+          ga.approved_score,
+          ga.max_score_snapshot,
+          ga.passed,
+          ga.hints_used,
+          ga.result_details,
+          ga.evaluated_at,
+          ga.created_at
+        from public.game_attempts as ga
+        join public.missions as m on m.id = ga.mission_id
+        where ga.class_id = ${classId}
+          and ga.student_id = ${studentId}
+          and m.unit_id = ${unitId}
+        order by ga.attempt_no desc, ga.created_at desc
+      `
+    : await sql`
+        select
+          ga.id,
+          ga.attempt_no,
+          ga.mission_id,
+          m.code as mission_code,
+          m.title as mission_title,
+          m.unit_id,
+          ga.approved_score,
+          ga.max_score_snapshot,
+          ga.passed,
+          ga.hints_used,
+          ga.result_details,
+          ga.evaluated_at,
+          ga.created_at
+        from public.game_attempts as ga
+        join public.missions as m on m.id = ga.mission_id
+        where ga.class_id = ${classId}
+          and ga.student_id = ${studentId}
+        order by ga.attempt_no desc, ga.created_at desc
+      `;
+
+  return rows.map((r: any) => ({
+    id: r.id,
+    attemptNo: Number(r.attempt_no),
+    missionId: r.mission_id,
+    missionCode: r.mission_code,
+    missionTitle: r.mission_title,
+    unitId: r.unit_id,
+    approvedScore: Number(r.approved_score),
+    maxScoreSnapshot: Number(r.max_score_snapshot),
+    passed: Boolean(r.passed),
+    hintsUsed: Number(r.hints_used),
+    resultDetails: r.result_details || {},
+    evaluatedAt: r.evaluated_at,
+    createdAt: r.created_at,
+  }));
 }
