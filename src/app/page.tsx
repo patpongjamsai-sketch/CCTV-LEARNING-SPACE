@@ -1,40 +1,48 @@
-import { getVerifiedAuthContext } from '../lib/auth/claims';
-import { createAdminSupabaseClient } from '../lib/supabase/admin';
+import { redirect } from 'next/navigation';
+import { getCurrentProfile } from '../lib/auth/currentProfile';
+import { createServerSupabaseClient } from '../lib/supabase/server';
 import { DashboardShell, type DashboardUnit } from '../components/portal/DashboardShell';
 import { getStudentProgressOverviewService } from '../server/services/progressionService';
 
 export default async function DashboardPage() {
+  let current;
   try {
-    const authContext = await getVerifiedAuthContext();
-    if (!authContext) {
-      return <DashboardShell />;
-    }
+    current = await getCurrentProfile();
+  } catch (error) {
+    console.error('Profile lookup failed:', error);
+    return <ProfileUnavailable />;
+  }
+  if (current.status === 'unauthenticated') {
+    redirect('/login?next=/');
+  }
+  if (current.status === 'inactive') {
+    return <ProfileUnavailable />;
+  }
 
-    const supabase = createAdminSupabaseClient();
+  const profile = current.profile;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, display_name, role, student_code')
-      .eq('id', authContext.userId)
-      .single();
+  try {
+    const supabase = await createServerSupabaseClient();
 
-    if (!profile) {
-      return <DashboardShell />;
-    }
-
-    const { data: membership } = await supabase
+    const { data: memberships, error: membershipsError } = await supabase
       .from('class_members')
       .select('class_id, member_role')
-      .eq('profile_id', authContext.userId)
-      .eq('active', true)
-      .maybeSingle();
+      .eq('profile_id', profile.id)
+      .eq('active', true);
+
+    if (membershipsError) throw membershipsError;
+
+    const membership =
+      memberships?.find((item) => item.member_role === 'teacher') ||
+      memberships?.find((item) => item.member_role === 'student') ||
+      memberships?.[0];
 
     const classId = membership?.class_id;
     const isStaff = profile.role === 'teacher' || profile.role === 'admin';
 
     // Progress and unlock state come from the server progression predicate.
     const overview = classId && !isStaff
-      ? await getStudentProgressOverviewService(authContext.userId, classId)
+      ? await getStudentProgressOverviewService(profile.id, classId)
       : null;
 
     const units: DashboardUnit[] = [];
@@ -87,6 +95,16 @@ export default async function DashboardPage() {
     );
   } catch (err) {
     console.error('Dashboard error:', err);
-    return <DashboardShell />;
+    return <ProfileUnavailable />;
   }
+}
+
+function ProfileUnavailable() {
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <h1 className="text-2xl font-bold">ไม่สามารถแสดงข้อมูลบัญชีได้</h1>
+      <p>โปรดติดต่อผู้ดูแลระบบเพื่อตรวจสอบสถานะบัญชีและการเชื่อมต่อ</p>
+      <a href="/auth/logout" className="text-sky-400 underline">ออกจากระบบ</a>
+    </main>
+  );
 }

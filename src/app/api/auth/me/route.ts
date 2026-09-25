@@ -1,35 +1,26 @@
 import { NextResponse } from 'next/server';
-import { getVerifiedAuthContext } from '../../../../lib/auth/claims';
-import { createAdminSupabaseClient } from '../../../../lib/supabase/admin';
+import { getCurrentProfile } from '../../../../lib/auth/currentProfile';
 
 export const dynamic = 'force-dynamic';
+const privateResponse = { headers: { 'Cache-Control': 'private, no-store' } };
 
 export async function GET() {
   try {
-    const authContext = await getVerifiedAuthContext();
-    if (!authContext) {
-      return NextResponse.json({ user: null });
+    const current = await getCurrentProfile();
+    if (current.status !== 'authenticated') {
+      return NextResponse.json({ user: null }, privateResponse);
     }
-
-    const supabase = createAdminSupabaseClient();
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, display_name, role, student_code')
-      .eq('id', authContext.userId)
-      .maybeSingle();
-
-    const email = typeof authContext.claims?.email === 'string' ? authContext.claims.email : null;
+    const profile = current.profile;
 
     return NextResponse.json({
       user: {
-        userId: authContext.userId,
-        displayName: profile?.display_name || (email ? email.split('@')[0] : 'ผู้เรียน'),
-        role: profile?.role || 'student',
-        studentCode: profile?.student_code || null,
-        email,
+        userId: profile.id,
+        displayName: profile.display_name,
+        role: profile.role,
+        studentCode: profile.student_code,
       },
-    });
+    }, privateResponse);
   } catch {
-    return NextResponse.json({ user: null });
+    return NextResponse.json({ error: 'Profile unavailable' }, { ...privateResponse, status: 503 });
   }
 }

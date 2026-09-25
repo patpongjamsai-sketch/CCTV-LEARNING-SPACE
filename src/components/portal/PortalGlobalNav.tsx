@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { createBrowserSupabaseClient } from '../../lib/supabase/client';
 
 export type GlobalNavItem = {
     num: string;
@@ -28,11 +27,10 @@ export type UserProfile = {
 };
 
 export type PortalGlobalNavProps = {
-    showTeacherTab?: boolean;
     initialUser?: UserProfile | null;
 };
 
-export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: PortalGlobalNavProps = {}) {
+export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {}) {
     const pathname = usePathname() || '';
     const [user, setUser] = useState<UserProfile | null>(initialUser);
 
@@ -41,35 +39,15 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
 
         const fetchUser = async () => {
             try {
-                // 1. Try server API route first (most reliable, reads HTTP cookies & profiles)
                 const res = await fetch('/api/auth/me', { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data?.user && isMounted) {
-                        setUser(data.user);
-                        return;
-                    }
-                }
-
-                // 2. Fallback to Supabase Browser Client
-                const supabase = createBrowserSupabaseClient();
-                const { data: { user: authUser } } = await supabase.auth.getUser();
-                if (authUser && isMounted) {
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('display_name, student_code, role')
-                        .eq('id', authUser.id)
-                        .maybeSingle();
-
-                    setUser({
-                        displayName: profile?.display_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'ผู้เรียน',
-                        role: profile?.role || 'student',
-                        studentCode: profile?.student_code || undefined,
-                        email: authUser.email,
-                    });
+                    if (isMounted) setUser(data?.user ?? null);
+                } else if (isMounted) {
+                    setUser(null);
                 }
             } catch {
-                // ignore
+                if (isMounted) setUser(null);
             }
         };
 
@@ -79,7 +57,7 @@ export function PortalGlobalNav({ showTeacherTab = false, initialUser = null }: 
         };
     }, []);
 
-    const isTeacherOrAdmin = showTeacherTab || user?.role === 'teacher' || user?.role === 'admin' || pathname.startsWith('/teacher');
+    const isTeacherOrAdmin = user?.role === 'teacher' || user?.role === 'admin';
     const items = isTeacherOrAdmin
         ? GLOBAL_NAV_ITEMS
         : GLOBAL_NAV_ITEMS.filter((item) => item.href !== '/teacher');
