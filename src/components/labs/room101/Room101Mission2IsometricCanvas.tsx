@@ -491,22 +491,32 @@ export const SplineCable3D: React.FC<CableSplineProps> = ({
 }) => {
   const particleRef = useRef<THREE.Mesh>(null);
 
-  // Generate a realistic drooping curve between ports
-  const { curve, tubeGeometry } = useMemo(() => {
+  // Generate a realistic elevated arc curve between ports
+  const { curve, tubeGeometry, labelPos } = useMemo(() => {
     const p0 = new THREE.Vector3(...startPos);
     const p3 = new THREE.Vector3(...endPos);
 
-    // Droop midpoint down towards the workbench
     const midX = (p0.x + p3.x) / 2;
     const midZ = (p0.z + p3.z) / 2;
-    const droopY = Math.min(p0.y, p3.y) - (cableType === 'HDMI' ? 0.35 : 0.45);
+    const dx = p3.x - p0.x;
 
-    const p1 = new THREE.Vector3(p0.x + 0.3, droopY, p0.z - 0.2);
-    const p2 = new THREE.Vector3(p3.x - 0.3, droopY, p3.z - 0.2);
+    // Keep droop comfortably above the workbench surface and socket pad rims (pad top is ~0.12, keep min at 0.20)
+    const baseMinY = Math.min(p0.y, p3.y);
+    const droopY = Math.max(0.20, baseMinY - (cableType === 'HDMI' ? 0.08 : 0.12));
 
-    const c = new THREE.CatmullRomCurve3([p0, p1, new THREE.Vector3(midX, droopY - 0.1, midZ), p2, p3]);
-    const geo = new THREE.TubeGeometry(c, 48, cableType === 'HDMI' ? 0.045 : 0.038, 12, false);
-    return { curve: c, tubeGeometry: geo };
+    // Slight forward bow (+Z) so the cable curves gracefully outward without clipping socket corners
+    const forwardBow = 0.16;
+    const p1 = new THREE.Vector3(p0.x + dx * 0.25, droopY + 0.04, p0.z + forwardBow * 0.5);
+    const p2 = new THREE.Vector3(p3.x - dx * 0.25, droopY + 0.04, p3.z + forwardBow * 0.5);
+    const midPoint = new THREE.Vector3(midX, droopY, midZ + forwardBow);
+
+    const c = new THREE.CatmullRomCurve3([p0, p1, midPoint, p2, p3]);
+    const geo = new THREE.TubeGeometry(c, 48, cableType === 'HDMI' ? 0.046 : 0.04, 12, false);
+    return {
+      curve: c,
+      tubeGeometry: geo,
+      labelPos: [midX, droopY + 0.22, midZ + forwardBow] as [number, number, number],
+    };
   }, [startPos, endPos, cableType]);
 
   // Animate particle pulse along curve
@@ -543,18 +553,18 @@ export const SplineCable3D: React.FC<CableSplineProps> = ({
         </mesh>
       )}
 
-      {/* Floating Cable Protocol Tag */}
+      {/* Floating Cable Protocol Tag - elevated above cable */}
       <Html
-        position={[(startPos[0] + endPos[0]) / 2, Math.min(startPos[1], endPos[1]) - 0.35, (startPos[2] + endPos[2]) / 2]}
+        position={labelPos}
         center
         distanceFactor={4.8}
         style={{ pointerEvents: 'none' }}
       >
         <div
-          className={`px-1.5 py-0.5 rounded-full text-[6.5px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none flex items-center gap-1 ${
+          className={`px-2 py-0.5 rounded-full text-[7px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none flex items-center gap-1 ${
             isFlowing
               ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400 animate-pulse'
-              : 'bg-slate-900/90 text-slate-300 border-slate-700'
+              : 'bg-white/95 text-slate-800 border-slate-300 shadow-slate-400/20'
           }`}
         >
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: glowColor }} />
@@ -599,37 +609,48 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
       {/* Studio White-Gray Background */}
       <color attach="background" args={['#f1f5f9']} />
 
-      {/* Studio Lighting */}
-      <ambientLight intensity={0.9} />
+      {/* Studio Lighting - Bright Cleanroom 3-Point with Rim Lights */}
+      <ambientLight intensity={1.15} color="#ffffff" />
       <directionalLight
         position={[9, 16, 7]}
-        intensity={1.5}
+        intensity={1.6}
         castShadow
         shadow-mapSize={[2048, 2048]}
       />
-      <directionalLight position={[-8, 10, -6]} intensity={0.5} color="#e2e8f0" />
-      <pointLight position={[-4, 4, 3]} intensity={0.6} color="#06b6d4" />
-      <pointLight position={[0, 4, 3]} intensity={0.6} color="#10b981" />
-      <pointLight position={[4, 4, 3]} intensity={0.6} color="#8b5cf6" />
+      {/* Opposing Fill Light for soft shadow fill */}
+      <directionalLight position={[-8, 10, -6]} intensity={0.7} color="#f0fdf4" />
+      {/* Back/Rim Light to highlight chassis edges of black hardware */}
+      <directionalLight position={[0, 8, -8]} intensity={0.9} color="#e0f2fe" />
+
+      {/* Vibrant Stage Accent Point Lights */}
+      <pointLight position={[-4, 4, 3]} intensity={0.7} color="#06b6d4" />
+      <pointLight position={[0, 4, 3]} intensity={0.7} color="#10b981" />
+      <pointLight position={[4, 4, 3]} intensity={0.7} color="#8b5cf6" />
 
       {/* Main Workbench Assembly Group */}
       <group position={[0, -0.6, 0]}>
-        {/* Workbench Table Top */}
+        {/* Workbench Table Top - Cleanroom Aluminum */}
         <mesh position={[0, -0.15, 0.4]} receiveShadow castShadow>
           <boxGeometry args={[10.5, 0.25, 4.2]} />
-          <meshStandardMaterial color="#0b1120" roughness={0.35} metalness={0.75} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.25} metalness={0.4} />
         </mesh>
 
-        {/* Electrostatic Mat Surface (ESD Mat) */}
+        {/* Electrostatic Mat Surface (ESD Mat) - Cleanroom Ice Blue High-Contrast */}
         <mesh position={[0, 0, 0.4]} receiveShadow>
           <boxGeometry args={[10.2, 0.04, 3.9]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.6} metalness={0.2} opacity={0.3} transparent />
+          <meshStandardMaterial color="#e0f2fe" roughness={0.4} metalness={0.15} />
+        </mesh>
+
+        {/* ESD Mat Outer Border Trim */}
+        <mesh position={[0, -0.01, 0.4]}>
+          <boxGeometry args={[10.26, 0.03, 3.96]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
         </mesh>
 
         {/* Workbench Front Trim with Glowing Accent */}
         <mesh position={[0, -0.15, 2.52]}>
           <boxGeometry args={[10.5, 0.12, 0.04]} />
-          <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={0.6} />
+          <meshStandardMaterial color="#0284c7" emissive="#0ea5e9" emissiveIntensity={0.8} />
         </mesh>
 
         {/* ========================================================
@@ -642,7 +663,7 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
           const isWrong = slot?.status === 'WRONG_ORDER' || slot?.status === 'WRONG_TYPE';
           const isTargeted = selectedCardId !== null && !placedItem;
 
-          let socketColor = '#1e293b';
+          let socketColor = stage.color;
           if (isCorrect) socketColor = '#10b981';
           else if (isWrong) socketColor = '#ef4444';
           else if (isTargeted) socketColor = '#06b6d4';
@@ -656,22 +677,36 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
                 onSlotClick(stage.index);
               }}
             >
-              {/* Socket Pad Rim */}
+              {/* Socket Pad Rim - Clean White Ceramic with Vibrant Neon Accent Border */}
               <mesh castShadow receiveShadow>
-                <boxGeometry args={[2.1, 0.08, 1.9]} />
+                <boxGeometry args={[2.14, 0.08, 1.94]} />
                 <meshStandardMaterial
-                  color={socketColor}
+                  color={isCorrect ? '#10b981' : isWrong ? '#ef4444' : isTargeted ? '#0ea5e9' : '#ffffff'}
                   emissive={socketColor}
-                  emissiveIntensity={isCorrect ? 0.35 : isTargeted ? 0.45 : 0.08}
-                  roughness={0.3}
-                  metalness={0.6}
+                  emissiveIntensity={isCorrect ? 0.4 : isTargeted ? 0.5 : 0.05}
+                  roughness={0.2}
+                  metalness={0.3}
                 />
               </mesh>
 
-              {/* Inner Recessed Cavity */}
+              {/* Inner High-Contrast Recessed Cavity (Light Blueprint Surface) */}
               <mesh position={[0, 0.03, 0]}>
-                <boxGeometry args={[1.85, 0.06, 1.65]} />
-                <meshStandardMaterial color="#020617" roughness={0.8} />
+                <boxGeometry args={[1.9, 0.06, 1.7]} />
+                <meshStandardMaterial
+                  color={isCorrect ? '#ecfdf5' : isWrong ? '#fef2f2' : isTargeted ? '#f0f9ff' : '#f8fafc'}
+                  roughness={0.5}
+                />
+              </mesh>
+
+              {/* Inner Blueprint Alignment Crosshair & Border */}
+              <mesh position={[0, 0.062, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[1.7, 1.5]} />
+                <meshBasicMaterial
+                  color={socketColor}
+                  wireframe
+                  transparent
+                  opacity={isCorrect ? 0.35 : isTargeted ? 0.5 : 0.2}
+                />
               </mesh>
 
               {/* Step Number Badge */}
@@ -682,12 +717,14 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
                 style={{ pointerEvents: 'none' }}
               >
                 <div
-                  className={`px-1.5 py-0.5 rounded-full text-[7px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none ${
+                  className={`px-2 py-0.5 rounded-full text-[7.5px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none ${
                     isCorrect
-                      ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400'
+                      ? 'bg-emerald-600 text-white border-emerald-400 shadow-emerald-500/30'
                       : isWrong
-                      ? 'bg-rose-950/90 text-rose-300 border-rose-400'
-                      : 'bg-slate-900/90 text-slate-300 border-slate-700'
+                      ? 'bg-rose-600 text-white border-rose-400 shadow-rose-500/30'
+                      : isTargeted
+                      ? 'bg-sky-600 text-white border-sky-300 shadow-sky-500/30 animate-pulse'
+                      : 'bg-white/95 text-slate-800 border-slate-300 shadow-slate-400/20'
                   }`}
                 >
                   {isCorrect ? `✓ ลำดับที่ ${stage.index + 1}` : `[ช่องที่ ${stage.index + 1}]`}
@@ -778,10 +815,10 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
             3D Bottom Component Shelf (Unplaced 3D Parts Pick-up)
            ======================================================== */}
         <group position={[0, 0, 2.3]}>
-          {/* Component Tray Shelf */}
+          {/* Component Tray Shelf - Modern Brushed Aluminum */}
           <mesh position={[0, -0.05, 0]} receiveShadow>
             <boxGeometry args={[9.6, 0.12, 1.2]} />
-            <meshStandardMaterial color="#0f172a" roughness={0.4} metalness={0.7} />
+            <meshStandardMaterial color="#e2e8f0" roughness={0.3} metalness={0.5} />
           </mesh>
 
           {M2_STAGE_CONFIGS.map((stage) => {
@@ -799,13 +836,15 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
                   onSelectCard(isSelected ? null : stage.cardId);
                 }}
               >
-                {/* Tray Pedestal */}
+                {/* Tray Pedestal - Polished Ceramic/Metal Disc */}
                 <mesh receiveShadow>
                   <cylinderGeometry args={[0.55, 0.6, 0.1, 24]} />
                   <meshStandardMaterial
-                    color={isSelected ? '#06b6d4' : '#1e293b'}
-                    emissive={isSelected ? '#06b6d4' : '#000000'}
-                    emissiveIntensity={isSelected ? 0.5 : 0}
+                    color={isSelected ? '#0ea5e9' : '#f8fafc'}
+                    emissive={isSelected ? '#0ea5e9' : '#cbd5e1'}
+                    emissiveIntensity={isSelected ? 0.6 : 0.1}
+                    metalness={0.3}
+                    roughness={0.2}
                   />
                 </mesh>
 
@@ -829,12 +868,12 @@ const IsometricWorkbenchScene: React.FC<Mission23DCanvasProps> = ({
                       e.stopPropagation();
                       onSelectCard(isSelected ? null : stage.cardId);
                     }}
-                    className={`px-1.5 py-0.5 rounded-md text-[7px] font-bold whitespace-nowrap transition-transform cursor-pointer select-none ${
+                    className={`px-2 py-0.5 rounded-md text-[7.5px] font-bold whitespace-nowrap transition-transform cursor-pointer select-none shadow-sm ${
                       isSelected
-                        ? 'bg-cyan-500 text-slate-950 scale-105 shadow-sm shadow-cyan-500/50'
+                        ? 'bg-sky-500 text-white scale-105 shadow-md shadow-sky-500/40'
                         : isPlaced
-                        ? 'bg-slate-800/80 text-slate-500 line-through opacity-50'
-                        : 'bg-slate-900 text-slate-200 hover:bg-slate-800 border border-slate-700'
+                        ? 'bg-slate-200 text-slate-400 line-through opacity-60 border border-slate-300'
+                        : 'bg-white text-slate-700 hover:bg-sky-50 hover:text-sky-700 border border-slate-300'
                     }`}
                   >
                     {isPlaced ? 'ติดตั้งแล้ว' : isSelected ? 'กำลังถือ ➜' : stage.nameTh}

@@ -334,11 +334,19 @@ const M3SplineCable: React.FC<{
     const p3 = new THREE.Vector3(...endPos);
     const midX = (p0.x + p3.x) / 2;
     const midZ = (p0.z + p3.z) / 2;
-    const droopY = Math.min(p0.y, p3.y) - 0.35;
-    const p1 = new THREE.Vector3(p0.x + 0.2, droopY, p0.z - 0.15);
-    const p2 = new THREE.Vector3(p3.x - 0.2, droopY, p3.z - 0.15);
-    const c = new THREE.CatmullRomCurve3([p0, p1, new THREE.Vector3(midX, droopY - 0.08, midZ), p2, p3]);
-    const geo = new THREE.TubeGeometry(c, 36, 0.035, 10, false);
+    const dx = p3.x - p0.x;
+
+    // Elevate cable arc comfortably above table and pad rims (pad top is ~0.12, keep min at 0.20)
+    const baseMinY = Math.min(p0.y, p3.y);
+    const droopY = Math.max(0.20, baseMinY - 0.12);
+    const forwardBow = 0.16;
+
+    const p1 = new THREE.Vector3(p0.x + dx * 0.25, droopY + 0.04, p0.z + forwardBow * 0.5);
+    const p2 = new THREE.Vector3(p3.x - dx * 0.25, droopY + 0.04, p3.z + forwardBow * 0.5);
+    const midPoint = new THREE.Vector3(midX, droopY, midZ + forwardBow);
+
+    const c = new THREE.CatmullRomCurve3([p0, p1, midPoint, p2, p3]);
+    const geo = new THREE.TubeGeometry(c, 44, 0.04, 12, false);
     return { curve: c, tubeGeometry: geo };
   }, [startPos, endPos]);
 
@@ -387,31 +395,36 @@ const Mission3Scene: React.FC<Mission33DCanvasProps> = ({ selectedDeviceId, onSe
       {/* Studio White-Gray Background */}
       <color attach="background" args={['#f1f5f9']} />
 
-      {/* Studio Lighting */}
-      <ambientLight intensity={0.9} />
+      {/* Studio Lighting - Bright Cleanroom 3-Point with Rim Lights */}
+      <ambientLight intensity={1.15} color="#ffffff" />
       <directionalLight
         position={[9, 16, 7]}
-        intensity={1.5}
+        intensity={1.6}
         castShadow
         shadow-mapSize={[2048, 2048]}
       />
-      <directionalLight position={[-8, 10, -6]} intensity={0.5} color="#e2e8f0" />
-      <pointLight position={[-3, 4, 3]} intensity={0.5} color="#06b6d4" />
-      <pointLight position={[3, 4, 3]} intensity={0.5} color="#8b5cf6" />
+      <directionalLight position={[-8, 10, -6]} intensity={0.7} color="#f0fdf4" />
+      <directionalLight position={[0, 8, -8]} intensity={0.9} color="#e0f2fe" />
+      <pointLight position={[-3, 4, 3]} intensity={0.6} color="#06b6d4" />
+      <pointLight position={[3, 4, 3]} intensity={0.6} color="#8b5cf6" />
 
       {/* Main Table Platform */}
       <group position={[0, -0.6, 0]}>
         <mesh position={[0, -0.15, 0.2]} receiveShadow castShadow>
           <boxGeometry args={[11.5, 0.25, 4.0]} />
-          <meshStandardMaterial color="#0b1120" roughness={0.35} metalness={0.75} />
+          <meshStandardMaterial color="#e2e8f0" roughness={0.25} metalness={0.4} />
         </mesh>
         <mesh position={[0, 0, 0.2]} receiveShadow>
           <boxGeometry args={[11.2, 0.04, 3.7]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.6} metalness={0.2} opacity={0.3} transparent />
+          <meshStandardMaterial color="#e0f2fe" roughness={0.4} metalness={0.15} />
+        </mesh>
+        <mesh position={[0, -0.01, 0.2]}>
+          <boxGeometry args={[11.26, 0.03, 3.76]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
         </mesh>
         <mesh position={[0, -0.15, 2.22]}>
           <boxGeometry args={[11.5, 0.12, 0.04]} />
-          <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.6} />
+          <meshStandardMaterial color="#d97706" emissive="#f59e0b" emissiveIntensity={0.8} />
         </mesh>
 
         {/* 5 Device Sockets */}
@@ -421,7 +434,7 @@ const Mission3Scene: React.FC<Mission33DCanvasProps> = ({ selectedDeviceId, onSe
           const isSelected = selectedDeviceId === item.id;
           const isWrong = !!currentMatch && !isCorrect;
 
-          let padColor = '#1e293b';
+          let padColor = item.color;
           if (isCorrect) padColor = '#10b981';
           else if (isWrong) padColor = '#ef4444';
           else if (isSelected) padColor = '#f59e0b';
@@ -437,18 +450,30 @@ const Mission3Scene: React.FC<Mission33DCanvasProps> = ({ selectedDeviceId, onSe
             >
               {/* Pad Frame */}
               <mesh castShadow receiveShadow>
-                <boxGeometry args={[1.95, 0.08, 1.8]} />
+                <boxGeometry args={[1.98, 0.08, 1.84]} />
                 <meshStandardMaterial
-                  color={padColor}
+                  color={isCorrect ? '#10b981' : isWrong ? '#ef4444' : isSelected ? '#f59e0b' : '#ffffff'}
                   emissive={padColor}
-                  emissiveIntensity={isCorrect ? 0.35 : isSelected ? 0.5 : 0.08}
-                  roughness={0.3}
-                  metalness={0.6}
+                  emissiveIntensity={isCorrect ? 0.4 : isSelected ? 0.5 : 0.05}
+                  roughness={0.2}
+                  metalness={0.3}
                 />
               </mesh>
               <mesh position={[0, 0.03, 0]}>
-                <boxGeometry args={[1.75, 0.06, 1.6]} />
-                <meshStandardMaterial color="#020617" roughness={0.8} />
+                <boxGeometry args={[1.78, 0.06, 1.64]} />
+                <meshStandardMaterial
+                  color={isCorrect ? '#ecfdf5' : isWrong ? '#fef2f2' : isSelected ? '#fffbeb' : '#f8fafc'}
+                  roughness={0.5}
+                />
+              </mesh>
+              <mesh position={[0, 0.062, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[1.6, 1.45]} />
+                <meshBasicMaterial
+                  color={padColor}
+                  wireframe
+                  transparent
+                  opacity={isCorrect ? 0.35 : isSelected ? 0.5 : 0.2}
+                />
               </mesh>
 
               {/* 3D Model Placed */}
@@ -473,14 +498,14 @@ const Mission3Scene: React.FC<Mission33DCanvasProps> = ({ selectedDeviceId, onSe
               {/* Status Badge */}
               <Html position={[0, 0.12, 1.05]} center distanceFactor={4.8} style={{ pointerEvents: 'none' }}>
                 <div
-                  className={`px-1.5 py-0.5 rounded-full text-[7px] font-bold font-mono tracking-wider border shadow-sm whitespace-nowrap select-none ${
+                  className={`px-2 py-0.5 rounded-full text-[7.5px] font-bold font-mono tracking-wider border shadow-md whitespace-nowrap select-none ${
                     isCorrect
-                      ? 'bg-emerald-950/90 text-emerald-300 border-emerald-400'
+                      ? 'bg-emerald-600 text-white border-emerald-400 shadow-emerald-500/30'
                       : isWrong
-                      ? 'bg-rose-950/90 text-rose-300 border-rose-400'
+                      ? 'bg-rose-600 text-white border-rose-400 shadow-rose-500/30'
                       : isSelected
-                      ? 'bg-amber-950/90 text-amber-300 border-amber-400 animate-pulse'
-                      : 'bg-slate-900/90 text-slate-300 border-slate-700'
+                      ? 'bg-amber-600 text-white border-amber-300 shadow-amber-500/30 animate-pulse'
+                      : 'bg-white/95 text-slate-800 border-slate-300 shadow-slate-400/20'
                   }`}
                 >
                   {isCorrect ? `✓ ${item.roleTh}` : isSelected ? `กำลังเลือก ➜ ${item.nameTh}` : item.nameTh}
