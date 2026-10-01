@@ -12,6 +12,7 @@ import {
     type SubjectiveSubmission,
 } from '../../lib/progressionState';
 import { allUnitsContent } from '../../content/courses/21909-2020';
+import { PV_CLASSES, getPvClassByCode, getPvClassById } from '../../lib/classes/classGroups';
 import { StudentAttemptHistoryModal } from './StudentAttemptHistoryModal';
 import { PendingReviewInbox } from './PendingReviewInbox';
 
@@ -101,7 +102,9 @@ const DEFAULT_CLASS_UUID = '22222222-2222-4222-8222-222222222222';
 
 export const resolveClassUuid = (cid: string): string => {
     if (!cid) return DEFAULT_CLASS_UUID;
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
+    const pv = getPvClassByCode(cid) || getPvClassById(cid);
+    if (pv) return pv.id;
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
         return cid;
     }
     if (cid === 'CLASS-2569-CCTV-01' || cid === '21909-2020') {
@@ -134,8 +137,15 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [studentStatusFilter, setStudentStatusFilter] = useState<'ALL' | 'PASSED' | 'IN_PROGRESS' | 'PENDING'>('ALL');
 
     // CSV & Override Form State
-    const [targetClassId, setTargetClassId] = useState(classId);
+    const [selectedClassUuid, setSelectedClassUuid] = useState<string>(() => resolveClassUuid(classId));
+    const [targetClassId, setTargetClassId] = useState<string>(() => resolveClassUuid(classId));
     const [csvText, setCsvText] = useState(DEFAULT_CSV_STUDENTS);
+
+    useEffect(() => {
+        const nextUuid = resolveClassUuid(classId);
+        setSelectedClassUuid(nextUuid);
+        setTargetClassId(nextUuid);
+    }, [classId]);
     const [isImporting, setIsImporting] = useState(false);
     const [overrideStudentId, setOverrideStudentId] = useState('69219090001');
     const [overrideUnitId, setOverrideUnitId] = useState('U01');
@@ -228,13 +238,13 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         }
     };
 
-    // Rehydrate and reload state when events fire
+    // Rehydrate and reload state when events fire or active class changes
     useEffect(() => {
         const savedApprovals = getTeacherApprovals();
         setApprovals(savedApprovals);
         setSubmissions(getSubjectiveSubmissions());
 
-        fetchStudents(classId);
+        fetchStudents(selectedClassUuid);
 
         const updateState = () => {
             setApprovals(getTeacherApprovals());
@@ -247,21 +257,21 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             window.removeEventListener('cctv_approvals_updated', updateState);
             window.removeEventListener('cctv_subjective_updated', updateState);
         };
-    }, [classId]);
+    }, [selectedClassUuid]);
 
     // Live auto-polling effect every 20 seconds
     useEffect(() => {
         if (!autoRefresh) return;
         const interval = setInterval(() => {
-            fetchStudents(classId);
+            fetchStudents(selectedClassUuid);
             setSubmissions(getSubjectiveSubmissions());
         }, 20000);
         return () => clearInterval(interval);
-    }, [autoRefresh, classId]);
+    }, [autoRefresh, selectedClassUuid]);
 
     // Membership changes trigger a fresh server-authorized roster read.
     useEffect(() => {
-        const effectiveClassId = resolveClassUuid(classId);
+        const effectiveClassId = resolveClassUuid(selectedClassUuid);
         if (!effectiveClassId) {
             setRealtimeStatus('fallback');
             return;
@@ -280,7 +290,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                     filter: `class_id=eq.${effectiveClassId}`,
                 },
                 () => {
-                    if (isActive) void fetchStudents(classId);
+                    if (isActive) void fetchStudents(selectedClassUuid);
                 },
             )
             .subscribe((status) => {
@@ -288,7 +298,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                 if (status === 'SUBSCRIBED') {
                     setRealtimeStatus('connected');
                     // Fetch again after subscribing to cover changes during connection setup.
-                    void fetchStudents(classId);
+                    void fetchStudents(selectedClassUuid);
                 } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
                     setRealtimeStatus('fallback');
                 }
@@ -298,7 +308,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             isActive = false;
             void supabase.removeChannel(channel);
         };
-    }, [classId]);
+    }, [selectedClassUuid]);
 
     const showNotice = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
         setNotification({ type, message });
@@ -420,13 +430,15 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         setStudents((prev) =>
             prev.map((s) => {
                 if (s.id === student.id || s.code === student.code) {
-                    const currentU = s.unitProgress[unitKey] || { lessons: 10, lab: false, exam: false, passed: false };
+                    const currentU = s.unitProgress[unitKey] || { lessons: 10, progressPercent: 100, lab: false, exam: false, passed: false, unlocked: true };
                     return {
                         ...s,
                         unitProgress: {
                             ...s.unitProgress,
                             [unitKey]: {
                                 ...currentU,
+                                progressPercent: 100,
+                                unlocked: true,
                                 lab: true,
                                 exam: true,
                                 passed: true,
@@ -479,7 +491,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         setApprovals(updated);
         saveTeacherApprovals(updated);
 
-        const effectiveClassUuid = resolveClassUuid(classId);
+        const effectiveClassUuid = resolveClassUuid(selectedClassUuid);
         const targetStudent = students.find((s) => s.code === overrideStudentId || s.id === overrideStudentId);
         const isStudentUuid = targetStudent && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetStudent.id);
 
@@ -497,7 +509,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                 });
                 if (res.ok) {
                     showNotice(`✓ บันทึกผลลงฐานข้อมูล: อนุมัติ Override สำหรับ ${targetStudent.name} (${overrideStudentId}) สำเร็จ`, 'success');
-                    fetchStudents(classId);
+                    fetchStudents(selectedClassUuid);
                     return;
                 }
             } catch {
@@ -1251,7 +1263,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             </div>
                             <button
                                 type="button"
-                                onClick={() => fetchStudents(classId)}
+                                onClick={() => fetchStudents(selectedClassUuid)}
                                 className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold text-xs shrink-0 transition-all cursor-pointer shadow"
                             >
                                 🔄 โหลดใหม่อีกครั้ง
@@ -1259,34 +1271,37 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         </div>
                     )}
 
-                    {/* Group Filter Tabs */}
+                    {/* Class Switcher for Vocational Certificate 1 (PV1, PV2, PV3) */}
                     <div className="flex items-center gap-2 overflow-x-auto pb-2">
                         <span className="text-xs font-mono font-bold text-slate-400 shrink-0 mr-1">
                             กลุ่มเรียน:
                         </span>
-                        {[
-                            { id: 'ALL', label: `ทั้งหมด (${students.length} คน)` },
-                            ...(students.some((student) => student.groupId)
-                                ? [
-                                      { id: '692190901', label: `กลุ่ม 1 (${students.filter((s) => s.groupId === '692190901').length} คน)` },
-                                      { id: '692190902', label: `กลุ่ม 2 (${students.filter((s) => s.groupId === '692190902').length} คน)` },
-                                      { id: '692190903', label: `กลุ่ม 3 (${students.filter((s) => s.groupId === '692190903').length} คน)` },
-                                  ]
-                                : []),
-                        ].map((grp) => {
-                            const isGrpSelected = selectedGroupFilter === grp.id;
+                        {PV_CLASSES.map((pv) => {
+                            const isClassActive = selectedClassUuid === pv.id;
                             return (
                                 <button
-                                    key={grp.id}
+                                    key={pv.id}
                                     type="button"
-                                    onClick={() => setSelectedGroupFilter(grp.id)}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                                        isGrpSelected
+                                    onClick={() => {
+                                        setSelectedClassUuid(pv.id);
+                                        setTargetClassId(pv.id);
+                                        setSelectedGroupFilter('ALL');
+                                    }}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                                        isClassActive
                                             ? 'bg-emerald-500 text-slate-950 font-bold shadow-md shadow-emerald-500/20'
                                             : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                                     }`}
                                 >
-                                    {grp.label}
+                                    <span className="font-mono bg-slate-900/60 px-1.5 py-0.5 rounded text-[11px] font-bold">
+                                        {pv.code}
+                                    </span>
+                                    <span>{pv.title}</span>
+                                    {isClassActive && (
+                                        <span className="text-[11px] font-mono opacity-80">
+                                            ({students.length} คน)
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}

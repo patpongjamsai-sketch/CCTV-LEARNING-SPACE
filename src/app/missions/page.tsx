@@ -1,7 +1,13 @@
+import { redirect } from 'next/navigation';
 import { missions } from '../../data/missions';
 import { PortalGlobalNav } from '../../components/portal/PortalGlobalNav';
+import { getCurrentProfile } from '../../lib/auth/currentProfile';
 
-export default function MissionsPage() {
+export default async function MissionsPage() {
+    const current = await getCurrentProfile();
+    if (current.status === 'unauthenticated') {
+        redirect('/login?next=/missions');
+    }
     return (
         <>
             <PortalGlobalNav />

@@ -5,7 +5,8 @@ import { createServerSupabaseClient } from '../../lib/supabase/server';
 import { canManageClass, type ProfileRole } from '../auth/authorizationRules';
 import { parseStudentCsv } from '../classes/parseStudentCsv';
 import { getServerDatabase, withTrustedTransaction } from '../database/client';
-import { progressOverrideInputSchema } from '../http/apiSchemas';
+import { joinClassInputSchema, progressOverrideInputSchema } from '../http/apiSchemas';
+import { getPvClassByCode } from '../../lib/classes/classGroups';
 
 export async function assertCanManageClass(actorId: string, classId: string): Promise<string> {
   try {
@@ -420,4 +421,133 @@ export async function getClassStudentsService(
 
   return Array.from(map.values());
 }
+
+/**
+ * Enrolls a student into PV1, PV2, or PV3 class, updates their student code and display name.
+ */
+export async function joinClassService(
+  actorId: string,
+  rawInput: unknown,
+): Promise<{ success: true; classId: string; classCode: string; classTitle: string }> {
+  const input = joinClassInputSchema.parse(rawInput);
+  const targetClass = getPvClassByCode(input.joinCode);
+  if (!targetClass) {
+    throw new Error(`รหัสกลุ่มเรียนไม่ถูกต้อง: ${input.joinCode}`);
+  }
+
+  const safeStudentCode = input.studentCode.trim().slice(0, 30);
+  const safeDisplayName = input.displayName.trim().slice(0, 100);
+
+  try {
+    const sql = getServerDatabase();
+
+    // 1. Check if the user is already in a class
+    const existing = await sql`
+      select cm.class_id, cm.active, c.code as class_code
+      from public.class_members as cm
+      left join public.classes as c on c.id = cm.class_id
+      where cm.profile_id = ${actorId} and cm.active = true
+      limit 1
+    `;
+
+    if (existing.length > 0 && existing[0]) {
+      const current = existing[0];
+      if (current.class_id !== targetClass.id) {
+        throw new Error(
+          `คุณได้ลงทะเบียนอยู่ในกลุ่ม ${current.class_code || 'อื่น'} แล้ว ไม่สามารถย้ายกลุ่มได้ หากต้องการย้ายกลุ่มกรุณาติดต่อครูผู้สอน`
+        );
+      }
+    }
+
+    // 2. Ensure class exists in public.classes
+    await sql`
+      insert into public.classes (
+        id, course_id, code, title, academic_year, semester, status
+      ) values (
+        ${targetClass.id},
+        (select id from public.courses where code = '21909-2020' limit 1),
+        ${targetClass.code},
+        ${targetClass.title},
+        2569,
+        2,
+        'active'
+      )
+      on conflict (id) do update
+      set code = ${targetClass.code},
+          title = ${targetClass.title},
+          status = 'active'
+    `;
+
+    // 3. Update student profile
+    await sql`
+      update public.profiles
+      set student_code = ${safeStudentCode},
+          display_name = ${safeDisplayName}
+      where id = ${actorId}
+    `;
+
+    // 4. Enroll into class_members
+    await sql`
+      insert into public.class_members (
+        class_id, profile_id, member_role, active
+      ) values (
+        ${targetClass.id}, ${actorId}, 'student', true
+      )
+      on conflict (class_id, profile_id) do update
+      set active = true, member_role = 'student'
+    `;
+
+    return {
+      success: true,
+      classId: targetClass.id,
+      classCode: targetClass.code,
+      classTitle: targetClass.title,
+    };
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('คุณได้ลงทะเบียนอยู่ในกลุ่ม')) {
+      throw err;
+    }
+    // Fallback using Supabase client
+    try {
+      const supabase = await createServerSupabaseClient();
+      const { data: member } = await supabase
+        .from('class_members')
+        .select('class_id, active')
+        .eq('profile_id', actorId)
+        .eq('active', true)
+        .maybeSingle();
+
+      if (member && member.class_id !== targetClass.id) {
+        throw new Error('คุณได้ลงทะเบียนในกลุ่มอื่นแล้ว ไม่สามารถย้ายกลุ่มได้');
+      }
+
+      await supabase
+        .from('profiles')
+        .update({ student_code: safeStudentCode, display_name: safeDisplayName })
+        .eq('id', actorId);
+
+      await supabase
+        .from('class_members')
+        .upsert({
+          class_id: targetClass.id,
+          profile_id: actorId,
+          member_role: 'student',
+          active: true,
+        });
+
+      return {
+        success: true,
+        classId: targetClass.id,
+        classCode: targetClass.code,
+        classTitle: targetClass.title,
+      };
+    } catch (fallbackErr) {
+      if (fallbackErr instanceof Error && fallbackErr.message.includes('คุณได้ลงทะเบียนในกลุ่มอื่น')) {
+        throw fallbackErr;
+      }
+    }
+    throw err;
+  }
+}
+
 

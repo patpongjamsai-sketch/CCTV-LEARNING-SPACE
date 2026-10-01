@@ -1,8 +1,8 @@
-import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '../lib/auth/currentProfile';
 import { createServerSupabaseClient } from '../lib/supabase/server';
 import { DashboardShell, type DashboardUnit } from '../components/portal/DashboardShell';
 import { getStudentProgressOverviewService } from '../server/services/progressionService';
+import { getPvClassById } from '../lib/classes/classGroups';
 
 export default async function DashboardPage() {
   let current;
@@ -12,9 +12,27 @@ export default async function DashboardPage() {
     console.error('Profile lookup failed:', error);
     return <ProfileUnavailable />;
   }
+
+  // 1. Unauthenticated visitors see the public landing page (Guest View)
   if (current.status === 'unauthenticated') {
-    redirect('/login?next=/');
+    return (
+      <DashboardShell
+        isGuest={true}
+        learner={{
+          displayName: 'ผู้เยี่ยมชม',
+          role: 'student',
+          studentCode: null,
+        }}
+        summary={{
+          completedUnits: 0,
+          totalUnits: 8,
+          passedMissions: 0,
+          bestScore: 0,
+        }}
+      />
+    );
   }
+
   if (current.status === 'inactive') {
     return <ProfileUnavailable />;
   }
@@ -26,7 +44,7 @@ export default async function DashboardPage() {
 
     const { data: memberships, error: membershipsError } = await supabase
       .from('class_members')
-      .select('class_id, member_role')
+      .select('class_id, member_role, classes(id, code, title)')
       .eq('profile_id', profile.id)
       .eq('active', true);
 
@@ -39,6 +57,14 @@ export default async function DashboardPage() {
 
     const classId = membership?.class_id;
     const isStaff = profile.role === 'teacher' || profile.role === 'admin';
+    const needsClassJoin = !isStaff && (!membership || !classId);
+
+    const cls = membership?.classes
+      ? Array.isArray(membership.classes)
+        ? membership.classes[0]
+        : membership.classes
+      : null;
+    const classCode = cls?.code || (classId ? getPvClassById(classId)?.code : null) || null;
 
     // Progress and unlock state come from the server progression predicate.
     const overview = classId && !isStaff
@@ -79,18 +105,22 @@ export default async function DashboardPage() {
 
     return (
       <DashboardShell
+        isGuest={false}
+        needsClassJoin={needsClassJoin}
         learner={{
           displayName: profile.display_name,
           role: profile.role,
+          studentCode: profile.student_code,
         }}
         summary={{
           completedUnits,
-          totalUnits: overview?.units.length || 8,
-          passedMissions: completedUnits,
+          totalUnits: overview?.units.length ? Math.min(1, overview.units.length) : 1,
+          passedMissions: 0,
           bestScore,
         }}
         units={units.length > 0 ? units : undefined}
         classId={classId}
+        classCode={classCode}
       />
     );
   } catch (err) {

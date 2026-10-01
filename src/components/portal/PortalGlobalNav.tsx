@@ -24,6 +24,11 @@ export type UserProfile = {
     role: 'student' | 'teacher' | 'admin';
     studentCode?: string;
     email?: string;
+    membership?: {
+        classId: string;
+        classCode: string | null;
+        classTitle: string | null;
+    } | null;
 };
 
 export type PortalGlobalNavProps = {
@@ -42,7 +47,16 @@ export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {
                 const res = await fetch('/api/auth/me', { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
-                    if (isMounted) setUser(data?.user ?? null);
+                    if (isMounted) {
+                        if (data?.user) {
+                            setUser({
+                                ...data.user,
+                                membership: data.membership ?? null,
+                            });
+                        } else {
+                            setUser(null);
+                        }
+                    }
                 } else if (isMounted) {
                     setUser(null);
                 }
@@ -104,9 +118,14 @@ export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {
                                 <span className="font-semibold text-slate-200 text-xs truncate max-w-[150px]">
                                     {user.displayName}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-mono">
-                                    {user.role === 'teacher' ? '👨‍🏫 ครูผู้สอน' : user.role === 'admin' ? '🛡️ ผู้ดูแลระบบ' : '👨‍🔧 นักเรียน'}
-                                    {user.studentCode ? ` (${user.studentCode})` : ''}
+                                <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 flex-wrap">
+                                    <span>{user.role === 'teacher' ? '👨‍🏫 ครูผู้สอน' : user.role === 'admin' ? '🛡️ ผู้ดูแลระบบ' : '👨‍🔧 นักเรียน'}</span>
+                                    {user.membership?.classCode && (
+                                        <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-[9px]">
+                                            {user.membership.classCode}
+                                        </span>
+                                    )}
+                                    {user.studentCode ? <span>({user.studentCode})</span> : null}
                                 </span>
                             </div>
                             <a
@@ -119,8 +138,8 @@ export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {
                         </div>
                     ) : (
                         <a
-                            href="/login"
-                            className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-colors shadow-sm inline-flex items-center gap-1.5"
+                            href={`/login?next=${encodeURIComponent(pathname || '/')}`}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shadow-sm inline-flex items-center gap-1.5"
                         >
                             <span>เข้าสู่ระบบ</span>
                         </a>

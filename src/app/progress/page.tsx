@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { getVerifiedAuthContext } from '../../lib/auth/claims';
 import { createAdminSupabaseClient } from '../../lib/supabase/admin';
 import { getStudentProgressOverviewService } from '../../server/services/progressionService';
@@ -29,17 +30,19 @@ interface UnitRowData {
 }
 
 export default async function ProgressPage() {
-    let isAuthenticated = false;
-    let learnerName = 'ผู้เรียนตัวอย่าง (DEMO)';
-    let studentCode = '67301001';
+    const auth = await getVerifiedAuthContext();
+    if (!auth) {
+        redirect('/login?next=/progress');
+    }
+
+    let isAuthenticated = true;
+    let learnerName = 'ผู้เรียน';
+    let studentCode = '-';
     let userRole = 'student';
     let unitRows: UnitRowData[] = [];
 
     try {
-        const auth = await getVerifiedAuthContext();
-        if (auth) {
-            isAuthenticated = true;
-            const supabase = createAdminSupabaseClient();
+        const supabase = createAdminSupabaseClient();
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('id, display_name, role, student_code')
@@ -137,7 +140,6 @@ export default async function ProgressPage() {
                     };
                 });
             }
-        }
     } catch (err) {
         console.error('Progress page error:', err);
     }

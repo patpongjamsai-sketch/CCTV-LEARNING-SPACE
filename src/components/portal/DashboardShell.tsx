@@ -8,6 +8,7 @@ const navigationItems = [
 ];
 
 import { TeacherManagementPanel } from './TeacherManagementPanel';
+import { StudentClassJoinModal } from './StudentClassJoinModal';
 
 export type DashboardUnit = {
     id: string;
@@ -19,9 +20,12 @@ export type DashboardUnit = {
 };
 
 export type DashboardShellProps = {
+    isGuest?: boolean;
+    needsClassJoin?: boolean;
     learner?: {
         displayName: string;
         role: 'student' | 'teacher' | 'admin';
+        studentCode?: string | null;
     };
     summary?: {
         completedUnits: number;
@@ -31,6 +35,7 @@ export type DashboardShellProps = {
     };
     units?: DashboardUnit[];
     classId?: string;
+    classCode?: string | null;
 };
 
 const fallbackUnits: DashboardUnit[] = [
@@ -45,13 +50,16 @@ const fallbackUnits: DashboardUnit[] = [
 ];
 
 export function DashboardShell({
-    learner = { displayName: 'ผู้เรียน', role: 'student' },
+    isGuest = false,
+    needsClassJoin = false,
+    learner = { displayName: 'ผู้เรียน', role: 'student', studentCode: null },
     summary = { completedUnits: 0, totalUnits: 8, passedMissions: 0, bestScore: 0 },
     units = fallbackUnits,
     classId,
+    classCode,
 }: DashboardShellProps = {}) {
     const experiencePoints = summary.completedUnits * 100 + summary.passedMissions * 25;
-    const isTeacherOrAdmin = learner.role === 'teacher' || learner.role === 'admin';
+    const isTeacherOrAdmin = !isGuest && (learner.role === 'teacher' || learner.role === 'admin');
     const visibleNavItems = isTeacherOrAdmin
         ? navigationItems
         : navigationItems.filter((item) => item.href !== '/teacher');
@@ -92,18 +100,34 @@ export function DashboardShell({
                         <span>Workspace</span>
                         <strong>ภาพรวมการเรียนรู้</strong>
                     </div>
-                    <div className="portal-profile flex items-center gap-3" aria-label="ข้อมูลผู้ใช้งาน">
-                        <span>{experiencePoints} XP</span>
-                        <span className="portal-avatar" aria-hidden="true">{learner.displayName.slice(0, 1)}</span>
-                        <span>{learner.displayName}</span>
-                        <a
-                            href="/auth/logout"
-                            className="text-xs text-slate-400 hover:text-rose-400 ml-2 transition-colors"
-                            title="ออกจากระบบ"
-                        >
-                            ออกจากระบบ
-                        </a>
-                    </div>
+                    {isGuest ? (
+                        <div className="portal-profile flex items-center gap-3">
+                            <a
+                                href="/login?next=/"
+                                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                            >
+                                เข้าสู่ระบบ
+                            </a>
+                        </div>
+                    ) : (
+                        <div className="portal-profile flex items-center gap-3" aria-label="ข้อมูลผู้ใช้งาน">
+                            <span>{experiencePoints} XP</span>
+                            <span className="portal-avatar" aria-hidden="true">{learner.displayName.slice(0, 1)}</span>
+                            <span className="font-semibold">{learner.displayName}</span>
+                            {classCode && (
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold">
+                                    {classCode}
+                                </span>
+                            )}
+                            <a
+                                href="/auth/logout"
+                                className="text-xs text-slate-400 hover:text-rose-400 ml-2 transition-colors"
+                                title="ออกจากระบบ"
+                            >
+                                ออกจากระบบ
+                            </a>
+                        </div>
+                    )}
                 </header>
 
                 <section className="portal-content">
@@ -116,8 +140,8 @@ export function DashboardShell({
                                 ผ่านห้องปฏิบัติการ 3D
                             </p>
                             <div className="portal-actions">
-                                <a className="portal-button portal-button-primary" href="/labs/3d/room-101">
-                                    เข้าสู่ห้องปฏิบัติการ 3D
+                                <a className="portal-button portal-button-primary" href="/login">
+                                    เข้าสู่ระบบ
                                 </a>
                                 <a className="portal-button portal-button-secondary" href="/courses/21909-2020">
                                     สำรวจบทเรียน
@@ -172,6 +196,13 @@ export function DashboardShell({
                     )}
                 </section>
             </main>
+
+            {needsClassJoin && !isGuest && (
+                <StudentClassJoinModal
+                    currentDisplayName={learner.displayName}
+                    currentStudentCode={learner.studentCode}
+                />
+            )}
         </div>
     );
 }

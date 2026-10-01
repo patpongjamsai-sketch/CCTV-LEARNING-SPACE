@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type PendingItem = {
     id: string;
@@ -291,7 +291,7 @@ export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
                                 </div>
                             )}
 
-                            {selectedItem.clientAnswers && (
+                            {Boolean(selectedItem.clientAnswers) && (
                                 <div className="space-y-1">
                                     <label className="text-xs font-semibold text-slate-300">คำตอบข้อสอบอัตนัย:</label>
                                     <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 font-mono overflow-x-auto max-h-36">

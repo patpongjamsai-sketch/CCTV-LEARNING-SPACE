@@ -125,3 +125,19 @@ export const quizReviewInputSchema = z
   })
   .strict();
 
+export const joinClassInputSchema = z
+  .object({
+    joinCode: z.enum(['PV1', 'PV2', 'PV3', 'pv1', 'pv2', 'pv3']),
+    studentCode: z
+      .string()
+      .trim()
+      .min(5, 'รหัสนักศึกษาต้องมีอย่างน้อย 5 ตัวอักษร')
+      .max(30, 'รหัสนักศึกษาต้องไม่เกิน 30 ตัวอักษร'),
+    displayName: z
+      .string()
+      .trim()
+      .min(2, 'ชื่อ-นามสกุลต้องมีอย่างน้อย 2 ตัวอักษร')
+      .max(100, 'ชื่อ-นามสกุลต้องไม่เกิน 100 ตัวอักษร'),
+  })
+  .strict();
+

@@ -14,7 +14,6 @@ vi.mock('../server/database/client', () => ({
 import { GET as getPendingReviews } from '../app/api/classes/[classId]/reviews/pending/route';
 import { PATCH as reviewQuizAttempt } from '../app/api/classes/[classId]/quizzes/[attemptId]/review/route';
 import { GET as getStudentAttempts } from '../app/api/classes/[classId]/students/[studentId]/attempts/route';
-import { requireVerifiedAuthContext, UnauthenticatedError } from '../lib/auth/claims';
 
 vi.mock('../lib/auth/claims', async () => {
   const actual = await vi.importActual<typeof import('../lib/auth/claims')>('../lib/auth/claims');

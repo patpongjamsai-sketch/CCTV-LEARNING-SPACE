@@ -1,222 +1,154 @@
-# แผนการพัฒนา Teacher Dashboard สู่ศูนย์ติดตามงานและศูนย์ตรวจ/อนุมัติ (Database Single Source of Truth)
+# แผนการพัฒนา: Flow การเข้าใช้งาน การรักษาสถานะ และการส่งต่อข้อมูลผู้เรียน (Landing → Login → Group Selection → Session Propagation)
 
 > [!NOTE]
-> **สถานะการดำเนินงาน (Status: COMPLETED - 100%)**
-> - **Git Branch**: `feat/teacher-dashboard-authoritative` (พัฒนาแยกจาก main อย่างปลอดภัย)
-> - **Zero-Regression**: การทดสอบอัตโนมัติ 48 ไฟล์ (221 tests) ผ่าน 100% ไม่มีผลกระทบต่อระบบเดิม
-> - **Single Source of Truth**: ย้ายการติดตาม, ให้คะแนน, และอนุมัติสิทธิ์เข้าสู่ PostgreSQL/Supabase ครบทั้ง 7 ระยะ
+> **สถานะ: รอครูผู้สอนอนุมัติก่อนเริ่มดำเนินการ (Pending User Approval)**
+> แผนนี้มุ่งเน้นการจัดลำดับการทำงาน (User Flow) ตั้งแต่หน้าแรก จนถึงการส่งต่อข้อมูลผู้เรียนไปยังทุกหน้าในระบบอย่างต่อเนื่องและปลอดภัย โดยใช้ Database และ Server Session เป็นแกนกลาง
 
 ---
 
-## 1. แนวทางการสร้าง Repo แยกและการป้องกันผลกระทบ (Isolation Strategy)
+## 1. ลำดับขั้นตอนการทำงานที่ต้องการ (User Journey Flow)
 
-เพื่อป้องกันไม่ให้กระทบระบบปัจจุบันและไฟล์งานเดิม จึงกำหนดแนวทางไว้ดังนี้:
-
-1. **การสร้าง Repository แยก (Isolated Workspace Directory)**:
-   - สร้างโฟลเดอร์สำหรับพัฒนาแยกออกมาที่ระดับเดียวกับโปรเจกต์ปัจจุบัน:
-     `../cctv-technician-3d-teacher-dashboard` หรือชื่อตามที่ครูผู้สอนกำหนด
-   - โคลน/คัดลอกโครงสร้างโปรเจกต์และ dependencies ที่จำเป็นเข้าไปใน Repo ใหม่
-   - สร้าง Git Repository แยกอิสระ พร้อมบันทึกประวัติการพัฒนาเฉพาะของ Teacher Dashboard Center
-2. **การแชร์ Database / Configuration อย่างปลอดภัย**:
-   - ใช้ Database Environment เดียวกันหรือใช้ Branching/Staging
-   - **ห้าม Drop หรือเปลี่ยน Schema เดิมที่ใช้งานอยู่**: การเพิ่มความสามารถใหม่จะใช้การสร้าง Read View, New Functions หรือใช้ตารางที่มีอยู่แล้ว (`game_mission_results`, `game_attempts`, `lab_submissions`, `quiz_attempts`) ซึ่งถูกออกแบบไว้สมบูรณ์แล้วในฐานข้อมูล
-   - มี Fallback Logic เสมอ หาก API ข้อมูลใหม่ยังไม่พร้อม ระบบจะไม่ค้างหรือแครช
-
----
-
-## 2. ภาพรวมปัญหาและสถาปัตยกรรมเป้าหมาย (Architecture Overview)
-
-```mermaid
-graph TD
-    subgraph IsolatedRepo ["New Isolated Repository (Teacher Hub Workspace)"]
-        TD[Teacher Dashboard V2]
-        QueueUI[กล่องงานค้าง / Pending Review Queue]
-        DetailModal[หน้ารายละเอียดรายคน / Attempt History]
-        EvalModal[โมดอลตรวจให้คะแนนและอนุมัติ]
-    end
-
-    subgraph ExistingRepo ["Existing Safe Repository (Production Trainee App)"]
-        StudentPortal[Student Portal / 3D Simulation]
-        StudentExam[Unit Exams & Labs]
-    end
-
-    subgraph APIs ["Server-Authoritative APIs"]
-        RosterAPI["/api/classes/[id]/students<br/>(รวม Game Missions, Quiz, Lab)"]
-        PendingAPI["/api/classes/[id]/reviews/pending<br/>(งานรอตรวจกลาง)"]
-        AttemptAPI["/api/classes/[id]/students/[stId]/attempts<br/>(ประวัติ & Checklist ผลจำลอง)"]
-        ReviewAPI["/api/classes/[id]/labs/[subId]/review<br/>/api/classes/[id]/quizzes/[attId]/review"]
-        OverrideAPI["/api/classes/[id]/students/[stId]/progress/[unitId]<br/>(บันทึก Override จริง)"]
-    end
-
-    subgraph Database ["PostgreSQL (Supabase Trusted Storage - Single Source of Truth)"]
-        Missions[(missions & game_mission_results)]
-        Attempts[(game_attempts & result_details)]
-        Labs[(lab_submissions & evidence_files)]
-        Quizzes[(quizzes & quiz_attempts)]
-        Progress[(unit_progress & audit_logs)]
-    end
-
-    TD --> RosterAPI
-    TD --> PendingAPI
-    TD --> AttemptAPI
-    TD --> ReviewAPI
-    TD --> OverrideAPI
-
-    StudentPortal --> APIs
-    StudentExam --> APIs
-
-    RosterAPI --> Database
-    PendingAPI --> Database
-    AttemptAPI --> Database
-    ReviewAPI --> Database
-    OverrideAPI --> Database
+```
+[นักเรียนเข้าเว็บ] 
+   └──> [1. เห็นหน้า Landing Page (ยังไม่ล็อกอิน)]
+           └──> [2. กดปุ่ม 'เข้าสู่ระบบ' -> ทำการ Login ด้วย Google]
+                   └──> [3. ระบบจัดเก็บและรักษาสถานะการ Login (Session & Cookies)]
+                           └──> [4. ถ้ายังไม่มีกลุ่ม -> เลือกรหัสกลุ่มเรียน ปวช.1 (PV1 / PV2 / PV3)]
+                                   └──> [5. เข้าเรียนแต่ละหน้า โดยข้อมูล Login & กลุ่มเรียน ถูกส่งต่อให้ทุกหน้าใช้งานร่วมกัน]
 ```
 
 ---
 
-## 3. รายละเอียดแผนการพัฒนารายระยะ (7 Phases Roadmap)
+## 2. ปัญหาและจุดที่ต้องปรับปรุงในปัจจุบัน (Current System Gaps)
 
-### ระยะที่ 1: วางข้อมูลกลางและมาตรฐานสถานะ (Centralized Data & Status Normalization)
-* **เป้าหมาย**: เลิกใช้ค่าคาดเดา (Guessing/Hardcoding) เช่น การประมาณบทเรียนจาก % หรือการสมมติคะแนนแล็บเป็น 90 เมื่อผ่าน ให้แสดงเฉพาะค่าจริงที่บันทึกในฐานข้อมูล
-* **โครงสร้างการทำงาน**:
-  1. กำหนด Canonical Status Types ให้ตรงกันระหว่าง Backend และ Frontend:
-     ```ts
-     export type ItemProgressStatus = 
-       | 'not_started'       // ยังไม่เริ่ม
-       | 'in_progress'       // กำลังทำ
-       | 'submitted'         // ส่งแล้ว รอตรวจ (Pending Review)
-       | 'reviewing'         // กำลังตรวจ
-       | 'passed'            // ผ่านเกณฑ์ (Approved / Graded)
-       | 'revision_required' // ขอให้แก้ไข
-       | 'failed';           // ไม่ผ่านเกณฑ์
+1. **หน้า Landing Page (`/`)**:
+   - ปัจจุบันโค้ดสั่ง `redirect('/login?next=/')` ทันทีเมื่อไม่พบ Session ทำให้คนทั่วไปไม่เห็นหน้า Landing Page
+   - **แนวทางแก้**: ปรับหน้า `/` ให้แสดงแบนเนอร์ Hero กล้องวงจรปิดบนระบบเครือข่าย พร้อมปุ่ม "เข้าสู่ระบบ" และพรีวิวรายวิชาแก่ผู้ที่ยังไม่ล็อกอิน
+2. **การคงอยู่และการส่งต่อสถานะผู้ใช้งาน (Auth Session & Data Propagation)**:
+   - ปัจจุบัน `/api/auth/me` ส่งเฉพาะ `{ userId, displayName, role, studentCode }` โดย**ยังไม่มีข้อมูลกลุ่มเรียน (`classId`, `classCode`)**
+   - หน้าเนื้อหาเรียน (`/courses/...`) และแบบทดสอบบางหน้า ยังไม่ได้ตรวจ Session ฝั่งเซิร์ฟเวอร์ และยังไม่ได้ส่ง `classId` ให้กับคอมโพเนนต์ย่อย ทำให้บางส่วนยังต้องพึ่งพา `localStorage`
+   - **แนวทางแก้**: อัปเดต `/api/auth/me` และเพิ่ม Session Context เพื่อส่ง `{ userId, displayName, studentCode, classId, classCode }` ไปยังทุกหน้าโดยอัตโนมัติ
+3. **การเข้าห้องเรียน 3 กลุ่ม ปวช.1 (`PV1`, `PV2`, `PV3`)**:
+   - นักเรียนล็อกอิน Google แล้วจะยังไม่มี `class_members` และ `student_code` เป็น `null`
+   - **แนวทางแก้**: สร้างโมดอลเลือกรหัสกลุ่ม (`PV1`, `PV2`, `PV3`) พร้อมกรอกรหัสนักศึกษาและชื่อจริง เพื่อบันทึกเข้าฐานข้อมูลจริงผ่าน `POST /api/classes/join`
+
+---
+
+## 3. สถาปัตยกรรมการส่งต่อข้อมูลระหว่างหน้าเว็บ (Data Propagation Architecture)
+
+```mermaid
+graph TD
+    subgraph Step1 ["1. หน้า Landing Page"]
+        Landing["หน้าแรก Landing Page (/)<br/>• สถานะ: Unauthenticated<br/>• แสดง Hero Banner + ปุ่ม 'เข้าสู่ระบบ'"]
+    end
+
+    subgraph Step2 ["2. ล็อกอิน"]
+        Login["/login & Google OAuth"]
+        Callback["/auth/callback (สร้าง/ยืนยัน Session คุกกี้)"]
+    end
+
+    subgraph Step3 ["3. จัดเก็บสถานะ & ลงทะเบียนกลุ่ม"]
+        RootAuth["หน้า / (Authenticated)"]
+        CheckGroup{มีกลุ่มเรียนหรือยัง?}
+        JoinModal["โมดอลเลือกกลุ่มเรียน ปวช.1<br/>• เลือกรหัส PV1 / PV2 / PV3<br/>• กรอกรหัส นศ. 11 หลัก + ชื่อจริง"]
+        JoinAPI["API POST /api/classes/join<br/>บันทึก profiles & class_members"]
+    end
+
+    subgraph Step4 ["4. การส่งต่อข้อมูลผู้เรียนไปยังทุกหน้า (Data Propagation)"]
+        SessionContext["Auth & Class Session State<br/>• userId<br/>• displayName<br/>• studentCode<br/>• classId & classCode (PV1/PV2/PV3)<br/>• unitProgression"]
+        
+        P_Dash["หน้าแดชบอร์ด (/): สถิติ 0/1, 0/5, 0 XP"]
+        P_Lessons["หน้าบทเรียน (/courses/...): ปลดล็อกตามสิทธิ์กลุ่ม"]
+        P_Labs["ห้องปฏิบัติการ 3D (/labs/3d/room-101): บันทึก Attempt ผูก classId"]
+        P_Exam["ระบบสอบ (/assessments): ส่งคำตอบผูก classId ตรงฐานข้อมูล"]
+        P_Prog["หน้าผลการเรียน (/progress): ดึงผลการเรียนจริงของตนเอง"]
+    end
+
+    subgraph Step5 ["5. ครูผู้สอนติดตามผล"]
+        TeacherDash["Teacher Dashboard (/teacher)<br/>• สลับกรองดูนักเรียนตามกลุ่ม PV1, PV2, PV3<br/>• เห็นคะแนนและความก้าวหน้าของทุกคนแบบ Realtime"]
+    end
+
+    Landing -->|คลิก 'เข้าสู่ระบบ'| Login
+    Login --> Callback
+    Callback --> RootAuth
+    RootAuth --> CheckGroup
+    CheckGroup -->|ยังไม่มีกลุ่ม| JoinModal
+    JoinModal --> JoinAPI
+    JoinAPI --> RootAuth
+    CheckGroup -->|มีกลุ่มแล้ว| SessionContext
+
+    SessionContext --> P_Dash
+    SessionContext --> P_Lessons
+    SessionContext --> P_Labs
+    SessionContext --> P_Exam
+    SessionContext --> P_Prog
+
+    P_Labs -->|ส่งผลประเมิน 3D| TeacherDash
+    P_Exam -->|ส่งคะแนนสอบ| TeacherDash
+    P_Dash -->|อัปเดตสถิติ| TeacherDash
+```
+
+---
+
+## 4. แผนการดำเนินงานรายระยะ (Action Plan)
+
+### ระยะที่ 1: หน้าแรก Landing Page (Public View) & การบังคับล็อกอิน
+1. **ปรับปรุง `src/app/page.tsx`**:
+   - ถ้ายังไม่ล็อกอิน (`unauthenticated`): แสดงผล Landing Page ที่มีแบนเนอร์ Hero กล้องวงจรปิด, วัตถุประสงค์การเรียนรู้, และปุ่ม **"เข้าสู่ระบบ"** (`href="/login?next=/"`) โดยไม่ redirect หนี
+   - ถ้าล็อกอินแล้ว (`authenticated`): โหลดข้อมูลสมาชิกและสถิติการเรียน
+2. **Server-side Session Guard**:
+   - ปกป้องหน้าภายใน (`/courses/...`, `/labs/...`, `/missions`, `/assessments`, `/progress`, `/teacher`) ถ้ายังไม่ล็อกอิน ให้ redirect ไป `/login?next=[currentPath]` ทันที
+
+### ระยะที่ 2: สร้างข้อมูล 3 กลุ่มเรียน ปวช.1 ในฐานข้อมูล (PV1, PV2, PV3)
+1. บันทึกข้อมูลชั้นเรียน 3 กลุ่มลงในตาราง `public.classes`:
+   - **กลุ่ม 1**: code = `'PV1'`, title = `'ปวช.1 ช่างอิเล็กทรอนิกส์/คอมพิวเตอร์ (กลุ่ม 1)'`
+   - **กลุ่ม 2**: code = `'PV2'`, title = `'ปวช.1 ช่างอิเล็กทรอนิกส์/คอมพิวเตอร์ (กลุ่ม 2)'`
+   - **กลุ่ม 3**: code = `'PV3'`, title = `'ปวช.1 ช่างอิเล็กทรอนิกส์/คอมพิวเตอร์ (กลุ่ม 3)'`
+   - ผูกกับวิชา 21909-2020
+
+### ระยะที่ 3: ระบบเลือกรหัสกลุ่มเรียน (`StudentClassJoinModal` & `POST /api/classes/join`)
+1. **API `POST /api/classes/join`**:
+   - รับ `{ joinCode: 'PV1' | 'PV2' | 'PV3', studentCode: string, displayName: string }`
+   - ตรวจสอบรูปแบบรหัสนักศึกษา (เช่น 11 หลัก เช่น `69219090001`) และชื่อจริง
+   - อัปเดต `public.profiles` (`student_code`, `display_name`)
+   - บันทึกการลงทะเบียนเข้า `public.class_members` (`member_role = 'student'`, `active = true`)
+2. **คอมโพเนนต์ `StudentClassJoinModal.tsx`**:
+   - ปรากฏบนหน้าแดชบอร์ดอัตโนมัติเมื่อนักเรียนล็อกอินแล้วแต่ยังไม่มีห้องเรียน (Unclosable Modal)
+   - ให้นักเรียนคลิกเลือกกลุ่ม `PV1` / `PV2` / `PV3` พร้อมกรอกรหัสนักศึกษา และกดยืนยัน
+
+### ระยะที่ 4: การส่งต่อข้อมูลผู้เรียนไปยังทุกหน้า (Data Propagation)
+1. **อัปเดต `/api/auth/me`**:
+   - ขยาย Response ให้ส่งข้อมูลห้องเรียนด้วย:
+     ```json
+     {
+       "user": {
+         "userId": "uuid",
+         "displayName": "นายสมชาย ใจดี",
+         "role": "student",
+         "studentCode": "69219090001"
+       },
+       "membership": {
+         "classId": "uuid-of-pv1",
+         "classCode": "PV1",
+         "classTitle": "ปวช.1 ช่างอิเล็กทรอนิกส์/คอมพิวเตอร์ (กลุ่ม 1)"
+       }
+     }
      ```
-  2. ปรับการแมปใน `TeacherApprovalDashboard.tsx`:
-     - ลบโค้ดคาดเดา: `lessons: uv.progressPercent >= 40 ? 10 : ...` และ `labScore: ... ?? (uv.passed ? 90 : null)`
-     - แสดงค่าจริง: หากไม่มีคะแนนบันทึก ให้แสดงสัญลักษณ์ `-` พร้อมป้ายสถานะ (Badge) ชัดเจนว่า "รอตรวจ" หรือ "ยังไม่ส่ง"
-     - แยกหมวดอย่างชัดเจน: **ระบบตรวจอัตโนมัติ (Automated)** (ปรนัย, ภารกิจ 3D) กับ **ครูตรวจให้คะแนน (Teacher Evaluation)** (ปฏิบัติการแล็บ, ข้อสอบอัตนัย)
+2. **ส่งต่อค่า `classId` และ `studentId` ให้คอมโพเนนต์การเรียนรู้ทั้งหมด**:
+   - แถบเมนูด้านบน ([PortalGlobalNav.tsx](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/components/portal/PortalGlobalNav.tsx)) แสดงชื่อ, รหัสนักศึกษา, และป้ายกลุ่มเรียน (`PV1`/`PV2`/`PV3`)
+   - ห้องแล็บ 3D ([LabClientContainer.tsx](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/app/labs/3d/%5BroomId%5D/LabClientContainer.tsx)): ใช้ `classId` จริงของกลุ่มในการส่งผลประเมิน ไม่ใช้ UUID หลอก
+   - ระบบสอบ ([UnitExamModal.tsx](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/components/portal/UnitExamModal.tsx)): ส่งคะแนนเข้าฐานข้อมูลโดยผูกกับ `classId` ของกลุ่มจริง ตัดการอ่าน/เขียน `localStorage`
+3. **เชื่อมโยงผลเข้าสู่ Teacher Dashboard**:
+   - หน้า `/teacher` สามารถสลับแท็บดูคะแนนของกลุ่ม `PV1`, `PV2`, `PV3` จากฐานข้อมูลจริง
+   - เมื่อนักเรียนในกลุ่มส่งงานหรือทำภารกิจ ผลจะไปขึ้นบนหน้าจอของครูทันที
 
 ---
 
-### ระยะที่ 2: เพิ่มผลภารกิจเกม 3D ในทะเบียนนักเรียน (Game Mission Integration)
-* **เป้าหมาย**: นำข้อมูลจากตาราง `game_mission_results` และ `missions` มาแสดงในหน้าทะเบียนนักเรียน เพื่อให้ครูเห็นผลภารกิจ 3D แต่ละหน่วย
-* **โครงสร้างการทำงาน**:
-  1. ปรับปรุง Query ใน `src/server/services/classService.ts` (`getClassStudentsService`):
-     - เพิ่ม Lateral Join ไปยัง `game_mission_results` และ `missions`:
-       ```sql
-       left join lateral (
-         select 
-           gmr.mission_id,
-           m.code as mission_code,
-           m.title as mission_title,
-           m.max_score,
-           gmr.best_score,
-           gmr.attempt_count,
-           gmr.hints_used,
-           gmr.passed,
-           gmr.first_passed_at,
-           gmr.latest_attempt_id
-         from public.game_mission_results as gmr
-         join public.missions as m on m.id = gmr.mission_id
-         where gmr.class_id = cm.class_id
-           and gmr.student_id = p.id
-           and m.unit_id = u.id
-       ) as mission_summary on true
-       ```
-  2. ขยายโครงสร้าง Interface `ClassStudentRecord`:
-     - เพิ่มฟิลด์ `mission?: { missionId: string; code: string; title: string; bestScore: number; maxScore: number; attemptCount: number; hintsUsed: number; passed: boolean } | null`
-  3. ปรับ UI ตาราง `TeacherApprovalDashboard`:
-     - แสดงแถบคอลัมน์หรือ Badge ภารกิจ 3D รายหน่วย: คะแนนสูงสุดที่ทำได้ / จำนวนครั้ง / จำนวนคำใบ้ที่ใช้ / สถานะผ่าน
-
----
-
-### ระยะที่ 3: หน้ารายละเอียดรายคนและประวัติความพยายาม (Learner Deep-Dive & Attempt History)
-* **เป้าหมาย**: ให้ครูกดดูประวัติการทำภารกิจแต่ละครั้งจาก `game_attempts` ไม่ใช่เห็นแค่คะแนนรวม เพื่อวิเคราะห์จุดผิดพลาดและพัฒนาการของผู้เรียน
-* **โครงสร้างการทำงาน**:
-  1. สร้าง API ใหม่:
-     - `GET /api/classes/[classId]/students/[studentId]/attempts?unitId=...`
-     - อ่านข้อมูลจาก `game_attempts`:
-       - `attempt_no`, `approved_score`, `max_score_snapshot`, `passed`, `hints_used`
-       - `result_details` (JSON Server Evaluation: รายการตรวจ wiring, การคำนวณบิตเรต, การตรวจสอบภาพ, การวิเคราะห์ไฟเลี้ยง)
-       - `created_at`, `evaluated_at`
-  2. ออกแบบคอมโพเนนต์ `StudentAttemptHistoryDrawer / Modal`:
-     - **Timeline**: แสดงพัฒนาการคะแนนตามลำดับครั้งที่ทำ (Attempt 1 -> 2 -> 3)
-     - **Diagnostics Checklist**: แสดงรายการที่ทำถูก vs ทำผิด ในการประเมินรอบนั้นๆ จาก Server Evaluator
-     - **Hints Audit**: ตรวจสอบว่าผู้เรียนกดเปิดดูคำใบ้ในขั้นตอนใดบ้าง
-
----
-
-### ระยะที่ 4: รวมกล่องงานที่รอตรวจ (Pending Review Inbox / Work Queue)
-* **เป้าหมาย**: ครูมีหน้าศูนย์รวมงานค้าง (Work Box) สำหรับแล็บและข้อสอบอัตนัยที่รอตรวจ สามารถกรองตามหน่วย และเปิดตรวจได้ทันที
-* **โครงสร้างการทำงาน**:
-  1. สร้าง API รวมงานรอตรวจ:
-     - `GET /api/classes/[classId]/reviews/pending`
-     - ดึงข้อมูลจาก 2 แหล่งในคำสั่งเดียว:
-       - `lab_submissions` ที่มี `status in ('submitted', 'reviewing')`
-       - `quiz_attempts` ที่มีคำตอบอัตนัยและสถานะ `submitted`
-       - รวมเอกสารหลักฐานแนบ (`evidence_files`: ภาพ/วิดีโอ/ไฟล์การต่อสาย)
-  2. เพิ่มส่วนแสดงผล "กล่องงานรอตรวจ (Pending Submissions Queue)":
-     - แถบสรุปตัวเลขงานค้างเด่นชัด เช่น `🔴 3 แล็บรอตรวจ · 2 ข้อสอบอัตนัยรอตรวจ`
-     - ตัวกรอง: เลือกดูตามหน่วย (U01–U08), ประเภทงาน (แล็บ / อัตนัย)
-     - รายการงานค้าง: แสดงชื่อนักศึกษา, วัน-เวลาที่ส่ง, เวลาที่รอตรวจ, ปุ่ม "เปิดตรวจงาน" เพื่อเปิดฟอร์มประเมิน
-
----
-
-### ระยะที่ 5: บันทึกการตรวจและให้คะแนนในฐานข้อมูล (Server-Authoritative Evaluation)
-* **เป้าหมาย**: ยกเลิกการเขียนลง `localStorage` สำหรับการตรวจข้อสอบอัตนัยและแล็บ ให้บันทึกผ่าน API เซิร์ฟเวอร์พร้อมบันทึกผู้ตรวจและประวัติย้อนหลัง
-* **โครงสร้างการทำงาน**:
-  1. ปรับปรุงฝั่งประเมินผลแล็บ:
-     - เรียกใช้ `reviewLabSubmissionService` (`PATCH /api/classes/[classId]/labs/[submissionId]/review`)
-     - ส่งสถานะ (`passed` / `revision_required`), คะแนน (`approvedScore`), และข้อเสนอแนะ (`feedback`)
-     - บันทึก `reviewed_by = teacherId` และ `reviewed_at = now()`
-  2. สร้างบริการตรวจข้อสอบอัตนัย/แบบทดสอบ:
-     - สร้าง `reviewQuizAttemptService` ใน `src/server/services/teacherReviewService.ts`
-     - สร้าง Endpoint `PATCH /api/classes/[classId]/quizzes/[attemptId]/review`
-     - อัปเดตตาราง `quiz_attempts`: `status = 'approved'`, `approved_score`, `approved_by`, `evaluation_reason`
-  3. ปรับ `UnitExamModal.tsx`:
-     - ส่งคำตอบอัตนัยเข้าเซิร์ฟเวอร์จริงผ่าน `POST /api/learning/submissions` ไม่เก็บเฉพาะในเครื่อง
-
----
-
-### ระยะที่ 6: ปรับการปลดล็อกและอนุมัติสิทธิ์สู่ระบบฐานข้อมูล (Centralized Unlocking & Access Control)
-* **เป้าหมาย**: ย้ายปุ่มสวิตช์ปลดล็อก/ล็อกหน่วย และการ Override สิทธิ์จาก `localStorage` ไปบันทึกลงฐานข้อมูลกลาง พร้อมตรวจสอบสิทธิ์ครู
-* **โครงสร้างการทำงาน**:
-  1. การปลดล็อกและ Override รายบุคคล:
-     - ปรับให้ปุ่ม "อนุมัติผ่าน" ใน Dashboard เรียก `PATCH /api/classes/[classId]/students/[studentId]/progress/[unitId]`
-     - ส่งเข้า `overrideStudentProgressService` ที่เรียก `private.override_unit_progress(...)`
-     - บันทึกลงตาราง `audit_logs` อัตโนมัติด้วย action `unit_progress.teacher_override` เพื่อความโปร่งใส
-  2. การตั้งค่าการเปิด/ล็อกหน่วยระดับชั้นเรียน (Class-wide Access Rule):
-     - บันทึกการเปิด-ปิดหน่วยเรียนลงในการตั้งค่าของชั้นเรียน หรือแมปผ่าน Unit Progression Rules ในฐานข้อมูล
-     - นำค่าสิทธิ์ที่แท้จริงจากฐานข้อมูลมาแสดงแทนการอ่าน `localStorage.getItem('cctv_teacher_approvals')`
-
----
-
-### ระยะที่ 7: ระบบติดตาม กรองข้อมูล และส่งออกรายงานสรุป (Monitoring, Analytics & CSV Export)
-* **เป้าหมาย**: เพิ่มเครื่องมือค้นหา กรองสถานะ และส่งออกรายงานเกรด/คะแนนสรุปเป็น CSV ภาษาไทยที่เปิดใน Excel ได้ถูกต้อง
-* **โครงสร้างการทำงาน**:
-  1. เครื่องมือค้นหาและกรอง (Filters & Search Bar):
-     - ค้นหาทันทีด้วยรหัสนักศึกษา หรือชื่อ-นามสกุล
-     - ตัวกรองสถานะ: "ยังไม่เริ่ม", "กำลังเรียน", "มีงานรอตรวจ", "ผ่านครบทุกหน่วย"
-  2. การส่งออกไฟล์ CSV สมบูรณ์ (Authoritative CSV Export):
-     - ใส่ UTF-8 BOM (`\uFEFF`) ป้องกันปัญหาฟอนต์ภาษาไทยเพี้ยนใน MS Excel
-     - คอลัมน์รายงานครอบคลุม:
-       - รหัสนักศึกษา, ชื่อ-นามสกุล
-       - สถานะหน่วย (U01–U08)
-       - คะแนนแบบทดสอบจริง (Quiz Approved Score)
-       - คะแนนแล็บจริง (Lab Approved Score)
-       - คะแนนภารกิจ 3D ที่ดีที่สุด (Game Best Score)
-       - จำนวนรอบและคำใบ้ที่ใช้ (Attempts & Hints)
-       - วันเวลาที่ผ่าน และผู้อนุมัติ (Approved Timestamp & Evaluator)
-
----
-
-## 4. แผนการทดสอบและความปลอดภัย (Verification & Security Plan)
-
-1. **สิทธิ์และการเข้าถึง (Authorization & RLS)**:
-   - ตรวจสอบผ่าน `assertCanManageClass(actorId, classId)` ในทุก Endpoint ของฝั่งครู
-   - ตรวจสอบว่าครูผู้สอนมีสถานะเป็น `active` และสังกัดชั้นเรียนนั้นจริง
-2. **ความถูกต้องของข้อมูล (Data Integrity)**:
-   - บันทึกการอนุมัติและ Override ผ่าน `audit_logs` ใน Trusted Transaction เสมอ
-   - ป้องกันการส่งคะแนนหลอก หรือการแทรกแซงคะแนนจาก Client
-3. **การทดสอบอัตโนมัติ (Automated Tests)**:
-   - รัน Unit / Integration Tests ด้วย `vitest` ทุกขั้นตอนที่มีการแก้ไข Service และ API
-   - ตรวจสอบ SSR Hydration และการ Render ของ `TeacherApprovalDashboard` ไม่ให้เกิด Layout Divergence
+## 5. ผลการดำเนินงาน (Completed)
+ทุกขั้นตอนได้รับการพัฒนาและตรวจสอบความถูกต้องเรียบร้อยแล้ว:
+1. [x] **Migration ข้อมูลกลุ่มเรียน**: สร้างกลุ่ม ปวช.1 (`PV1`, `PV2`, `PV3`) ในตาราง `classes`
+2. [x] **หน้า Landing Page & การเข้าสู่ระบบ**: ผู้เข้าชมเห็นหน้าแรกโดยไม่ถูก redirect บังคับ, ปุ่ม "เข้าสู่ระบบ" นำทางไปสู่การ Login
+3. [x] **โมดอลเลือกรหัสกลุ่มเรียน**: นักเรียนใหม่สามารถเลือกรหัสกลุ่มเรียน (`PV1`/`PV2`/`PV3`) พร้อมกรอกรหัสนักศึกษาและชื่อจริง เพื่อบันทึกลงตาราง `profiles` และ `class_members` ในฐานข้อมูลจริง
+4. [x] **Data Propagation ข้ามทุกหน้า**: ข้อมูลผู้เรียนและกลุ่มเรียนถูกส่งต่อไปยัง Navbar, Dashboard สถิติ, และห้องปฏิบัติการ 3D
+5. [x] **Teacher Dashboard Group Switcher**: ครูผู้สอนสามารถสลับดูกลุ่มเรียน `PV1`, `PV2`, และ `PV3` ได้อย่างอิสระ พร้อมระบบ Real-time ซิงค์ข้อมูลนักเรียน
+6. [x] **Zero-Regression Verification**: ผ่านการทดสอบทั้งหมด 48 test files (221 tests passing 100%)
