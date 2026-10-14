@@ -34,7 +34,7 @@ describe('Teacher Approval Dashboard SSR & Hydration contract', () => {
 
     expect(html).toContain('แดชบอร์ดครูผู้สอน');
     expect(html).toContain('TEACHER COMMAND CENTER');
-    expect(html).toContain('CLASS-2569-CCTV-01');
+    expect(html).toContain('ทุกกลุ่มเรียน (ปวช.1)');
 
     // Canonical SSR defaults for initial view
     expect(html).toContain('🔒 อนุมัติสิทธิ์ห้องแล็บ');

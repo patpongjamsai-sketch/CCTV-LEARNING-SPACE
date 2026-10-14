@@ -1,10 +1,9 @@
 const navigationItems = [
     { num: '01', label: 'ภาพรวมการเรียนรู้', href: '/' },
-    { num: '02', label: 'เส้นทางการเรียนรู้', href: '/courses/21909-2020' },
+    { num: '02', label: 'แบบทดสอบ', href: '/assessments' },
     { num: '03', label: 'ภารกิจฝึกทักษะ', href: '/missions' },
-    { num: '04', label: 'แบบทดสอบ', href: '/assessments' },
-    { num: '05', label: 'ผลการเรียนของฉัน', href: '/progress' },
-    { num: '06', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher' },
+    { num: '04', label: 'ผลการเรียนของฉัน', href: '/progress' },
+    { num: '05', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher' },
 ];
 
 import { TeacherManagementPanel } from './TeacherManagementPanel';
@@ -39,25 +38,23 @@ export type DashboardShellProps = {
 };
 
 const fallbackUnits: DashboardUnit[] = [
-    { id: '01', sequenceNo: 1, title: 'พื้นฐานและองค์ประกอบระบบ CCTV', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '02', sequenceNo: 2, title: 'กล้อง การเลือกใช้ และตำแหน่งติดตั้ง', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '03', sequenceNo: 3, title: 'ระบบสาย การเชื่อมต่อ และการติดตั้ง', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '04', sequenceNo: 4, title: 'เครือข่ายสำหรับกล้อง IP', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '05', sequenceNo: 5, title: 'การตั้งค่า DVR และ NVR', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '06', sequenceNo: 6, title: 'การบันทึก พื้นที่จัดเก็บ และการดูระยะไกล', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '07', sequenceNo: 7, title: 'การตรวจสอบ แก้ไขปัญหา และบำรุงรักษา', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
-    { id: '08', sequenceNo: 8, title: 'โครงงานบูรณาการระบบ CCTV', statusLabel: 'พร้อมเรียน', href: '/courses/21909-2020', unlocked: true },
+    { id: '01', sequenceNo: 1, title: 'พื้นฐานและองค์ประกอบระบบ CCTV', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-101', unlocked: true },
+    { id: '02', sequenceNo: 2, title: 'กล้อง การเลือกใช้ และตำแหน่งติดตั้ง', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-102', unlocked: true },
+    { id: '03', sequenceNo: 3, title: 'ระบบสาย การเชื่อมต่อ และการติดตั้ง', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-103', unlocked: true },
+    { id: '04', sequenceNo: 4, title: 'เครือข่ายสำหรับกล้อง IP', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-104', unlocked: true },
+    { id: '05', sequenceNo: 5, title: 'การตั้งค่า DVR และ NVR', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-105', unlocked: true },
+    { id: '06', sequenceNo: 6, title: 'การบันทึก พื้นที่จัดเก็บ และการดูระยะไกล', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-106', unlocked: true },
+    { id: '07', sequenceNo: 7, title: 'การตรวจสอบ แก้ไขปัญหา และบำรุงรักษา', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-107', unlocked: true },
+    { id: '08', sequenceNo: 8, title: 'โครงงานบูรณาการระบบ CCTV', statusLabel: 'พร้อมเรียน', href: '/labs/3d/room-108', unlocked: true },
 ];
 
-export function DashboardShell({
-    isGuest = false,
-    needsClassJoin = false,
-    learner = { displayName: 'ผู้เรียน', role: 'student', studentCode: null },
-    summary = { completedUnits: 0, totalUnits: 8, passedMissions: 0, bestScore: 0 },
-    units = fallbackUnits,
-    classId,
-    classCode,
-}: DashboardShellProps = {}) {
+export function DashboardShell(props: DashboardShellProps = {}) {
+    const isGuest = props.isGuest ?? !props.learner;
+    const needsClassJoin = props.needsClassJoin ?? false;
+    const learner = props.learner ?? { displayName: 'ผู้เรียน', role: 'student', studentCode: null };
+    const summary = props.summary ?? { completedUnits: 0, totalUnits: 8, passedMissions: 0, bestScore: 0 };
+    const units = props.units ?? fallbackUnits;
+    const { classId, classCode } = props;
     const experiencePoints = summary.completedUnits * 100 + summary.passedMissions * 25;
     const isTeacherOrAdmin = !isGuest && (learner.role === 'teacher' || learner.role === 'admin');
     const visibleNavItems = isTeacherOrAdmin
@@ -114,9 +111,14 @@ export function DashboardShell({
                             <span>{experiencePoints} XP</span>
                             <span className="portal-avatar" aria-hidden="true">{learner.displayName.slice(0, 1)}</span>
                             <span className="font-semibold">{learner.displayName}</span>
-                            {classCode && (
+                            {learner.role === 'student' && classCode && (
                                 <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono font-bold">
                                     {classCode}
+                                </span>
+                            )}
+                            {learner.role !== 'student' && (
+                                <span className="text-xs px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/40 font-mono font-bold">
+                                    ครูผู้สอน (ทุกกลุ่มเรียน)
                                 </span>
                             )}
                             <a
@@ -140,12 +142,25 @@ export function DashboardShell({
                                 ผ่านห้องปฏิบัติการ 3D
                             </p>
                             <div className="portal-actions">
-                                <a className="portal-button portal-button-primary" href="/login">
-                                    เข้าสู่ระบบ
-                                </a>
-                                <a className="portal-button portal-button-secondary" href="/courses/21909-2020">
-                                    สำรวจบทเรียน
-                                </a>
+                                {isGuest ? (
+                                    <>
+                                        <a className="portal-button portal-button-primary" href="/login">
+                                            เข้าสู่ระบบ
+                                        </a>
+                                        <a className="portal-button portal-button-secondary" href="/missions">
+                                            ภารกิจฝึกทักษะ
+                                        </a>
+                                    </>
+                                ) : (
+                                    <>
+                                        <a className="portal-button portal-button-primary" href="/missions">
+                                            ภารกิจฝึกทักษะ
+                                        </a>
+                                        <a className="portal-button portal-button-secondary" href="/assessments">
+                                            แบบทดสอบ
+                                        </a>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="portal-camera-visual" aria-label="ภาพแทนระบบกล้องวงจรปิด">
@@ -165,10 +180,10 @@ export function DashboardShell({
                     <section className="portal-learning-path" aria-labelledby="learning-path-title">
                         <div className="portal-section-heading">
                             <div>
-                                <p className="portal-kicker">LEARNING PATH</p>
-                                <h2 id="learning-path-title">เส้นทางการเรียนรู้</h2>
+                                <p className="portal-kicker">PRACTICE MODULES</p>
+                                <h2 id="learning-path-title">โมดูลฝึกทักษะและห้องปฏิบัติการ 3D</h2>
                             </div>
-                            <a href="/courses/21909-2020">ดูบทเรียนทั้งหมด</a>
+                            <a href="/missions">ดูภารกิจทั้งหมด ({units.length} หน่วย)</a>
                         </div>
 
                         <div className="portal-module-grid">

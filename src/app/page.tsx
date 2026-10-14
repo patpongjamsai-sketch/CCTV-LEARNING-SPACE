@@ -91,7 +91,7 @@ export default async function DashboardPage() {
         statusLabel = u.sequenceNo === 1 ? 'พร้อมเรียน' : 'เปิดแล้ว';
       }
 
-      const href = '/courses/21909-2020';
+      const href = `/labs/3d/room-${100 + u.sequenceNo}`;
 
       units.push({
         id: u.unitId,
@@ -119,8 +119,8 @@ export default async function DashboardPage() {
           bestScore,
         }}
         units={units.length > 0 ? units : undefined}
-        classId={classId}
-        classCode={classCode}
+        classId={isStaff ? undefined : classId}
+        classCode={isStaff ? undefined : classCode}
       />
     );
   } catch (err) {

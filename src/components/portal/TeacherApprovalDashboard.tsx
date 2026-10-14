@@ -27,6 +27,8 @@ export type RosterStudent = {
     code: string;
     name: string;
     groupId?: string;
+    classCode?: string;
+    classTitle?: string;
     orderNum?: number;
     unitProgress: Record<string, {
         unitId?: string;
@@ -98,10 +100,10 @@ const DEFAULT_CSV_STUDENTS = `email,student_code,display_name
 69219090044@cctv.local,69219090044,นางสาวปภัสสร ผูกมิตร
 69219090045@cctv.local,69219090045,นายต้นตการณ์ โพสาวัง`;
 
-const DEFAULT_CLASS_UUID = '22222222-2222-4222-8222-222222222222';
+const DEFAULT_CLASS_UUID = 'ALL';
 
 export const resolveClassUuid = (cid: string): string => {
-    if (!cid) return DEFAULT_CLASS_UUID;
+    if (!cid || cid === 'ALL' || cid === 'all') return 'ALL';
     const pv = getPvClassByCode(cid) || getPvClassById(cid);
     if (pv) return pv.id;
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
@@ -170,6 +172,8 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             studentId: string;
                             studentCode: string;
                             displayName: string;
+                            classCode?: string;
+                            classTitle?: string;
                             unitProgress?: Record<string, {
                                 unitId?: string;
                                 progressPercent: number;
@@ -195,6 +199,9 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             id: st.studentId,
                             code: st.studentCode || '',
                             name: st.displayName || 'ผู้เรียน',
+                            groupId: st.classCode || '',
+                            classCode: st.classCode || '',
+                            classTitle: st.classTitle || '',
                             unitProgress: Object.entries(st.unitProgress || {}).reduce((acc, [uk, uv]) => {
                                 acc[uk] = {
                                     unitId: uv.unitId,
@@ -271,6 +278,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
 
     // Membership changes trigger a fresh server-authorized roster read.
     useEffect(() => {
+        let isActive = true;
         const effectiveClassId = resolveClassUuid(selectedClassUuid);
         if (!effectiveClassId) {
             setRealtimeStatus('fallback');
@@ -278,17 +286,25 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         }
 
         const supabase = createBrowserSupabaseClient();
-        let isActive = true;
+        const isAll = effectiveClassId === 'ALL';
+        const changeConfig = isAll
+            ? {
+                event: '*',
+                schema: 'public',
+                table: 'class_members',
+            }
+            : {
+                event: '*',
+                schema: 'public',
+                table: 'class_members',
+                filter: `class_id=eq.${effectiveClassId}`,
+            };
+
         const channel = supabase
             .channel(`teacher-roster:${effectiveClassId}`)
             .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'class_members',
-                    filter: `class_id=eq.${effectiveClassId}`,
-                },
+                'postgres_changes' as any,
+                changeConfig as any,
                 () => {
                     if (isActive) void fetchStudents(selectedClassUuid);
                 },
@@ -679,7 +695,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             TEACHER COMMAND CENTER
                         </span>
                         <span className="text-xs text-slate-400 font-mono">
-                            คลาส: {classId} · วิชา 21909-2020
+                            คลาส: {classId === 'ALL' || classId === 'CLASS-2569-CCTV-01' ? 'ทุกกลุ่มเรียน (ปวช.1)' : classId} · วิชา 21909-2020
                         </span>
                     </div>
                     <h2 className="text-2xl font-black text-white mt-1">
@@ -1271,12 +1287,15 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         </div>
                     )}
 
-                    {/* Class Switcher for Vocational Certificate 1 (PV1, PV2, PV3) */}
+                    {/* Class Switcher for Vocational Certificate 1 (ALL, PV1, PV2, PV3) */}
                     <div className="flex items-center gap-2 overflow-x-auto pb-2">
                         <span className="text-xs font-mono font-bold text-slate-400 shrink-0 mr-1">
                             กลุ่มเรียน:
                         </span>
-                        {PV_CLASSES.map((pv) => {
+                        {[
+                            { id: 'ALL', code: 'ALL', title: 'ทุกกลุ่มเรียน (ทั้งหมด)', shortLabel: 'ทั้งหมด' },
+                            ...PV_CLASSES,
+                        ].map((pv) => {
                             const isClassActive = selectedClassUuid === pv.id;
                             return (
                                 <button
@@ -1284,7 +1303,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                     type="button"
                                     onClick={() => {
                                         setSelectedClassUuid(pv.id);
-                                        setTargetClassId(pv.id);
+                                        setTargetClassId(pv.id === 'ALL' ? PV_CLASSES[0].id : pv.id);
                                         setSelectedGroupFilter('ALL');
                                     }}
                                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -1406,9 +1425,29 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                                 </button>
                                             </td>
                                             <td className="p-3">
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
-                                                    {st.groupId ? `กลุ่ม ${st.groupId.slice(-1)}` : '-'}
-                                                </span>
+                                                <div className="flex flex-col gap-1 items-start">
+                                                    {st.classCode ? (
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                                                            st.classCode === 'PV1'
+                                                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                                                : st.classCode === 'PV2'
+                                                                ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                                                                : st.classCode === 'PV3'
+                                                                ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                                                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                                                        }`}>
+                                                            {st.classCode === 'PV1' ? 'ปวช.1/1' : st.classCode === 'PV2' ? 'ปวช.1/2' : st.classCode === 'PV3' ? 'ปวช.1/3' : st.classCode}
+                                                        </span>
+                                                    ) : null}
+                                                    {st.groupId ? (
+                                                        <span className="text-[10px] text-slate-400">
+                                                            กลุ่มย่อย {st.groupId.slice(-1)}
+                                                        </span>
+                                                    ) : null}
+                                                    {!st.classCode && !st.groupId && (
+                                                        <span className="text-slate-500 text-[10px]">-</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="p-3">
                                                 <span

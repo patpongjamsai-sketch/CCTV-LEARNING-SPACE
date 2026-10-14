@@ -46,7 +46,7 @@ export default async function TeacherPage() {
                     </div>
 
                     {/* Teacher Approval Dashboard Component */}
-                    <TeacherApprovalDashboard classId="CLASS-2569-CCTV-01" />
+                    <TeacherApprovalDashboard classId="ALL" />
                 </div>
             </main>
         </>

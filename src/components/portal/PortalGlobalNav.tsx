@@ -12,11 +12,10 @@ export type GlobalNavItem = {
 
 export const GLOBAL_NAV_ITEMS: GlobalNavItem[] = [
     { num: '01', label: 'ภาพรวมการเรียนรู้', href: '/' },
-    { num: '02', label: 'เส้นทางการเรียนรู้', href: '/courses/21909-2020', matchPrefix: '/courses' },
+    { num: '02', label: 'แบบทดสอบ', href: '/assessments', matchPrefix: '/assessments' },
     { num: '03', label: 'ภารกิจฝึกทักษะ', href: '/missions', matchPrefix: '/missions' },
-    { num: '04', label: 'แบบทดสอบ', href: '/assessments', matchPrefix: '/assessments' },
-    { num: '05', label: 'ผลการเรียนของฉัน', href: '/progress', matchPrefix: '/progress' },
-    { num: '06', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher', matchPrefix: '/teacher' },
+    { num: '04', label: 'ผลการเรียนของฉัน', href: '/progress', matchPrefix: '/progress' },
+    { num: '05', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher', matchPrefix: '/teacher' },
 ];
 
 export type UserProfile = {
@@ -89,7 +88,7 @@ export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {
                         {items.map((item) => {
                             const isActive = item.href === '/'
                                 ? pathname === '/'
-                                : pathname.startsWith(item.matchPrefix || item.href);
+                                : pathname.startsWith(item.matchPrefix || item.href) || (item.href === '/missions' && pathname.startsWith('/labs'));
 
                             return (
                                 <a
@@ -120,9 +119,14 @@ export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1.5 flex-wrap">
                                     <span>{user.role === 'teacher' ? '👨‍🏫 ครูผู้สอน' : user.role === 'admin' ? '🛡️ ผู้ดูแลระบบ' : '👨‍🔧 นักเรียน'}</span>
-                                    {user.membership?.classCode && (
+                                    {user.role === 'student' && user.membership?.classCode && (
                                         <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-[9px]">
                                             {user.membership.classCode}
+                                        </span>
+                                    )}
+                                    {user.role !== 'student' && (
+                                        <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40 text-[9px]">
+                                            ทุกกลุ่มเรียน (ปวช.1)
                                         </span>
                                     )}
                                     {user.studentCode ? <span>({user.studentCode})</span> : null}

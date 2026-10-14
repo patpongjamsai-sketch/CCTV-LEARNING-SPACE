@@ -9,6 +9,34 @@ import { joinClassInputSchema, progressOverrideInputSchema } from '../http/apiSc
 import { getPvClassByCode } from '../../lib/classes/classGroups';
 
 export async function assertCanManageClass(actorId: string, classId: string): Promise<string> {
+  if (classId === 'ALL') {
+    try {
+      const sql = getServerDatabase();
+      const [actor] = await sql`
+        select p.role, p.active
+        from public.profiles as p
+        where p.id = ${actorId} and p.active = true
+      `;
+      if (!actor || (actor.role !== 'teacher' && actor.role !== 'admin')) {
+        throw new Error('Forbidden: only an active class teacher or admin can manage this class');
+      }
+      return 'ALL';
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('Forbidden:')) throw err;
+      const supabase = await createServerSupabaseClient();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, active')
+        .eq('id', actorId)
+        .eq('active', true)
+        .maybeSingle();
+      if (profile && (profile.role === 'teacher' || profile.role === 'admin')) {
+        return 'ALL';
+      }
+      throw new Error('Forbidden: only an active class teacher or admin can manage this class');
+    }
+  }
+
   try {
     const sql = getServerDatabase();
 
@@ -197,6 +225,8 @@ export type ClassStudentRecord = {
   studentId: string;
   studentCode: string;
   displayName: string;
+  classCode?: string;
+  classTitle?: string;
   unitProgress: Record<string, {
     unitId: string;
     sequenceNo: number;
@@ -245,112 +275,208 @@ export async function getClassStudentsService(
   let rows: any[] = [];
   try {
     const sql = getServerDatabase();
+    const isAll = classId === 'ALL';
 
-    rows = await sql`
-      select
-        p.id as student_id,
-        p.student_code,
-        p.display_name,
-        u.id as unit_id,
-        u.sequence_no,
-        coalesce(up.progress_percent, 0) as progress_percent,
-        coalesce(up.passed, false) as passed,
-        coalesce(private.is_unit_unlocked(p.id, ${classId}, u.id), false) as unlocked,
-        up.approved_score,
-        latest_quiz.id as latest_quiz_id,
-        latest_quiz.approved_score as latest_quiz_score,
-        latest_quiz.passed as latest_quiz_passed,
-        latest_quiz.status as latest_quiz_status,
-        latest_quiz.submitted_at as latest_quiz_submitted_at,
-        latest_lab.id as latest_lab_id,
-        latest_lab.status as latest_lab_status,
-        latest_lab.passed as latest_lab_passed,
-        latest_lab.approved_score as latest_lab_approved_score,
-        latest_lab.reviewed_at as latest_lab_reviewed_at,
-        latest_lab.submitted_at as latest_lab_submitted_at,
-        latest_mission.mission_id as latest_mission_id,
-        latest_mission.code as latest_mission_code,
-        latest_mission.title as latest_mission_title,
-        latest_mission.max_score as latest_mission_max_score,
-        latest_mission.best_score as latest_mission_best_score,
-        latest_mission.attempt_count as latest_mission_attempt_count,
-        latest_mission.hints_used as latest_mission_hints_used,
-        latest_mission.passed as latest_mission_passed,
-        latest_mission.first_passed_at as latest_mission_first_passed_at,
-        latest_mission.latest_attempt_id as latest_mission_latest_attempt_id
-      from public.class_members as cm
-      join public.profiles as p on p.id = cm.profile_id
-      join public.classes as c on c.id = cm.class_id
-      left join public.units as u on u.course_id = c.course_id and u.status = 'published'
-      left join public.unit_progress as up
-        on up.student_id = p.id
-       and up.class_id = cm.class_id
-       and up.unit_id = u.id
-      left join lateral (
-        select qa.id, qa.approved_score, qa.passed, qa.status, qa.submitted_at
-        from public.quiz_attempts as qa
-        join public.quizzes as q on q.id = qa.quiz_id
-        where qa.class_id = cm.class_id
-          and qa.student_id = p.id
-          and q.unit_id = u.id
-        order by qa.attempt_no desc
-        limit 1
-      ) as latest_quiz on true
-      left join lateral (
-        select ls.id, ls.status, ls.passed, ls.approved_score, ls.reviewed_at, ls.submitted_at
-        from public.lab_submissions as ls
-        where ls.class_id = cm.class_id
-          and ls.student_id = p.id
-          and ls.unit_id = u.id
-        order by ls.attempt_no desc
-        limit 1
-      ) as latest_lab on true
-      left join lateral (
+    if (isAll) {
+      rows = await sql`
         select
-          m.id as mission_id,
-          m.code,
-          m.title,
-          m.max_score,
-          gmr.best_score,
-          gmr.attempt_count,
-          gmr.hints_used,
-          gmr.passed,
-          gmr.first_passed_at,
-          gmr.latest_attempt_id
-        from public.game_mission_results as gmr
-        join public.missions as m on m.id = gmr.mission_id
-        where gmr.class_id = cm.class_id
-          and gmr.student_id = p.id
-          and m.unit_id = u.id
-        order by gmr.updated_at desc
-        limit 1
-      ) as latest_mission on true
-      where cm.class_id = ${classId}
-        and cm.member_role = 'student'
-        and cm.active = true
-      order by p.student_code asc, u.sequence_no asc
-    `;
+          p.id as student_id,
+          p.student_code,
+          p.display_name,
+          c.id as class_id,
+          c.code as class_code,
+          c.title as class_title,
+          u.id as unit_id,
+          u.sequence_no,
+          coalesce(up.progress_percent, 0) as progress_percent,
+          coalesce(up.passed, false) as passed,
+          coalesce(private.is_unit_unlocked(p.id, cm.class_id, u.id), false) as unlocked,
+          up.approved_score,
+          latest_quiz.id as latest_quiz_id,
+          latest_quiz.approved_score as latest_quiz_score,
+          latest_quiz.passed as latest_quiz_passed,
+          latest_quiz.status as latest_quiz_status,
+          latest_quiz.submitted_at as latest_quiz_submitted_at,
+          latest_lab.id as latest_lab_id,
+          latest_lab.status as latest_lab_status,
+          latest_lab.passed as latest_lab_passed,
+          latest_lab.approved_score as latest_lab_approved_score,
+          latest_lab.reviewed_at as latest_lab_reviewed_at,
+          latest_lab.submitted_at as latest_lab_submitted_at,
+          latest_mission.mission_id as latest_mission_id,
+          latest_mission.code as latest_mission_code,
+          latest_mission.title as latest_mission_title,
+          latest_mission.max_score as latest_mission_max_score,
+          latest_mission.best_score as latest_mission_best_score,
+          latest_mission.attempt_count as latest_mission_attempt_count,
+          latest_mission.hints_used as latest_mission_hints_used,
+          latest_mission.passed as latest_mission_passed,
+          latest_mission.first_passed_at as latest_mission_first_passed_at,
+          latest_mission.latest_attempt_id as latest_mission_latest_attempt_id
+        from public.class_members as cm
+        join public.profiles as p on p.id = cm.profile_id
+        join public.classes as c on c.id = cm.class_id
+        left join public.units as u on u.course_id = c.course_id and u.status = 'published'
+        left join public.unit_progress as up
+          on up.student_id = p.id
+         and up.class_id = cm.class_id
+         and up.unit_id = u.id
+        left join lateral (
+          select qa.id, qa.approved_score, qa.passed, qa.status, qa.submitted_at
+          from public.quiz_attempts as qa
+          join public.quizzes as q on q.id = qa.quiz_id
+          where qa.class_id = cm.class_id
+            and qa.student_id = p.id
+            and q.unit_id = u.id
+          order by qa.attempt_no desc
+          limit 1
+        ) as latest_quiz on true
+        left join lateral (
+          select ls.id, ls.status, ls.passed, ls.approved_score, ls.reviewed_at, ls.submitted_at
+          from public.lab_submissions as ls
+          where ls.class_id = cm.class_id
+            and ls.student_id = p.id
+            and ls.unit_id = u.id
+          order by ls.attempt_no desc
+          limit 1
+        ) as latest_lab on true
+        left join lateral (
+          select
+            m.id as mission_id,
+            m.code,
+            m.title,
+            m.max_score,
+            gmr.best_score,
+            gmr.attempt_count,
+            gmr.hints_used,
+            gmr.passed,
+            gmr.first_passed_at,
+            gmr.latest_attempt_id
+          from public.game_mission_results as gmr
+          join public.missions as m on m.id = gmr.mission_id
+          where gmr.class_id = cm.class_id
+            and gmr.student_id = p.id
+            and m.unit_id = u.id
+          order by gmr.updated_at desc
+          limit 1
+        ) as latest_mission on true
+        where cm.member_role = 'student' and cm.active = true
+        order by c.code asc, p.student_code asc, u.sequence_no asc
+      `;
+    } else {
+      rows = await sql`
+        select
+          p.id as student_id,
+          p.student_code,
+          p.display_name,
+          c.id as class_id,
+          c.code as class_code,
+          c.title as class_title,
+          u.id as unit_id,
+          u.sequence_no,
+          coalesce(up.progress_percent, 0) as progress_percent,
+          coalesce(up.passed, false) as passed,
+          coalesce(private.is_unit_unlocked(p.id, cm.class_id, u.id), false) as unlocked,
+          up.approved_score,
+          latest_quiz.id as latest_quiz_id,
+          latest_quiz.approved_score as latest_quiz_score,
+          latest_quiz.passed as latest_quiz_passed,
+          latest_quiz.status as latest_quiz_status,
+          latest_quiz.submitted_at as latest_quiz_submitted_at,
+          latest_lab.id as latest_lab_id,
+          latest_lab.status as latest_lab_status,
+          latest_lab.passed as latest_lab_passed,
+          latest_lab.approved_score as latest_lab_approved_score,
+          latest_lab.reviewed_at as latest_lab_reviewed_at,
+          latest_lab.submitted_at as latest_lab_submitted_at,
+          latest_mission.mission_id as latest_mission_id,
+          latest_mission.code as latest_mission_code,
+          latest_mission.title as latest_mission_title,
+          latest_mission.max_score as latest_mission_max_score,
+          latest_mission.best_score as latest_mission_best_score,
+          latest_mission.attempt_count as latest_mission_attempt_count,
+          latest_mission.hints_used as latest_mission_hints_used,
+          latest_mission.passed as latest_mission_passed,
+          latest_mission.first_passed_at as latest_mission_first_passed_at,
+          latest_mission.latest_attempt_id as latest_mission_latest_attempt_id
+        from public.class_members as cm
+        join public.profiles as p on p.id = cm.profile_id
+        join public.classes as c on c.id = cm.class_id
+        left join public.units as u on u.course_id = c.course_id and u.status = 'published'
+        left join public.unit_progress as up
+          on up.student_id = p.id
+         and up.class_id = cm.class_id
+         and up.unit_id = u.id
+        left join lateral (
+          select qa.id, qa.approved_score, qa.passed, qa.status, qa.submitted_at
+          from public.quiz_attempts as qa
+          join public.quizzes as q on q.id = qa.quiz_id
+          where qa.class_id = cm.class_id
+            and qa.student_id = p.id
+            and q.unit_id = u.id
+          order by qa.attempt_no desc
+          limit 1
+        ) as latest_quiz on true
+        left join lateral (
+          select ls.id, ls.status, ls.passed, ls.approved_score, ls.reviewed_at, ls.submitted_at
+          from public.lab_submissions as ls
+          where ls.class_id = cm.class_id
+            and ls.student_id = p.id
+            and ls.unit_id = u.id
+          order by ls.attempt_no desc
+          limit 1
+        ) as latest_lab on true
+        left join lateral (
+          select
+            m.id as mission_id,
+            m.code,
+            m.title,
+            m.max_score,
+            gmr.best_score,
+            gmr.attempt_count,
+            gmr.hints_used,
+            gmr.passed,
+            gmr.first_passed_at,
+            gmr.latest_attempt_id
+          from public.game_mission_results as gmr
+          join public.missions as m on m.id = gmr.mission_id
+          where gmr.class_id = cm.class_id
+            and gmr.student_id = p.id
+            and m.unit_id = u.id
+          order by gmr.updated_at desc
+          limit 1
+        ) as latest_mission on true
+        where cm.class_id = ${classId} and cm.member_role = 'student' and cm.active = true
+        order by c.code asc, p.student_code asc, u.sequence_no asc
+      `;
+    }
   } catch (dbErr) {
     try {
       // Reuse the verified teacher session and RLS for the fallback read.
       const supabase = await createServerSupabaseClient();
-      const { data: members, error: membersError } = await supabase
+      let query = supabase
         .from('class_members')
-        .select('profile_id, profiles(id, student_code, display_name, active)')
-        .eq('class_id', classId)
+        .select('profile_id, class_id, classes(id, code, title), profiles(id, student_code, display_name, active)')
         .eq('member_role', 'student')
         .eq('active', true);
+      if (classId !== 'ALL') {
+        query = query.eq('class_id', classId);
+      }
+      const { data: members, error: membersError } = await query;
       if (membersError) throw dbErr;
 
       if (members) {
         return members.flatMap((member: any) => {
           const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+          const cls = Array.isArray(member.classes) ? member.classes[0] : member.classes;
           if (!profile || profile.active !== true) return [];
           return [{
-          studentId: profile.id || member.profile_id,
-          studentCode: profile.student_code || '',
-          displayName: profile.display_name || 'ผู้เรียน',
-          unitProgress: {},
+            studentId: profile.id || member.profile_id,
+            studentCode: profile.student_code || '',
+            displayName: profile.display_name || 'ผู้เรียน',
+            classCode: cls?.code || '',
+            classTitle: cls?.title || '',
+            unitProgress: {},
           }];
         });
       }
@@ -368,6 +494,8 @@ export async function getClassStudentsService(
         studentId: row.student_id,
         studentCode: row.student_code || '',
         displayName: row.display_name || '',
+        classCode: row.class_code || '',
+        classTitle: row.class_title || '',
         unitProgress: {},
       });
     }

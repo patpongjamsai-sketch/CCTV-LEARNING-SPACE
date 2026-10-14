@@ -9,18 +9,19 @@ describe('Next.js learning portal shell', () => {
     const html = renderToStaticMarkup(<DashboardShell />);
 
     expect(html).toContain('กล้องวงจรปิดบนระบบเครือข่าย');
-    expect(html).toContain('เส้นทางการเรียนรู้');
+    expect(html).toContain('แบบทดสอบ');
+    expect(html).toContain('ภารกิจฝึกทักษะ');
     expect(html).toContain('เข้าสู่ระบบ');
     expect(html).toContain('href="/login"');
   });
 
-  it('routes the first learning module to the canonical course before the LAB', async () => {
+  it('routes the first learning module to its 3D Virtual Lab', async () => {
     const componentUrl = new URL('../components/portal/DashboardShell.tsx', import.meta.url).href;
     const { DashboardShell } = await import(/* @vite-ignore */ componentUrl);
 
     const html = renderToStaticMarkup(<DashboardShell />);
 
-    expect(html).toMatch(/class="portal-module-card" data-unit-id="01" href="\/courses\/21909-2020"/);
+    expect(html).toMatch(/class="portal-module-card" data-unit-id="01" href="\/labs\/3d\/room-101"/);
   });
 
   it('renders the authenticated learner and backend-approved progress', async () => {

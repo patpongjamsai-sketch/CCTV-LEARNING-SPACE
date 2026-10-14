@@ -89,8 +89,10 @@ const roomSummaries = [
 
 export default function LabsDirectoryPage() {
     const [renderTick, setRenderTick] = useState(0);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         const handleUpdate = () => setRenderTick((t) => t + 1);
         window.addEventListener('cctv_approvals_updated', handleUpdate);
         return () => window.removeEventListener('cctv_approvals_updated', handleUpdate);
@@ -126,18 +128,98 @@ export default function LabsDirectoryPage() {
                             <span>🎛️ แดชบอร์ดครูผู้สอน</span>
                         </a>
                         <a
-                            href="/courses/21909-2020"
+                            href="/missions"
                             className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-sky-500/20"
                         >
-                            📖 ดูแผนการเรียนรู้
+                            🎯 ภารกิจฝึกทักษะ
                         </a>
                     </div>
                 </div>
 
+                {/* Featured 3D Interactive Labs (Bullet & Dome) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Featured Bullet Camera Lab */}
+                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-cyan-950/30 to-slate-900 border border-cyan-500/40 p-6 md:p-7 shadow-2xl flex flex-col justify-between gap-5">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-mono font-bold">
+                                    3D LAB · BULLET
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                                    AVAILABLE
+                                </span>
+                            </div>
+                            <h2 className="text-lg md:text-xl font-bold text-white">
+                                Bullet Camera 3D Interactive Lab V1
+                            </h2>
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                                ฝึกติดตั้งกล้องกระบอก (Bullet Camera): ตัวละคร Roblox เดินสำรวจ, จุดติดตั้ง A–E, ปรับมุม Pan/Tilt/Roll, และใบงาน 4 พื้นผิวนักเรียนเลือกคำตอบเอง
+                            </p>
+                        </div>
+                        <a
+                            href="/labs/bullet-camera"
+                            className="px-5 py-3 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold rounded-2xl text-xs transition-all shadow-lg shadow-cyan-500/20 flex items-center justify-between"
+                        >
+                            <span>เข้าสู่ห้องปฏิบัติการ Bullet Camera</span>
+                            <span>→</span>
+                        </a>
+                    </div>
+
+                    {/* Featured Dome Camera Lab */}
+                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-sky-950/40 to-slate-900 border border-sky-400/50 p-6 md:p-7 shadow-2xl flex flex-col justify-between gap-5">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-mono font-bold">
+                                    3D LAB · DOME
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold animate-pulse">
+                                    NEW RELEASE
+                                </span>
+                            </div>
+                            <h2 className="text-lg md:text-xl font-bold text-white">
+                                Dome Camera 3D Interactive Lab V1
+                            </h2>
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                                ฝึกติดตั้งกล้องโดมใน <strong>2 ห้อง (Indoor Office & Semi-Outdoor)</strong>: กิมบอล 3 แกน (Pan/Tilt/Rotation), ทดสอบ Day/Night IR Reflection, และใบงาน 4 พื้นผิว
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                            <a
+                                href="/labs/dome-camera/room-1"
+                                className="px-4 py-2.5 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-sky-500/20 flex items-center justify-between"
+                            >
+                                <span>🏢 ห้องที่ 1: สำนักงาน</span>
+                                <span>→</span>
+                            </a>
+                            <a
+                                href="/labs/dome-camera/room-2"
+                                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white font-bold rounded-xl text-xs border border-sky-500/30 transition-all flex items-center justify-between"
+                            >
+                                <span>🏭 ห้องที่ 2: โรงฝึกงาน</span>
+                                <span>→</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* เกมฝึกเข้าหัวสายแยกจาก Room 103 */}
+                <section className="relative overflow-hidden rounded-3xl border border-teal-400/50 bg-gradient-to-r from-[#102a36] via-[#103c45] to-[#10232f] p-6 md:p-8 shadow-2xl">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+                        <div className="max-w-2xl space-y-2">
+                            <span className="inline-flex rounded-lg border border-teal-300/40 bg-teal-300/10 px-3 py-1 text-[11px] font-bold tracking-wider text-teal-200">NEW GAME · RJ45 CAT6</span>
+                            <h2 className="text-2xl font-bold text-white">เกมฝึกเข้าหัวสาย RJ45 CAT6</h2>
+                            <p className="text-sm leading-relaxed text-slate-200">ฝึก 8 ขั้นตอนด้วยตนเอง: ตัด PoE, วัดและปอกสาย, เรียงสี T568B ทั้งสองปลาย, ย้ำหัว, อ่านผล Cable Tester และซ่อมหัวที่ผิด</p>
+                            <p className="text-xs text-teal-100/70">Section ฝึกอิสระ · แยกจากคะแนน Room 103</p>
+                        </div>
+                        <a href="/RJ45" className="inline-flex shrink-0 items-center justify-center gap-3 rounded-xl bg-teal-300 px-6 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-teal-400/20 transition hover:bg-teal-200">เข้าเล่นเกม RJ45 <span>→</span></a>
+                    </div>
+                </section>
+
                 {/* Labs Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {roomSummaries.map((room) => {
-                        const labGate = isLabUnlocked(room.unitId);
+                        // รอหลัง Hydration ก่อนอ่านสิทธิ์จาก localStorage เพื่อให้ HTML ฝั่ง Server/Client ตรงกัน
+                        const labGate = mounted ? isLabUnlocked(room.unitId) : { unlocked: false, reason: '' };
 
                         return (
                             <div

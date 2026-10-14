@@ -222,10 +222,10 @@ export function LabClientContainer({
 
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href="/courses/21909-2020"
+              href="/missions"
               className="flex-1 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors text-center shadow-lg shadow-sky-600/20"
             >
-              📖 ไปยังบทเรียนเพื่อศึกษาเนื้อหา
+              🎯 กลับหน้าภารกิจฝึกทักษะ
             </a>
             <a
               href="/teacher"
@@ -334,10 +334,10 @@ export function LabClientContainer({
                   คุณผ่านการทดสอบ 3D Lab แล้ว ระบบได้ปลดล็อก "แบบทดสอบ ปรนัย + อัตนัย" ประจำหน่วยนี้ให้เรียบร้อยแล้ว
                 </p>
                 <a
-                  href="/courses/21909-2020"
+                  href="/assessments"
                   className="inline-block mt-1 text-xs font-bold text-emerald-300 hover:text-emerald-200 underline"
                 >
-                  📝 ไปยังหน้าหลักเพื่อทำแบบทดสอบประจำหน่วย (Step 3) →
+                  📝 ไปยังหน้าแบบทดสอบประจำหน่วย (Step 3) →
                 </a>
               </div>
             )}

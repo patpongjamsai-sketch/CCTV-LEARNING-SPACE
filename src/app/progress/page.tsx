@@ -276,10 +276,10 @@ export default async function ProgressPage() {
                         {/* ทางลัด */}
                         <div className="flex flex-wrap items-center gap-3">
                             <a
-                                href="/courses/21909-2020"
+                                href="/assessments"
                                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition"
                             >
-                                📘 เส้นทางการเรียน
+                                📝 แบบทดสอบ
                             </a>
                             <a
                                 href="/missions"
@@ -460,16 +460,16 @@ export default async function ProgressPage() {
                                                     )}
                                                 </div>
                                                 <p className="text-[11px] text-slate-400 mt-1">
-                                                    ศึกษาเนื้อหาและตอบคำถาม Knowledge Checks
+                                                    ทำแบบทดสอบวัดความรู้ประจำหน่วย
                                                 </p>
                                             </div>
 
                                             <div className="mt-3 pt-3 border-t border-slate-800/60">
                                                 <a
-                                                    href={`/courses/21909-2020`}
+                                                    href={`/assessments#unit-${unit.unitId.toLowerCase()}`}
                                                     className="inline-flex items-center gap-1 text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors"
                                                 >
-                                                    ไปยังเนื้อหาบทเรียน <span>→</span>
+                                                    ไปยังแบบทดสอบ <span>→</span>
                                                 </a>
                                             </div>
                                         </div>

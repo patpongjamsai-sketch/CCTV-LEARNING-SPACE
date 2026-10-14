@@ -21,29 +21,38 @@ export async function GET() {
       memberRole: string;
     } | null = null;
 
-    try {
-      const supabase = await createServerSupabaseClient();
-      const { data: member } = await supabase
-        .from('class_members')
-        .select('class_id, member_role, classes(id, code, title)')
-        .eq('profile_id', profile.id)
-        .eq('active', true)
-        .order('joined_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    if (profile.role === 'teacher' || profile.role === 'admin') {
+      membership = {
+        classId: 'ALL',
+        classCode: 'ALL',
+        classTitle: 'ทุกกลุ่มเรียน (ปวช.1)',
+        memberRole: profile.role,
+      };
+    } else {
+      try {
+        const supabase = await createServerSupabaseClient();
+        const { data: member } = await supabase
+          .from('class_members')
+          .select('class_id, member_role, classes(id, code, title)')
+          .eq('profile_id', profile.id)
+          .eq('active', true)
+          .order('joined_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (member) {
-        const cls = Array.isArray(member.classes) ? member.classes[0] : member.classes;
-        const pvFallback = getPvClassById(member.class_id);
-        membership = {
-          classId: member.class_id,
-          classCode: cls?.code ?? pvFallback?.code ?? null,
-          classTitle: cls?.title ?? pvFallback?.title ?? null,
-          memberRole: member.member_role,
-        };
+        if (member) {
+          const cls = Array.isArray(member.classes) ? member.classes[0] : member.classes;
+          const pvFallback = getPvClassById(member.class_id);
+          membership = {
+            classId: member.class_id,
+            classCode: cls?.code ?? pvFallback?.code ?? null,
+            classTitle: cls?.title ?? pvFallback?.title ?? null,
+            memberRole: member.member_role,
+          };
+        }
+      } catch {
+        // membership lookup fallback
       }
-    } catch {
-      // membership lookup fallback
     }
 
     return NextResponse.json(

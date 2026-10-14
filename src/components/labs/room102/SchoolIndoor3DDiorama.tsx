@@ -745,10 +745,10 @@ export const SchoolIndoor3DDiorama: React.FC<SchoolIndoor3DDioramaProps> = ({
                       isSelected
                         ? '#f59e0b'
                         : camId
-                        ? isCorrect
-                          ? '#10b981'
-                          : '#f43f5e'
-                        : '#38bdf8'
+                          ? isCorrect
+                            ? '#10b981'
+                            : '#f43f5e'
+                          : '#38bdf8'
                     }
                     emissive={isSelected ? '#f59e0b' : '#000000'}
                     emissiveIntensity={isSelected ? 0.8 : 0}
@@ -775,15 +775,14 @@ export const SchoolIndoor3DDiorama: React.FC<SchoolIndoor3DDioramaProps> = ({
                 {/* Floating 3D Badge on Spot */}
                 <Html position={[0, 0.45, 0]} center distanceFactor={5.5} style={{ pointerEvents: 'none' }}>
                   <div
-                    className={`px-1.5 py-0.5 rounded-lg text-[8px] font-mono font-bold tracking-wider border shadow-md flex items-center gap-1 whitespace-nowrap transition-all ${
-                      isSelected
+                    className={`px-1.5 py-0.5 rounded-lg text-[8px] font-mono font-bold tracking-wider border shadow-md flex items-center gap-1 whitespace-nowrap transition-all ${isSelected
                         ? 'bg-amber-500 text-slate-950 border-amber-300 ring-1 ring-amber-400 scale-105'
                         : camId
-                        ? isCorrect
-                          ? 'bg-emerald-950/95 text-emerald-300 border-emerald-400'
-                          : 'bg-rose-950/95 text-rose-300 border-rose-400'
-                        : 'bg-slate-900/90 text-slate-200 border-slate-700'
-                    }`}
+                          ? isCorrect
+                            ? 'bg-emerald-950/95 text-emerald-300 border-emerald-400'
+                            : 'bg-rose-950/95 text-rose-300 border-rose-400'
+                          : 'bg-slate-900/90 text-slate-200 border-slate-700'
+                      }`}
                   >
                     <span>{camId ? ROOM102_CAMERA_CATALOG[camId].icon : '📍'}</span>
                     <span>{spot.nameTh.split(':')[0]}</span>
