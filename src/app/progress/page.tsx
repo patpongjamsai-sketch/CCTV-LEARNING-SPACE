@@ -282,10 +282,10 @@ export default async function ProgressPage() {
                                 📝 แบบทดสอบ
                             </a>
                             <a
-                                href="/missions"
+                                href="/labs"
                                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition"
                             >
-                                🎮 ห้องปฏิบัติการ 3D
+                                🎮 ห้องปฏิบัติการ 8 Units
                             </a>
                             <a
                                 href="/assessments"

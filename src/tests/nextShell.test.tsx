@@ -10,7 +10,7 @@ describe('Next.js learning portal shell', () => {
 
     expect(html).toContain('กล้องวงจรปิดบนระบบเครือข่าย');
     expect(html).toContain('แบบทดสอบ');
-    expect(html).toContain('ภารกิจฝึกทักษะ');
+    expect(html).toContain('ห้องปฏิบัติการเสมือนจริง');
     expect(html).toContain('เข้าสู่ระบบ');
     expect(html).toContain('href="/login"');
   });

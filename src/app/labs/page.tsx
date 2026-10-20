@@ -240,10 +240,10 @@ export default function LabsDirectoryPage() {
                 <span>🎛️ แดชบอร์ดครูผู้สอน</span>
               </Link>
               <Link
-                href="/missions"
+                href="/assessments"
                 className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-sky-500/20 flex items-center gap-1.5"
               >
-                <span>🎯 ภารกิจฝึกทักษะ</span>
+                <span>📝 ศูนย์แบบทดสอบ</span>
               </Link>
             </div>
           </div>

@@ -222,10 +222,10 @@ export function LabClientContainer({
 
           <div className="flex flex-col sm:flex-row gap-3">
             <a
-              href="/missions"
+              href="/labs"
               className="flex-1 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl text-xs transition-colors text-center shadow-lg shadow-sky-600/20"
             >
-              🎯 กลับหน้าภารกิจฝึกทักษะ
+              🏛️ กลับศูนย์ปฏิบัติการ (8 Units)
             </a>
             <a
               href="/teacher"

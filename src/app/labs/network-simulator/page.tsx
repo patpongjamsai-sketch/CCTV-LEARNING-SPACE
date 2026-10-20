@@ -32,10 +32,10 @@ export default function NetworkSimulatorPage() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/missions"
+            href="/labs"
             className="text-xs font-semibold text-slate-400 hover:text-white px-3 py-1.5 rounded-xl transition-all"
           >
-            ภารกิจทั้งหมด
+            ห้องปฏิบัติการ 8 Units
           </Link>
           <Link
             href="/labs/3d/room-104?student_code=DEMO-TRAINEE&student_name=ผู้ทดลองเรียน"

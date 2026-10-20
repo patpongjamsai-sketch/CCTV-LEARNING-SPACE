@@ -1,7 +1,7 @@
 const navigationItems = [
     { num: '01', label: 'ภาพรวมการเรียนรู้', href: '/' },
     { num: '02', label: 'แบบทดสอบ', href: '/assessments' },
-    { num: '03', label: 'ภารกิจฝึกทักษะ', href: '/missions' },
+    { num: '03', label: 'ห้องปฏิบัติการเสมือนจริง', href: '/labs' },
     { num: '04', label: 'ผลการเรียนของฉัน', href: '/progress' },
     { num: '05', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher' },
 ];
@@ -147,14 +147,14 @@ export function DashboardShell(props: DashboardShellProps = {}) {
                                         <a className="portal-button portal-button-primary" href="/login">
                                             เข้าสู่ระบบ
                                         </a>
-                                        <a className="portal-button portal-button-secondary" href="/missions">
-                                            ภารกิจฝึกทักษะ
+                                        <a className="portal-button portal-button-secondary" href="/labs">
+                                            ห้องปฏิบัติการ 8 Units
                                         </a>
                                     </>
                                 ) : (
                                     <>
-                                        <a className="portal-button portal-button-primary" href="/missions">
-                                            ภารกิจฝึกทักษะ
+                                        <a className="portal-button portal-button-primary" href="/labs">
+                                            ห้องปฏิบัติการ 8 Units
                                         </a>
                                         <a className="portal-button portal-button-secondary" href="/assessments">
                                             แบบทดสอบ
@@ -183,7 +183,7 @@ export function DashboardShell(props: DashboardShellProps = {}) {
                                 <p className="portal-kicker">PRACTICE MODULES</p>
                                 <h2 id="learning-path-title">โมดูลฝึกทักษะและห้องปฏิบัติการ 3D</h2>
                             </div>
-                            <a href="/missions">ดูภารกิจทั้งหมด ({units.length} หน่วย)</a>
+                            <a href="/labs">ดูห้องปฏิบัติการทั้งหมด ({units.length} หน่วย)</a>
                         </div>
 
                         <div className="portal-module-grid">

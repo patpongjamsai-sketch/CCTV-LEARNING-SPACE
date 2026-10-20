@@ -13,7 +13,7 @@ export type GlobalNavItem = {
 export const GLOBAL_NAV_ITEMS: GlobalNavItem[] = [
     { num: '01', label: 'ภาพรวมการเรียนรู้', href: '/' },
     { num: '02', label: 'แบบทดสอบ', href: '/assessments', matchPrefix: '/assessments' },
-    { num: '03', label: 'ภารกิจฝึกทักษะ', href: '/missions', matchPrefix: '/missions' },
+    { num: '03', label: 'ห้องปฏิบัติการเสมือนจริง', href: '/labs', matchPrefix: '/labs' },
     { num: '04', label: 'ผลการเรียนของฉัน', href: '/progress', matchPrefix: '/progress' },
     { num: '05', label: 'อนุมัติสิทธิ์ (Teacher)', href: '/teacher', matchPrefix: '/teacher' },
 ];
@@ -88,7 +88,7 @@ export function PortalGlobalNav({ initialUser = null }: PortalGlobalNavProps = {
                         {items.map((item) => {
                             const isActive = item.href === '/'
                                 ? pathname === '/'
-                                : pathname.startsWith(item.matchPrefix || item.href) || (item.href === '/missions' && pathname.startsWith('/labs'));
+                                : pathname.startsWith(item.matchPrefix || item.href);
 
                             return (
                                 <a
