@@ -1,10 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function ConduitBendingLabPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [submissionReceipt, setSubmissionReceipt] = useState<{
+    studentName: string;
+    classGroup: string;
+    timestamp: string;
+  } | null>(null);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -21,6 +26,22 @@ export default function ConduitBendingLabPage() {
       }
     }
   };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'CONDUIT_PRACTICAL_SUBMISSION') {
+        const payload = event.data.payload;
+        setSubmissionReceipt({
+          studentName: payload.studentName,
+          classGroup: payload.classGroup,
+          timestamp: new Date().toLocaleTimeString('th-TH'),
+        });
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   return (
     <div className="flex flex-col w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -46,6 +67,14 @@ export default function ConduitBendingLabPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {submissionReceipt && (
+            <span className="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium flex items-center gap-1.5 animate-fadeIn">
+              <span>✅ ส่งงานแล้ว:</span>
+              <strong className="text-white">{submissionReceipt.studentName}</strong>
+              <span className="text-[10px] text-emerald-400/80">({submissionReceipt.timestamp} น.)</span>
+            </span>
+          )}
+
           <button
             onClick={toggleFullscreen}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-all border border-slate-700"

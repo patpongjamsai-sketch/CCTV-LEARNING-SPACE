@@ -15,8 +15,8 @@
   <style>
     :root {
       --bg-dark: #070d18;
-      --card-bg: rgba(13, 23, 42, 0.88);
-      --card-border: rgba(56, 189, 248, 0.25);
+      --card-bg: rgba(13, 23, 42, 0.90);
+      --card-border: rgba(56, 189, 248, 0.28);
       --accent-cyan: #06b6d4;
       --accent-sky: #38bdf8;
       --accent-orange: #f97316;
@@ -185,9 +185,22 @@
       transform: translateY(-1px);
     }
 
+    .btn-upload-submit {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #34d399;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-upload-submit:hover {
+      background: linear-gradient(135deg, #34d399, #10b981);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.5);
+    }
+
     /* Main Info Card (Bottom-Left) */
     .content-panel {
-      max-width: 480px;
+      max-width: 490px;
       background: var(--card-bg);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -243,7 +256,7 @@
     }
 
     .spec-box {
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.75);
       border-left: 3px solid var(--accent-cyan);
       border-radius: 0 10px 10px 0;
       padding: 10px 12px;
@@ -363,7 +376,7 @@
       position: absolute;
       top: 86px;
       right: 18px;
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(148, 163, 184, 0.2);
       padding: 8px 12px;
@@ -380,11 +393,11 @@
       gap: 5px;
     }
 
-    /* Standards Modal */
+    /* Modal Backdrop */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(3, 7, 18, 0.82);
+      background: rgba(3, 7, 18, 0.85);
       backdrop-filter: blur(8px);
       z-index: 100;
       display: none;
@@ -404,6 +417,8 @@
       width: 100%;
       padding: 24px;
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal-header {
@@ -419,7 +434,7 @@
       color: #fff;
     }
     .modal-body {
-      font-size: 12px;
+      font-size: 12.5px;
       color: #cbd5e1;
       line-height: 1.6;
     }
@@ -429,6 +444,85 @@
     }
     .modal-body li {
       margin-bottom: 8px;
+    }
+
+    /* Practical Submission Modal Specifics */
+    .upload-zone {
+      border: 2px dashed rgba(56, 189, 248, 0.4);
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin: 14px 0;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent-sky);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .upload-preview-box {
+      margin-top: 12px;
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      max-height: 220px;
+      display: none;
+    }
+    .upload-preview-box img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .btn-remove-preview {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(225, 29, 72, 0.85);
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    .form-control {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #f1f5f9;
+      font-size: 12.5px;
+      font-family: 'Kanit', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      border-color: var(--accent-sky);
+    }
+    .submission-success-banner {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      padding: 14px;
+      border-radius: 12px;
+      margin-top: 14px;
+      display: none;
+      font-size: 12px;
+      line-height: 1.5;
     }
 
     @media (max-width: 900px) {
@@ -482,6 +576,9 @@
       </div>
 
       <div class="header-actions">
+        <button class="btn-action btn-upload-submit" id="btn-open-submit">
+          <span>📤 ส่งผลงานปฏิบัติจริง</span>
+        </button>
         <button class="btn-action" id="btn-standards">
           <span>📖 สูตร & เกณฑ์ช่าง</span>
         </button>
@@ -526,6 +623,74 @@
         <button class="btn-step btn-next" id="btn-next">
           <span>ขั้นตอนถัดไป →</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Practical Submission Modal -->
+  <div class="modal-backdrop" id="modal-submission">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>📤 ส่งผลงานภาพถ่ายการปฏิบัติงานจริงหน้างาน</h2>
+        <button class="btn-action" id="btn-close-submission">✕ ปิด</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: #94a3b8; font-size: 11.5px; margin-bottom: 12px;">
+          อัปโหลดรูปภาพชิ้นงานท่อ uPVC ที่นักเรียนได้ลงมือดัดจริงในห้องปฏิบัติการ (ภาพท่อดัด 90° สามเข่า หรือภาพท่อดัด 45° หลบคาน) เพื่อส่งให้ครูผู้สอนประเมินผล
+        </p>
+
+        <form id="submission-form" onsubmit="return false;">
+          <div class="form-group">
+            <label>หัวข้อชิ้นงานที่ปฏิบัติ:</label>
+            <select class="form-control" id="submit-task-type">
+              <option value="90_deg_knee">การดัดฉาก 90° ด้วยเทคนิคสามเข่า (25-30-35 cm)</option>
+              <option value="45_deg_beam">การดัด 45° สองจังหวะหลบคานคอนกรีต (สูตร 1.414)</option>
+              <option value="both_integrated">ทั้ง 2 รูปแบบ (ดัดฉาก 90° ร่วมกับหลบคาน 45°)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>ชื่อ-นามสกุล / รหัสนักศึกษา:</label>
+            <input type="text" class="form-control" id="submit-student-name" placeholder="เช่น นายสมชาย ช่างไฟ (รหัส 67209010001)" required />
+          </div>
+
+          <div class="form-group">
+            <label>กลุ่มเรียน (Class Group):</label>
+            <select class="form-control" id="submit-student-group">
+              <option value="PV1">ช่างไฟฟ้ากำลัง กลุ่ม 1 (PV1)</option>
+              <option value="PV2">ช่างไฟฟ้ากำลัง กลุ่ม 2 (PV2)</option>
+              <option value="PV3">ช่างไฟฟ้ากำลัง กลุ่ม 3 (PV3)</option>
+            </select>
+          </div>
+
+          <!-- Drag and Drop Upload Area -->
+          <div class="upload-zone" id="upload-dropzone">
+            <input type="file" id="file-input" accept="image/*" style="display: none;" />
+            <div id="dropzone-prompt">
+              <div style="font-size: 32px; margin-bottom: 6px;">📷</div>
+              <strong style="color: #38bdf8; font-size: 13px;">คลิกเพื่อเลือกภาพถ่าย หรือ ลากไฟล์รูปภาพมาวางที่นี่</strong>
+              <p style="font-size: 11px; color: #94a3b8; margin-top: 4px;">รองรับไฟล์รูปภาพ PNG, JPG, WebP (ถ่ายจากกล้องมือถือได้)</p>
+            </div>
+            <div class="upload-preview-box" id="upload-preview-container">
+              <img id="upload-preview-img" src="" alt="ตัวอย่างภาพถ่ายชิ้นงาน" />
+              <button type="button" class="btn-remove-preview" id="btn-remove-img">ลบรูป ✕</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>บันทึกผลการปฏิบัติงาน / ปัญหาและวิธีแก้ไข:</label>
+            <textarea class="form-control" id="submit-notes" rows="3" placeholder="ระบุผลการวัดมุมฉาก, ค่าระยะห่างคานที่คำนวณได้จริง, หรือสภาพผิวท่อหลังดัด..."></textarea>
+          </div>
+
+          <button type="button" class="btn-step btn-next" id="btn-confirm-submit" style="width: 100%; padding: 12px; margin-top: 8px;">
+            <span>🚀 ยืนยันการส่งผลงานปฏิบัติการ</span>
+          </button>
+
+          <div class="submission-success-banner" id="submission-success-banner">
+            <strong>✅ ส่งผลงานเข้าสู่ระบบเรียบร้อยแล้ว!</strong>
+            <p id="submission-receipt-text" style="margin-top: 4px; font-size: 11px;"></p>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -635,18 +800,6 @@
       metalness: 0.1,
     });
 
-    const cutterBodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0xe11d48,
-      roughness: 0.35,
-      metalness: 0.3,
-    });
-
-    const cutterBladeMaterial = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      roughness: 0.1,
-      metalness: 0.95,
-    });
-
     const boxMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.3,
@@ -659,14 +812,13 @@
       metalness: 0.1,
     });
 
-    // Concrete Beam Material
+    // Realistic Concrete Beam Material
     const beamMaterial = new THREE.MeshStandardMaterial({
       color: 0x334155,
-      roughness: 0.9,
-      metalness: 0.15,
+      roughness: 0.88,
+      metalness: 0.12,
     });
 
-    // Knee Indicator / Cushion Material
     const kneeMaterial = new THREE.MeshStandardMaterial({
       color: 0x0284c7,
       roughness: 0.4,
@@ -675,10 +827,8 @@
       opacity: 0.85,
     });
 
-    // Marker Band Materials
     const markRed = new THREE.MeshBasicMaterial({ color: 0xef4444 });
     const markOrange = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-    const markYellow = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
 
     // Grid Floor
     const gridHelper = new THREE.GridHelper(10, 20, 0x0284c7, 0x1e293b);
@@ -699,22 +849,63 @@
     table.receiveShadow = true;
     scene.add(table);
 
-    // Concrete Beam (Displayed in Mode B)
-    const beamGeo = new THREE.BoxGeometry(4.8, 0.5, 0.35);
+    /* =====================================================================
+       PHYSICAL CONCRETE BEAM (คาน/เสายื่นออกจากผนังอย่างสมจริง)
+    ===================================================================== */
+    // Beam juts out from the wall (from z = -1.0 to z = -0.75, width 0.6m, height 3.2m)
+    const beamGeo = new THREE.BoxGeometry(0.6, 3.2, 0.25);
     const concreteBeam = new THREE.Mesh(beamGeo, beamMaterial);
-    concreteBeam.position.set(0, 1.4, -0.8);
+    concreteBeam.position.set(0, 0.9, -0.875);
     concreteBeam.castShadow = true;
     concreteBeam.receiveShadow = true;
     concreteBeam.visible = false;
     scene.add(concreteBeam);
 
     /* =====================================================================
-       3D STAGES DATA & ASSETS BUILDER
+       HELPER: SEAMLESS CONTINUOUS 3D PIPE BUILDER (แก้ปัญหาท่อลอยหลุดจากกัน 100%)
     ===================================================================== */
-    let currentMode = '90'; // '90' or '45'
+    function createSeamlessTube(pointsArray, radius = 0.038, mat = upvcMaterial) {
+      const curve = new THREE.CatmullRomCurve3(pointsArray, false, 'catmullrom', 0.15);
+      const tubeGeo = new THREE.TubeGeometry(curve, 72, radius, 20, false);
+      const mesh = new THREE.Mesh(tubeGeo, mat);
+      mesh.castShadow = true;
+      return mesh;
+    }
+
+    function createSpringCoils(coils = 36, length = 0.6) {
+      const group = new THREE.Group();
+      const step = length / coils;
+      for (let i = 0; i < coils; i++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.031, 0.0035, 8, 20), springSteelMaterial);
+        ring.rotation.y = Math.PI / 2;
+        ring.position.x = (i - coils / 2) * step;
+        group.add(ring);
+      }
+      return group;
+    }
+
+    function createMarkerBand(xPos, yPos, zPos, mat) {
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0405, 0.0405, 0.015, 32), mat);
+      band.rotation.z = Math.PI / 2;
+      band.position.set(xPos, yPos, zPos);
+      return band;
+    }
+
+    function createKneeIndicator(x, y, z) {
+      const kneeGroup = new THREE.Group();
+      const kneeMesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 24, 24), kneeMaterial);
+      kneeMesh.scale.set(1.1, 0.9, 0.9);
+      kneeGroup.add(kneeMesh);
+      kneeGroup.position.set(x, y, z);
+      return kneeGroup;
+    }
+
+    /* =====================================================================
+       GROUPS HIERARCHY FOR DUAL MODES
+    ===================================================================== */
+    let currentMode = '90';
     let currentStep = 1;
 
-    // Groups for Mode 90 (6 stages) and Mode 45 (6 stages)
     const mode90Groups = [];
     const mode45Groups = [];
 
@@ -729,251 +920,141 @@
     }
 
     /* ---------------------------------------------------------------------
-       HELPER: Spring Model Generator
-    --------------------------------------------------------------------- */
-    function createSpringCoils(coils = 36, length = 0.6) {
-      const group = new THREE.Group();
-      const step = length / coils;
-      for (let i = 0; i < coils; i++) {
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.0035, 8, 20), springSteelMaterial);
-        ring.rotation.y = Math.PI / 2;
-        ring.position.x = (i - coils / 2) * step;
-        group.add(ring);
-      }
-      return group;
-    }
-
-    /* ---------------------------------------------------------------------
-       HELPER: Marker Band Generator
-    --------------------------------------------------------------------- */
-    function createMarkerBand(xPos, yPos, zPos, mat, labelText = "") {
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0408, 0.0408, 0.014, 32), mat);
-      band.rotation.z = Math.PI / 2;
-      band.position.set(xPos, yPos, zPos);
-      return band;
-    }
-
-    /* ---------------------------------------------------------------------
-       HELPER: Simulated Knee Cushion
-    --------------------------------------------------------------------- */
-    function createKneeIndicator(x, y, z) {
-      const kneeGroup = new THREE.Group();
-      const kneeMesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 24, 24), kneeMaterial);
-      kneeMesh.scale.set(1.1, 0.9, 0.9);
-      kneeGroup.add(kneeMesh);
-      kneeGroup.position.set(x, y, z);
-      return kneeGroup;
-    }
-
-    /* ---------------------------------------------------------------------
-       BUILD MODE 90° (3-POINT KNEE BENDING)
+       BUILD MODE 90° (3-POINT KNEE BENDING - SEAMLESS CONTINUOUS TUBES)
     --------------------------------------------------------------------- */
 
-    // Stage 1: Measuring & 3-Point Mark (25 - 30 - 35 cm)
-    (function build90_Stage1() {
+    // Stage 1: Measure & Mark 3 Points (25 - 30 - 35 cm)
+    (function build90_1() {
       const group = mode90Groups[0];
+      const pts = [new THREE.Vector3(-0.9, 0.2, 0), new THREE.Vector3(0.9, 0.2, 0)];
+      group.add(createSeamlessTube(pts));
 
-      // Straight pipe
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 32), upvcMaterial);
-      pipe.rotation.z = Math.PI / 2;
-      pipe.position.set(0, 0.2, 0);
-      pipe.castShadow = true;
-      group.add(pipe);
+      group.add(createMarkerBand(-0.15, 0.2, 0, markOrange));
+      group.add(createMarkerBand(0, 0.2, 0, markRed));
+      group.add(createMarkerBand(0.15, 0.2, 0, markOrange));
 
-      // 3 Marker Bands: 25cm (Orange), 30cm (Red/Center), 35cm (Orange)
-      // Center at x = 0 (30 cm), Start at x = -0.15 (25 cm), End at x = 0.15 (35 cm)
-      const band25 = createMarkerBand(-0.15, 0.2, 0, markOrange);
-      const band30 = createMarkerBand(0, 0.2, 0, markRed);
-      const band35 = createMarkerBand(0.15, 0.2, 0, markOrange);
-      group.add(band25, band30, band35);
-
-      // Measurement Tape
+      // Tape Measure Body
       const tape = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }));
       tape.position.set(-0.85, 0.2, 0.06);
       tape.castShadow = true;
       group.add(tape);
 
-      // Yellow Ribbon with cm ticks
       const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.025), new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6, side: THREE.DoubleSide }));
       ribbon.rotation.x = -Math.PI / 2;
       ribbon.position.set(-0.15, 0.245, 0);
       group.add(ribbon);
-
-      // Pen
-      const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.18, 16), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-      pen.rotation.x = Math.PI / 3;
-      pen.rotation.z = Math.PI / 6;
-      pen.position.set(0.02, 0.32, 0.06);
-      group.add(pen);
     })();
 
-    // Stage 2: Cutting & Spring Insertion
-    (function build90_Stage2() {
+    // Stage 2: Cut & Spring Inserted (25-35 cm Zone)
+    (function build90_2() {
       const group = mode90Groups[1];
+      const pts = [new THREE.Vector3(-0.8, 0.2, 0), new THREE.Vector3(0.8, 0.2, 0)];
+      group.add(createSeamlessTube(pts, 0.038, upvcTranslucentMaterial));
 
-      // Translucent pipe showing spring inside across 25-35cm zone
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 32), upvcTranslucentMaterial);
-      pipe.rotation.z = Math.PI / 2;
-      pipe.position.set(0, 0.2, 0);
-      group.add(pipe);
-
-      // Markers
       group.add(createMarkerBand(-0.15, 0.2, 0, markOrange));
       group.add(createMarkerBand(0, 0.2, 0, markRed));
       group.add(createMarkerBand(0.15, 0.2, 0, markOrange));
 
-      // Spring inside pipe centered over the 3 marks
-      const spring = createSpringCoils(40, 0.7);
+      const spring = createSpringCoils(42, 0.7);
       spring.position.set(0, 0.2, 0);
       group.add(spring);
 
-      // Orange Pull Cord
-      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.9, 12), cordMaterial);
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.8, 12), cordMaterial);
       cord.rotation.z = Math.PI / 2;
-      cord.position.set(0.85, 0.2, 0);
+      cord.position.set(0.75, 0.2, 0);
       group.add(cord);
     })();
 
-    // Stage 3: Knee Stroke 1 (Pressing at 25cm mark ~25-30°)
-    (function build90_Stage3() {
+    // Stage 3: Knee Stroke 1 (25cm mark ~25-30°) -> SEAMLESS CONTINUOUS TUBE
+    (function build90_3() {
       const group = mode90Groups[2];
-
-      const pipeG = new THREE.Group();
-      // Slight curve at x = -0.15
-      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      leg1.rotation.z = Math.PI / 2;
-      leg1.position.set(-0.5, 0.2, 0);
-      pipeG.add(leg1);
-
-      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 16, 32, Math.PI / 7), upvcMaterial);
-      elbow.position.set(-0.15, 0.55, 0);
-      elbow.rotation.z = -Math.PI / 2;
-      pipeG.add(elbow);
-
-      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      leg2.position.set(0.18, 0.32, 0);
-      leg2.rotation.z = -0.45;
-      pipeG.add(leg2);
-
-      group.add(pipeG);
-
-      // Simulated Knee at 25cm
-      const knee = createKneeIndicator(-0.15, 0.12, 0);
-      group.add(knee);
-
-      // Marker on knee
-      group.add(createMarkerBand(-0.15, 0.22, 0.02, markOrange));
+      const pts = [
+        new THREE.Vector3(-0.85, 0.2, 0),
+        new THREE.Vector3(-0.35, 0.2, 0),
+        new THREE.Vector3(-0.15, 0.21, 0),
+        new THREE.Vector3(0.0, 0.25, 0),
+        new THREE.Vector3(0.3, 0.38, 0),
+        new THREE.Vector3(0.75, 0.58, 0)
+      ];
+      group.add(createSeamlessTube(pts));
+      group.add(createKneeIndicator(-0.15, 0.12, 0));
     })();
 
-    // Stage 4: Knee Stroke 2 (Sliding to 30cm mark ~60°)
-    (function build90_Stage4() {
+    // Stage 4: Knee Stroke 2 (30cm mark ~60°) -> SEAMLESS CONTINUOUS TUBE
+    (function build90_4() {
       const group = mode90Groups[3];
-
-      const pipeG = new THREE.Group();
-      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.65, 32), upvcMaterial);
-      leg1.rotation.z = Math.PI / 2;
-      leg1.position.set(-0.52, 0.2, 0);
-      pipeG.add(leg1);
-
-      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 16, 32, Math.PI / 3), upvcMaterial);
-      elbow.position.set(-0.2, 0.48, 0);
-      elbow.rotation.z = -Math.PI / 2;
-      pipeG.add(elbow);
-
-      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.65, 32), upvcMaterial);
-      leg2.position.set(0.15, 0.5, 0);
-      leg2.rotation.z = -1.05;
-      pipeG.add(leg2);
-
-      group.add(pipeG);
-
-      // Knee at 30cm center mark
-      const knee = createKneeIndicator(0, 0.16, 0);
-      group.add(knee);
-      group.add(createMarkerBand(0, 0.23, 0.02, markRed));
+      const pts = [
+        new THREE.Vector3(-0.85, 0.2, 0),
+        new THREE.Vector3(-0.3, 0.2, 0),
+        new THREE.Vector3(-0.12, 0.22, 0),
+        new THREE.Vector3(0.0, 0.28, 0),
+        new THREE.Vector3(0.15, 0.44, 0),
+        new THREE.Vector3(0.32, 0.72, 0),
+        new THREE.Vector3(0.42, 1.05, 0)
+      ];
+      group.add(createSeamlessTube(pts));
+      group.add(createKneeIndicator(0.0, 0.18, 0));
     })();
 
-    // Stage 5: Knee Stroke 3 (Pressing at 35cm mark, Overbend ~95°-100° to 90° Final)
-    (function build90_Stage5() {
+    // Stage 5: Knee Stroke 3 (35cm mark, Overbend to 90° Final) -> SEAMLESS CONTINUOUS TUBE
+    (function build90_5() {
       const group = mode90Groups[4];
+      const pts = [
+        new THREE.Vector3(-0.85, 0.2, 0),
+        new THREE.Vector3(-0.25, 0.2, 0),
+        new THREE.Vector3(-0.08, 0.24, 0),
+        new THREE.Vector3(0.05, 0.38, 0),
+        new THREE.Vector3(0.1, 0.6, 0),
+        new THREE.Vector3(0.1, 1.15, 0)
+      ];
+      group.add(createSeamlessTube(pts));
+      group.add(createKneeIndicator(0.08, 0.24, 0));
 
-      const pipeG = new THREE.Group();
-      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      leg1.rotation.z = Math.PI / 2;
-      leg1.position.set(-0.55, 0.1, 0);
-      pipeG.add(leg1);
-
-      // Perfect 90-degree curved elbow
-      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 2), upvcMaterial);
-      elbow.position.set(-0.2, 0.35, 0);
-      elbow.rotation.z = -Math.PI / 2;
-      pipeG.add(elbow);
-
-      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      leg2.position.set(0.05, 0.7, 0);
-      pipeG.add(leg2);
-
-      group.add(pipeG);
-
-      // Knee indicator at 35cm finish point
-      const knee = createKneeIndicator(0.05, 0.25, 0);
-      group.add(knee);
-
-      // Square 90° Verification Angle
+      // Square Angle Ring
       const angleRing = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.14, 32, 1, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide }));
-      angleRing.position.set(-0.05, 0.45, 0.05);
+      angleRing.position.set(-0.02, 0.45, 0.05);
       group.add(angleRing);
 
-      // Level
       const level = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.03), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 }));
-      level.position.set(0.11, 0.7, 0);
+      level.position.set(0.16, 0.8, 0);
       group.add(level);
     })();
 
     // Stage 6: Spring Extracted & IP Bullet Camera Mounted
-    (function build90_Stage6() {
+    (function build90_6() {
       const group = mode90Groups[5];
+      const runG = new THREE.Group();
+      runG.position.set(0, 0.5, -0.92);
 
-      const runGroup = new THREE.Group();
-      runGroup.position.set(0, 0.5, -0.9);
+      const pts = [
+        new THREE.Vector3(-1.2, 0, 0.05),
+        new THREE.Vector3(-0.15, 0, 0.05),
+        new THREE.Vector3(0.04, 0.05, 0.05),
+        new THREE.Vector3(0.18, 0.18, 0.05),
+        new THREE.Vector3(0.2, 0.45, 0.05)
+      ];
+      runG.add(createSeamlessTube(pts, 0.035));
 
-      // Horizontal run
-      const hPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.2, 32), upvcMaterial);
-      hPipe.rotation.z = Math.PI / 2;
-      hPipe.position.set(-0.6, 0, 0.06);
-      runGroup.add(hPipe);
-
-      // 90 Elbow
-      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 16, 32, Math.PI / 2), upvcMaterial);
-      elbow.position.set(0.0, 0.2, 0.06);
-      elbow.rotation.z = -Math.PI / 2;
-      runGroup.add(elbow);
-
-      // Vertical run into box
-      const vPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 32), upvcMaterial);
-      vPipe.position.set(0.2, 0.45, 0.06);
-      runGroup.add(vPipe);
-
-      // Snap clips
+      // Clips
       const clipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
       const addClip = (x, y) => {
         const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), clipMat);
-        b.position.set(x, y, 0.03);
-        runGroup.add(b);
+        b.position.set(x, y, 0.025);
+        runG.add(b);
       };
       addClip(-1.0, 0);
       addClip(-0.35, 0);
-      addClip(0.2, 0.35);
+      addClip(0.2, 0.32);
 
       // Junction Box 4x4
       const box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.16), boxMaterial);
-      box.position.set(0.2, 0.85, 0.08);
+      box.position.set(0.2, 0.72, 0.08);
       box.castShadow = true;
-      runGroup.add(box);
+      runG.add(box);
 
       // IP Bullet Cam
       const camGroup = new THREE.Group();
-      camGroup.position.set(0.2, 0.85, 0.16);
+      camGroup.position.set(0.2, 0.72, 0.16);
 
       const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.12, 16), boxMaterial);
       arm.rotation.x = Math.PI / 2;
@@ -992,233 +1073,152 @@
       shield.position.set(0, -0.02, 0.22);
       camGroup.add(shield);
 
-      runGroup.add(camGroup);
-      group.add(runGroup);
+      runG.add(camGroup);
+      group.add(runG);
     })();
 
 
     /* ---------------------------------------------------------------------
-       BUILD MODE 45° (BEAM CROSSOVER / DOUBLE 45° OFFSET)
+       BUILD MODE 45° (BEAM CROSSOVER - ACCURATE SPATIAL POSITION & SEAMLESS)
     --------------------------------------------------------------------- */
 
     // Stage 1: Beam Measurement & 1.414 Calculation
-    (function build45_Stage1() {
+    (function build45_1() {
       const group = mode45Groups[0];
+      const pts = [new THREE.Vector3(-0.9, 0.2, 0), new THREE.Vector3(0.9, 0.2, 0)];
+      group.add(createSeamlessTube(pts));
 
-      // Straight pipe
-      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 32), upvcMaterial);
-      pipe.rotation.z = Math.PI / 2;
-      pipe.position.set(0, 0.2, 0);
-      pipe.castShadow = true;
-      group.add(pipe);
+      // 2 Marks: 14.1 cm apart (scaled ~0.28m)
+      group.add(createMarkerBand(-0.14, 0.2, 0, markOrange));
+      group.add(createMarkerBand(0.14, 0.2, 0, markOrange));
 
-      // Two marks separated by 14.1 cm (represented by scaled 0.25 units)
-      const mark1 = createMarkerBand(-0.14, 0.2, 0, markOrange);
-      const mark2 = createMarkerBand(0.14, 0.2, 0, markOrange);
-      group.add(mark1, mark2);
-
-      // Measurement ribbon
       const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.025), new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6, side: THREE.DoubleSide }));
       ribbon.rotation.x = -Math.PI / 2;
       ribbon.position.set(0, 0.245, 0);
       group.add(ribbon);
 
-      // Tape Measure
       const tape = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }));
       tape.position.set(-0.6, 0.2, 0.06);
       group.add(tape);
     })();
 
-    // Stage 2: First Bend 45° (Bend Upward)
-    (function build45_Stage2() {
+    // Stage 2: First Bend 45° (Bend Upward) -> SEAMLESS CONTINUOUS TUBE
+    (function build45_2() {
       const group = mode45Groups[1];
-
-      const pipeG = new THREE.Group();
-      // Straight section 1
-      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      p1.rotation.z = Math.PI / 2;
-      p1.position.set(-0.5, 0.2, 0);
-      pipeG.add(p1);
-
-      // 45° Elbow
-      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
-      elbow.position.set(-0.15, 0.48, 0);
-      elbow.rotation.z = -Math.PI / 2;
-      pipeG.add(elbow);
-
-      // Slanted section at 45°
-      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      p2.position.set(0.18, 0.45, 0);
-      p2.rotation.z = -0.785; // -45 deg
-      pipeG.add(p2);
-
-      group.add(pipeG);
-
-      // Knee at mark 1
-      const knee = createKneeIndicator(-0.15, 0.14, 0);
-      group.add(knee);
+      const pts = [
+        new THREE.Vector3(-0.85, 0.2, 0),
+        new THREE.Vector3(-0.25, 0.2, 0),
+        new THREE.Vector3(-0.14, 0.22, 0),
+        new THREE.Vector3(0.05, 0.35, 0),
+        new THREE.Vector3(0.35, 0.58, 0),
+        new THREE.Vector3(0.65, 0.82, 0)
+      ];
+      group.add(createSeamlessTube(pts));
+      group.add(createKneeIndicator(-0.14, 0.14, 0));
     })();
 
-    // Stage 3: No Dogleg Alignment (Sight-down-the-pipe)
-    (function build45_Stage3() {
+    // Stage 3: Sight-down-the-pipe Alignment (No Dogleg) -> SEAMLESS CONTINUOUS TUBE
+    (function build45_3() {
       const group = mode45Groups[2];
+      const pts = [
+        new THREE.Vector3(-0.85, 0.2, 0),
+        new THREE.Vector3(-0.25, 0.2, 0),
+        new THREE.Vector3(-0.14, 0.22, 0),
+        new THREE.Vector3(0.05, 0.35, 0),
+        new THREE.Vector3(0.35, 0.58, 0),
+        new THREE.Vector3(0.65, 0.82, 0)
+      ];
+      group.add(createSeamlessTube(pts));
 
-      const pipeG = new THREE.Group();
-      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      p1.rotation.z = Math.PI / 2;
-      p1.position.set(-0.5, 0.2, 0);
-      pipeG.add(p1);
-
-      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
-      elbow.position.set(-0.15, 0.48, 0);
-      elbow.rotation.z = -Math.PI / 2;
-      pipeG.add(elbow);
-
-      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
-      p2.position.set(0.18, 0.45, 0);
-      p2.rotation.z = -0.785;
-      pipeG.add(p2);
-
-      group.add(pipeG);
-
-      // Laser / Alignment Guideline
-      const lineGeo = new THREE.CylinderGeometry(0.003, 0.003, 1.8, 8);
-      const lineMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const line = new THREE.Mesh(lineGeo, lineMat);
+      // Level / Alignment beam line
+      const line = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 1.8, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
       line.rotation.z = Math.PI / 2;
       line.position.set(0, 0.2, 0.08);
       group.add(line);
     })();
 
-    // Stage 4: Second Bend 45° (Bend Downward parallel to wall)
-    (function build45_Stage4() {
+    // Stage 4: Second Bend 45° (Double 45° Offset) -> SEAMLESS CONTINUOUS TUBE
+    (function build45_4() {
       const group = mode45Groups[3];
-
-      // Complete Double 45° Offset Geometry
-      const pipeG = new THREE.Group();
-
-      // Lower horizontal leg
-      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 32), upvcMaterial);
-      p1.rotation.z = Math.PI / 2;
-      p1.position.set(-0.6, 0.15, 0);
-      pipeG.add(p1);
-
-      // Elbow 1 (up 45)
-      const e1 = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
-      e1.position.set(-0.3, 0.4, 0);
-      e1.rotation.z = -Math.PI / 2;
-      pipeG.add(e1);
-
-      // Slant leg
-      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.35, 32), upvcMaterial);
-      p2.position.set(-0.05, 0.42, 0);
-      p2.rotation.z = -0.785;
-      pipeG.add(p2);
-
-      // Elbow 2 (down 45 back to horizontal)
-      const e2 = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
-      e2.position.set(0.2, 0.45, 0);
-      e2.rotation.z = Math.PI / 4;
-      pipeG.add(e2);
-
-      // Upper horizontal leg
-      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 32), upvcMaterial);
-      p3.rotation.z = Math.PI / 2;
-      p3.position.set(0.65, 0.63, 0);
-      pipeG.add(p3);
-
-      group.add(pipeG);
-
-      // Knee indicator at second bend
-      const knee = createKneeIndicator(0.12, 0.45, 0);
-      group.add(knee);
+      // Seamless Double 45° Offset pipe
+      const pts = [
+        new THREE.Vector3(-0.9, 0.2, 0),
+        new THREE.Vector3(-0.35, 0.2, 0),
+        new THREE.Vector3(-0.2, 0.22, 0),
+        new THREE.Vector3(-0.05, 0.34, 0),
+        new THREE.Vector3(0.1, 0.46, 0),
+        new THREE.Vector3(0.25, 0.48, 0),
+        new THREE.Vector3(0.85, 0.48, 0)
+      ];
+      group.add(createSeamlessTube(pts));
+      group.add(createKneeIndicator(0.1, 0.36, 0));
     })();
 
-    // Stage 5: Fitting Contour Around Concrete Beam
-    (function build45_Stage5() {
+    // Stage 5: Fitting Contour Directly Across Concrete Beam (SEAMLESS & PERFECT SPATIAL POSITION)
+    (function build45_5() {
       const group = mode45Groups[4];
-
-      // Recreate Double 45 offset running over/contouring the beam
       const runG = new THREE.Group();
-      runG.position.set(0, 0.6, -0.6);
+      runG.position.set(0, 0.8, 0);
 
-      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
-      p1.rotation.z = Math.PI / 2;
-      p1.position.set(-0.8, 0, 0);
-      runG.add(p1);
-
-      const e1 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
-      e1.position.set(-0.4, 0.22, 0);
-      e1.rotation.z = -Math.PI / 2;
-      runG.add(e1);
-
-      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.38, 32), upvcMaterial);
-      p2.position.set(-0.16, 0.27, 0);
-      p2.rotation.z = -0.785;
-      runG.add(p2);
-
-      const e2 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
-      e2.position.set(0.1, 0.32, 0);
-      e2.rotation.z = Math.PI / 4;
-      runG.add(e2);
-
-      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
-      p3.rotation.z = Math.PI / 2;
-      p3.position.set(0.65, 0.48, 0);
-      runG.add(p3);
-
+      // Wall is at z = -1.0, Beam front face is at z = -0.75
+      // Conduit runs along wall (z = -0.92), bends 45° forward to front of beam (z = -0.71),
+      // traverses beam face, then bends 45° back to wall (z = -0.92)
+      const pts = [
+        new THREE.Vector3(-1.4, 0, -0.92),
+        new THREE.Vector3(-0.55, 0, -0.92),
+        new THREE.Vector3(-0.42, 0, -0.90),
+        new THREE.Vector3(-0.32, 0, -0.80),
+        new THREE.Vector3(-0.24, 0, -0.71),
+        new THREE.Vector3(0.0, 0, -0.71),
+        new THREE.Vector3(0.24, 0, -0.71),
+        new THREE.Vector3(0.32, 0, -0.80),
+        new THREE.Vector3(0.42, 0, -0.90),
+        new THREE.Vector3(0.55, 0, -0.92),
+        new THREE.Vector3(1.4, 0, -0.92)
+      ];
+      runG.add(createSeamlessTube(pts, 0.035));
       group.add(runG);
     })();
 
-    // Stage 6: Final Mounting with Clips & Cat6 Cable Pulled Through
-    (function build45_Stage6() {
+    // Stage 6: Final Installed Run with Clips on Both Sides of Beam & Cat6 Cable Pulled Through
+    (function build45_6() {
       const group = mode45Groups[5];
-
       const runG = new THREE.Group();
-      runG.position.set(0, 0.6, -0.6);
+      runG.position.set(0, 0.8, 0);
 
-      // Complete Offset Pipe
-      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
-      p1.rotation.z = Math.PI / 2;
-      p1.position.set(-0.8, 0, 0);
-      runG.add(p1);
+      // Continuous crossover pipe
+      const pts = [
+        new THREE.Vector3(-1.4, 0, -0.92),
+        new THREE.Vector3(-0.55, 0, -0.92),
+        new THREE.Vector3(-0.42, 0, -0.90),
+        new THREE.Vector3(-0.32, 0, -0.80),
+        new THREE.Vector3(-0.24, 0, -0.71),
+        new THREE.Vector3(0.0, 0, -0.71),
+        new THREE.Vector3(0.24, 0, -0.71),
+        new THREE.Vector3(0.32, 0, -0.80),
+        new THREE.Vector3(0.42, 0, -0.90),
+        new THREE.Vector3(0.55, 0, -0.92),
+        new THREE.Vector3(1.4, 0, -0.92)
+      ];
+      runG.add(createSeamlessTube(pts, 0.035));
 
-      const e1 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
-      e1.position.set(-0.4, 0.22, 0);
-      e1.rotation.z = -Math.PI / 2;
-      runG.add(e1);
-
-      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.38, 32), upvcMaterial);
-      p2.position.set(-0.16, 0.27, 0);
-      p2.rotation.z = -0.785;
-      runG.add(p2);
-
-      const e2 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
-      e2.position.set(0.1, 0.32, 0);
-      e2.rotation.z = Math.PI / 4;
-      runG.add(e2);
-
-      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
-      p3.rotation.z = Math.PI / 2;
-      p3.position.set(0.65, 0.48, 0);
-      runG.add(p3);
-
-      // Snap clips on both sides of beam
+      // Snap clips securely on wall and on beam face
       const clipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-      const addClip = (x, y) => {
+      const addClip = (x, y, z) => {
         const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), clipMat);
-        b.position.set(x, y, -0.02);
+        b.position.set(x, y, z);
         runG.add(b);
       };
-      addClip(-1.1, 0);
-      addClip(-0.55, 0);
-      addClip(0.3, 0.48);
-      addClip(0.9, 0.48);
+      addClip(-0.7, 0, -0.94);
+      addClip(-0.48, 0, -0.94); // right before beam
+      addClip(0.0, 0, -0.73);   // center of beam face
+      addClip(0.48, 0, -0.94);  // right after beam
+      addClip(0.8, 0, -0.94);
 
-      // Blue Cat6 UTP Cable emerging from end
-      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }));
+      // Cat6 UTP Cable protruding from conduit end
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }));
       cable.rotation.z = Math.PI / 2;
-      cable.position.set(1.15, 0.48, 0);
+      cable.position.set(1.45, 0, -0.92);
       runG.add(cable);
 
       group.add(runG);
@@ -1254,7 +1254,7 @@
         badge: "โหมด 1 (90°) · STEP 3 / 6",
         formula: "🦵 เข่ากดจุดที่ 1 (25 cm) · มุมเริ่มต้น ~25°-30°",
         title: "การกดดัดจังหวะที่ 1 (จุด 25 cm)",
-        desc: "นำท่อทาบเข่าที่ตำแหน่งมาร์คแรก 25 ซม. ใช้สองมือจับปลายท่อขนาบข้างแล้วค่อยๆ โน้มแรงเบาๆ ให้ท่อเริ่มโค้งประมาณ 25°–30° เพื่อขึ้นรูปทรงโค้งแรก",
+        desc: "นำท่อทาบเข่าที่ตำแหน่งมาร์คแรก 25 ซม. ใช้สองมือจับปลายท่อขนาบข้างแล้วค่อยๆ โน้มแรงเบาๆ ให้ท่อเริ่มโค้งประมาณ 25°–30° เพื่อขึ้นรูปทรงโค้งแรก ท่อเป็นเนื้อเดียวเชื่อมต่อไร้รอยต่อ",
         spec: "💡 <strong>หัวใจสำคัญ:</strong> ออกแรงนุ่มนวลอย่างสม่ำเสมอ อย่ากระตุกแรง เพราะสปริงด้านในกำลังเริ่มรองรับผนังท่อเพื่อรักษารูในท่อให้กลม",
         camPos: { x: 0.1, y: 0.9, z: 2.2 },
         target: { x: 0, y: 0.25, z: 0 }
@@ -1264,7 +1264,7 @@
         badge: "โหมด 1 (90°) · STEP 4 / 6",
         formula: "🦵 เข่าเลื่อนกดจุดที่ 2 (30 cm) · มุมโค้งเพิ่มเป็น ~60°",
         title: "การกดดัดจังหวะที่ 2 (จุดกึ่งกลาง 30 cm)",
-        desc: "เลื่อนท่อมาทาบเข่าที่มาร์คกลาง 30 ซม. ออกแรงโน้มดัดต่อเนื่องให้ความโค้งเพิ่มขึ้นเป็นประมาณ 60° รัศมีส่วนโค้งจะเริ่มแผ่ตัวสม่ำเสมอระหว่างจุด 25 ถึง 35 ซม.",
+        desc: "เลื่อนท่อมาทาบเข่าที่มาร์คกลาง 30 ซม. ออกแรงโน้มดัดต่อเนื่องให้ความโค้งเพิ่มขึ้นเป็นประมาณ 60° รัศมีส่วนโค้งจะแผ่ตัวสม่ำเสมอต่อเนื่องระหว่างจุด 25 ถึง 35 ซม.",
         spec: "🔍 <strong>สังเกตผิวท่อ:</strong> ผิวท่อ uPVC จะตึงตัวสวยงามโดยไม่มีรอยพับหรือรอยย่นสีขาว (Stress Whitening) ให้เห็น",
         camPos: { x: 0.2, y: 0.8, z: 2.0 },
         target: { x: 0, y: 0.3, z: 0 }
@@ -1297,7 +1297,7 @@
         badge: "โหมด 2 (45°) · STEP 1 / 6",
         formula: "📏 สูตรตัวคูณ 45°: ระยะจุดดัด = ความลึกคาน × 1.414",
         title: "วัดความลึกคาน & คำนวณระยะด้วยตัวคูณ 1.414",
-        desc: "วัดความลึกของคานคอนกรีตอาคาร (เช่น คานลึก 10 ซม.) นำมาคูณตัวคูณคงที่ของมุม 45 องศา: 10 × 1.414 = 14.1 ซม. จากนั้นมาร์คจุดดัดที่ 1 และจุดดัดที่ 2 ห่างกัน 14.1 ซม. บนท่อ",
+        desc: "วัดความลึกของคานคอนกรีตอาคาร (เช่น คานยื่น 10 ซม.) นำมาคูณตัวคูณคงที่ของมุม 45 องศา: 10 × 1.414 = 14.1 ซม. จากนั้นมาร์คจุดดัดที่ 1 และจุดดัดที่ 2 ห่างกัน 14.1 ซม. บนท่อ",
         spec: "💡 <strong>สูตรช่างท่อ:</strong> ค่า 1.414 มาจาก csc 45° ทำให้ท่อที่ดัด 45 องศา สองจังหวะสามารถคร่อมหลบคานได้อย่างพอดี ไม่สั้นหรือยาวเกินไป",
         camPos: { x: 0.1, y: 1.1, z: 2.3 },
         target: { x: 0, y: 0.2, z: 0 }
@@ -1327,7 +1327,7 @@
         badge: "โหมด 2 (45°) · STEP 4 / 6",
         formula: "📐 ดัดลง 45° สวนทาง ➔ กลับมาขนานแนวผนัง",
         title: "สอดสปริง & ดัดจังหวะที่ 2 (ดัดลง 45°)",
-        desc: "เลื่อนสปริงดัดท่อไปยังมาร์คจุดที่ 2 ดัดท่อสวนทิศทางลง 45° ให้แนวท่อปลายทางกลับมาขนานกับแนวท่อเดิมอีกครั้ง เกิดเป็นรูปทรง Double 45° Offset ที่สมบูรณ์",
+        desc: "เลื่อนสปริงดัดท่อไปยังมาร์คจุดที่ 2 ดัดท่อสวนทิศทางลง 45° ให้แนวท่อปลายทางกลับมาขนานกับแนวท่อเดิมอีกครั้ง เกิดเป็นรูปทรง Double 45° Offset เป็นเนื้อเดียวไร้รอยต่อ",
         spec: "📏 <strong>การตรวจสอบ:</strong> วางท่อลงบนพื้นราบ ท่อทั้งสองฝั่งต้องวางแนบระนาบพื้นได้สนิทโดยไม่มีการกระดก",
         camPos: { x: -0.1, y: 0.9, z: 2.3 },
         target: { x: 0, y: 0.4, z: 0 }
@@ -1335,22 +1335,22 @@
       {
         step: 5,
         badge: "โหมด 2 (45°) · STEP 5 / 6",
-        formula: "🏢 ทาบแนบคานคอนกรีตอาคาร (Contour Fitting)",
-        title: "นำท่อทาบคร่อมแนบคานคอนกรีตอาคาร",
-        desc: "ยกท่อขึ้นทาบกับคานคอนกรีตอาคารจริง ท่อจะหักหลบและไต่ข้ามคานได้อย่างแนบเนียน รัศมีโค้งมนนุ่มนวล สวยงาม และไม่กีดขวางพื้นที่ใช้สอย",
+        formula: "🏢 ทาบแนบชิดหน้าคานคอนกรีตอาคารจริง",
+        title: "นำท่อทาบคร่อมแนบคานคอนกรีตอาคารจริง",
+        desc: "ยกท่อขึ้นทาบกับคานคอนกรีตอาคารจริง ท่อจะหักหลบและไต่ข้ามคานได้อย่างแนบเนียน รัศมีโค้งมนนุ่มนวล สวยงาม และแนบชิดผิวคาน ไม่ลอยเคว้งกลางอากาศ",
         spec: "💡 <strong>ความปลอดภัยสายเคเบิล:</strong> มุม 45° สองจังหวะทำให้รัศมีดัดกว้างกว่ามุมฉาก 90° สาย UTP จึงรับแรงดึงน้อยมากระหว่างร้อยสาย",
-        camPos: { x: 0.3, y: 1.1, z: 2.4 },
-        target: { x: 0, y: 0.7, z: -0.6 }
+        camPos: { x: 0.0, y: 1.0, z: 1.8 },
+        target: { x: 0, y: 0.8, z: -0.8 }
       },
       {
         step: 6,
         badge: "โหมด 2 (45°) · STEP 6 / 6",
         formula: "✨ ยึดกิ๊บก้ามปูสองฝั่งคาน + ร้อยสาย Cat6 ลื่นไหล",
         title: "ยึดกิ๊บก้ามปูหัว-ท้ายคาน และร้อยสาย Cat6",
-        desc: "ติดตั้งกิ๊บก้ามปู uPVC ล็อกท่อทั้งฝั่งก่อนขึ้นคานและหลังข้ามคาน (ห่างจากขอบคาน ≤ 30 ซม.) แล้วร้อยสาย UTP Cat6 ผ่านท่อหลบคานได้อย่างลื่นไหลไร้แรงต้าน",
+        desc: "ติดตั้งกิ๊บก้ามปู uPVC ล็อกท่อทั้งฝั่งก่อนขึ้นคาน บนหน้าคาน และหลังข้ามคาน แล้วร้อยสาย UTP Cat6 ผ่านท่อหลบคานได้อย่างลื่นไหลไร้แรงต้าน",
         spec: "✅ <strong>สรุปผลงาน:</strong> ท่อ uPVC ยึดแน่นหนา ขนานแนวอาคาร และพร้อมเชื่อมต่อไปยังกล้องวงจรปิด IP CCTV อย่างมั่นคงปลอดภัย",
-        camPos: { x: 0.5, y: 1.2, z: 2.5 },
-        target: { x: 0, y: 0.7, z: -0.6 }
+        camPos: { x: 0.4, y: 1.1, z: 2.0 },
+        target: { x: 0, y: 0.8, z: -0.8 }
       }
     ];
 
@@ -1364,7 +1364,7 @@
       const inactiveGroups = is90 ? mode45Groups : mode90Groups;
 
       // Concrete Beam visible only in Mode 45 and stages 5 & 6
-      concreteBeam.visible = (!is90 && currentStep >= 4);
+      concreteBeam.visible = (!is90 && currentStep >= 5);
 
       // Hide all inactive groups
       inactiveGroups.forEach(g => g.visible = false);
@@ -1406,7 +1406,7 @@
       document.getElementById('btn-prev').disabled = (currentStep === 1);
       const nextBtn = document.getElementById('btn-next');
       if (currentStep === 6) {
-        nextBtn.innerHTML = "<span>✨ ปฏิบัติการสำเร็จ</span>";
+        nextBtn.innerHTML = "<span>✨ ปฏิบัติการสำเร็จ (ส่งงาน)</span>";
       } else {
         nextBtn.innerHTML = "<span>ขั้นตอนถัดไป →</span>";
       }
@@ -1458,6 +1458,9 @@
       if (currentStep < 6) {
         currentStep++;
         applyCurrentState();
+      } else {
+        // Open submission modal upon completing step 6
+        openSubmissionModal();
       }
     });
 
@@ -1480,15 +1483,152 @@
     });
 
     // Standards Modal toggle
-    const modal = document.getElementById('modal-standards');
+    const modalStandards = document.getElementById('modal-standards');
     document.getElementById('btn-standards').addEventListener('click', () => {
-      modal.classList.add('show');
+      modalStandards.classList.add('show');
     });
     document.getElementById('btn-close-modal').addEventListener('click', () => {
-      modal.classList.remove('show');
+      modalStandards.classList.remove('show');
     });
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('show');
+    modalStandards.addEventListener('click', (e) => {
+      if (e.target === modalStandards) modalStandards.classList.remove('show');
+    });
+
+    /* =====================================================================
+       PRACTICAL SUBMISSION MODAL & PHOTO UPLOAD LOGIC
+    ===================================================================== */
+    const modalSubmission = document.getElementById('modal-submission');
+    const btnOpenSubmit = document.getElementById('btn-open-submit');
+    const btnCloseSubmission = document.getElementById('btn-close-submission');
+    const dropzone = document.getElementById('upload-dropzone');
+    const fileInput = document.getElementById('file-input');
+    const previewContainer = document.getElementById('upload-preview-container');
+    const previewImg = document.getElementById('upload-preview-img');
+    const dropzonePrompt = document.getElementById('dropzone-prompt');
+    const btnRemoveImg = document.getElementById('btn-remove-img');
+    const btnConfirmSubmit = document.getElementById('btn-confirm-submit');
+    const successBanner = document.getElementById('submission-success-banner');
+
+    let currentAttachedFile = null;
+
+    function openSubmissionModal() {
+      modalSubmission.classList.add('show');
+    }
+
+    btnOpenSubmit.addEventListener('click', openSubmissionModal);
+    btnCloseSubmission.addEventListener('click', () => {
+      modalSubmission.classList.remove('show');
+    });
+    modalSubmission.addEventListener('click', (e) => {
+      if (e.target === modalSubmission) modalSubmission.classList.remove('show');
+    });
+
+    // Click dropzone to open file dialog
+    dropzone.addEventListener('click', (e) => {
+      if (e.target !== btnRemoveImg) {
+        fileInput.click();
+      }
+    });
+
+    // Drag & drop handlers
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleSelectedFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleSelectedFile(e.target.files[0]);
+      }
+    });
+
+    function handleSelectedFile(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('กรุณาเลือกไฟล์รูปภาพ (PNG, JPG, WebP) เท่านั้น');
+        return;
+      }
+      currentAttachedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewContainer.style.display = 'block';
+        dropzonePrompt.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    btnRemoveImg.addEventListener('click', (e) => {
+      e.stopPropagation();
+      currentAttachedFile = null;
+      fileInput.value = '';
+      previewImg.src = '';
+      previewContainer.style.display = 'none';
+      dropzonePrompt.style.display = 'block';
+    });
+
+    btnConfirmSubmit.addEventListener('click', () => {
+      const studentName = document.getElementById('submit-student-name').value.trim();
+      const taskType = document.getElementById('submit-task-type').value;
+      const classGroup = document.getElementById('submit-student-group').value;
+      const notes = document.getElementById('submit-notes').value.trim();
+
+      if (!studentName) {
+        alert('กรุณากรอกชื่อ-นามสกุล หรือรหัสนักศึกษา');
+        document.getElementById('submit-student-name').focus();
+        return;
+      }
+
+      if (!currentAttachedFile) {
+        alert('กรุณาอัปโหลดรูปภาพผลงานการปฏิบัติจริงก่อนกดยืนยัน');
+        return;
+      }
+
+      btnConfirmSubmit.disabled = true;
+      btnConfirmSubmit.innerHTML = "<span>⏳ กำลังบันทึกและส่งผลงาน...</span>";
+
+      // Build Submission Record
+      const submissionData = {
+        taskId: taskType,
+        studentName: studentName,
+        classGroup: classGroup,
+        notes: notes,
+        fileName: currentAttachedFile.name,
+        fileSize: currentAttachedFile.size,
+        timestamp: new Date().toISOString(),
+        scoreProposal: 100
+      };
+
+      // Save locally to localStorage as persistent receipt
+      const pastRecords = JSON.parse(localStorage.getItem('cctv_conduit_submissions') || '[]');
+      pastRecords.push(submissionData);
+      localStorage.setItem('cctv_conduit_submissions', JSON.stringify(pastRecords));
+
+      // PostMessage to parent Next.js page if embedded
+      window.parent.postMessage({
+        type: 'CONDUIT_PRACTICAL_SUBMISSION',
+        payload: submissionData
+      }, '*');
+
+      setTimeout(() => {
+        btnConfirmSubmit.style.display = 'none';
+        successBanner.style.display = 'block';
+        document.getElementById('submission-receipt-text').innerHTML =
+          `รหัสหลักฐาน: <strong>CD-${Date.now().toString().slice(-6)}</strong> | ผู้ส่ง: <strong>${studentName}</strong> (${classGroup})<br>บันทึกเวลา: ${new Date().toLocaleTimeString('th-TH')} น.`;
+
+        // Update header button to show submitted badge
+        btnOpenSubmit.innerHTML = "<span>✅ ส่งงานแล้ว</span>";
+        btnOpenSubmit.style.background = "linear-gradient(135deg, #059669, #047857)";
+      }, 800);
     });
 
     // Initialize State
