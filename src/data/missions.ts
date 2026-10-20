@@ -72,7 +72,7 @@ export const floor1Mission104: MissionDefinition = {
   floor: 1,
   room: 104,
   title: 'IP Networking & PoE Budget Workstation',
-  description: 'กำหนดค่า Static IP, Subnet Mask, Gateway ให้กล้อง และคำนวณ PoE Budget บน Switch',
+  description: 'ปฏิบัติการ 2D Network Pre-Lab & 3D: จำลองเสียบสาย PoE Switch, กำหนดค่า IP กล้องใน NVR 4.0, ทดสอบ Ping, แยก VLAN และคำนวณ Subnetting',
   objectives: [
     { id: 'config:r104:ip_addressing', type: 'select', label: 'กำหนดค่า Static IP และ Subnet ให้อยู่ในวงเดียวกัน', required: true },
     { id: 'calc:r104:poe_budget', type: 'answer', label: 'คำนวณ PoE Power Budget ไม่ให้เกินกำลังวัตต์ของ Switch', required: true },
