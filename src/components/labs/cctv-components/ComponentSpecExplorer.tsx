@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { REALISTIC_COMPONENTS } from './cctvComponentsData';
 import {
-  Eye,
   Zap,
   Sliders,
   CheckCircle2,
@@ -13,18 +12,16 @@ import {
   Monitor,
   Camera,
   Network,
-  Sun,
   ShieldAlert,
 } from 'lucide-react';
+import { LensDoriWdrSimulator } from '../room101/LensDoriWdrSimulator';
 
 export const ComponentSpecExplorer: React.FC = () => {
   const [selectedCompId, setSelectedCompId] = useState<string>('camera_bullet');
   const [selectedPartId, setSelectedPartId] = useState<string | null>('lens');
   const [activeTab, setActiveTab] = useState<'overview' | 'anatomy' | 'dori_wdr' | 'poe_calculator'>('overview');
 
-  // Interactive Lens Simulator States
-  const [selectedFocalLength, setSelectedFocalLength] = useState<number>(4.0); // 2.8, 4.0, 6.0, 12.0
-  const [wdrStrength, setWdrStrength] = useState<number>(80); // 0 (OFF) to 100 (Max)
+  // Interactive States
   const [isNightMode, setIsNightMode] = useState<boolean>(false);
 
   // PoE Calculator States
@@ -35,50 +32,6 @@ export const ComponentSpecExplorer: React.FC = () => {
   const currentComp = (REALISTIC_COMPONENTS.find((c) => c.id === selectedCompId) || REALISTIC_COMPONENTS[0])!;
   const activePart = (currentComp.anatomyParts.find((p) => p.id === selectedPartId) || currentComp.anatomyParts[0])!;
 
-  // DORI calculations based on Focal Length
-  const getDoriData = (f: number) => {
-    switch (f) {
-      case 2.8:
-        return {
-          fov: '103° (มุมกว้างพิเศษ)',
-          detection: '43 ม.',
-          observation: '17 ม.',
-          recognition: '9 ม.',
-          identification: '4.5 ม.',
-          bestUse: 'ห้องเรียน, ลิฟต์, ร้านค้ามินิมาร์ท, โถงทางเดินแคบ',
-        };
-      case 6.0:
-        return {
-          fov: '52° (มุมแคบระยะไกล)',
-          detection: '90 ม.',
-          observation: '36 ม.',
-          recognition: '18 ม.',
-          identification: '9.0 ม.',
-          bestUse: 'แนวรั้วกำแพง, ซอยยาว, จับป้ายทะเบียนรถทางเข้า',
-        };
-      case 12.0:
-        return {
-          fov: '24° (มุมเทเลโฟโต้)',
-          detection: '180 ม.',
-          observation: '72 ม.',
-          recognition: '36 ม.',
-          identification: '18.0 ม.',
-          bestUse: 'ตรวจการณ์แนวกำแพงวิทยาลัยระยะไกล, ป้อมยามตรวจรถ',
-        };
-      case 4.0:
-      default:
-        return {
-          fov: '84° (มุมมองมาตรฐานยอดนิยม)',
-          detection: '63 ม.',
-          observation: '25 ม.',
-          recognition: '13 ม.',
-          identification: '6.5 ม.',
-          bestUse: 'ลานจอดรถ, หน้าอาคารเรียน, โรงฝึกงาน, หน้าเคาน์เตอร์',
-        };
-    }
-  };
-
-  const dori = getDoriData(selectedFocalLength);
 
   // PoE Calculation
   const camWatt = poeCameraModel === 'standard' ? 8 : poeCameraModel === 'high_ir' ? 12 : 28;
@@ -534,137 +487,7 @@ export const ComponentSpecExplorer: React.FC = () => {
 
           {/* TAB 3: DORI & WDR SIMULATOR (CAMERA SPECIFIC) */}
           {activeTab === 'dori_wdr' && (
-            <div className="space-y-4">
-              {/* DORI Criteria Simulator */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                      <Eye className="w-4 h-4 text-amber-400" />
-                      <span>เครื่องมือทดลองระยะเลนส์ DORI (DORI Lens Simulator)</span>
-                    </h4>
-                    <p className="text-xs text-slate-400">
-                      เกณฑ์สากล EN 62676-4: Detection, Observation, Recognition, Identification
-                    </p>
-                  </div>
-                </div>
-
-                {/* Lens Selector */}
-                <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
-                  {[2.8, 4.0, 6.0, 12.0].map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => setSelectedFocalLength(f)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
-                        selectedFocalLength === f
-                          ? 'bg-amber-500 text-slate-950 shadow-md'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {f.toFixed(1)} mm
-                    </button>
-                  ))}
-                </div>
-
-                {/* DORI Distance Bar Representation */}
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-slate-300">มุมมองภาพแนวนอน (FOV):</span>
-                    <span className="font-mono text-amber-400 font-bold">{dori.fov}</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                    <div className="bg-slate-900 p-2.5 rounded-xl border border-emerald-500/30">
-                      <div className="text-[10px] text-emerald-400 font-bold uppercase">1. ตรวจจับ (Detection)</div>
-                      <div className="text-base font-bold font-mono text-white mt-0.5">{dori.detection}</div>
-                      <div className="text-[10px] text-slate-400">รู้ว่ามีคนเดิน (25 px/m)</div>
-                    </div>
-                    <div className="bg-slate-900 p-2.5 rounded-xl border border-sky-500/30">
-                      <div className="text-[10px] text-sky-400 font-bold uppercase">2. สังเกต (Observation)</div>
-                      <div className="text-base font-bold font-mono text-white mt-0.5">{dori.observation}</div>
-                      <div className="text-[10px] text-slate-400">ดูลักษณะเสื้อผ้า (63 px/m)</div>
-                    </div>
-                    <div className="bg-slate-900 p-2.5 rounded-xl border border-amber-500/30">
-                      <div className="text-[10px] text-amber-400 font-bold uppercase">3. จดจำ (Recognition)</div>
-                      <div className="text-base font-bold font-mono text-white mt-0.5">{dori.recognition}</div>
-                      <div className="text-[10px] text-slate-400">ชี้ตัวคนคุ้นเคย (125 px/m)</div>
-                    </div>
-                    <div className="bg-slate-900 p-2.5 rounded-xl border border-rose-500/30">
-                      <div className="text-[10px] text-rose-400 font-bold uppercase">4. ชี้ชัด (Identification)</div>
-                      <div className="text-base font-bold font-mono text-white mt-0.5">{dori.identification}</div>
-                      <div className="text-[10px] text-slate-400">อ่านป้ายทะเบียน (250 px/m)</div>
-                    </div>
-                  </div>
-
-                  <div className="text-[11px] text-slate-300 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-                    <strong>📌 พื้นที่เหมาะสมในการติดตั้ง:</strong> {dori.bestUse}
-                  </div>
-                </div>
-              </div>
-
-              {/* True WDR Slider Simulator */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sun className="w-4 h-4 text-amber-400" />
-                    <span className="text-sm font-bold text-white">ทดสอบระบบย้อนแสง True WDR (120dB)</span>
-                  </div>
-                  <span className="text-xs font-mono font-bold text-amber-300">
-                    {wdrStrength === 0 ? 'WDR OFF (ปิด)' : `WDR: ${wdrStrength}% (Active)`}
-                  </span>
-                </div>
-
-                {/* Slider */}
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="10"
-                  value={wdrStrength}
-                  onChange={(e) => setWdrStrength(parseInt(e.target.value, 10))}
-                  className="w-full accent-amber-400 cursor-pointer"
-                />
-
-                {/* Simulated Image Visualizer */}
-                <div className="h-32 rounded-xl border border-slate-800 relative overflow-hidden flex items-center justify-center">
-                  {/* Background: Outdoor Sunlight */}
-                  <div
-                    className="absolute inset-0 transition-all duration-300"
-                    style={{
-                      background:
-                        wdrStrength === 0
-                          ? 'linear-gradient(to right, #0f172a 45%, #ffffff 55%)'
-                          : `linear-gradient(to right, #1e293b 45%, rgba(186, 230, 253, ${1 - wdrStrength * 0.006}) 55%)`,
-                    }}
-                  />
-                  {/* Foreground Person Silhouette / Revealed Face */}
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div
-                      className="w-12 h-12 rounded-full border-2 transition-all duration-300 flex items-center justify-center text-xs font-bold"
-                      style={{
-                        backgroundColor: wdrStrength === 0 ? '#000000' : `rgba(246, 194, 155, ${0.4 + wdrStrength * 0.006})`,
-                        borderColor: wdrStrength === 0 ? '#000000' : '#f6c29b',
-                        color: wdrStrength === 0 ? '#ffffff' : '#0f172a',
-                      }}
-                    >
-                      {wdrStrength === 0 ? '👤 เงา' : '😊 ชัด'}
-                    </div>
-                    <div
-                      className="w-16 h-10 rounded-t-lg transition-all duration-300 mt-1"
-                      style={{
-                        backgroundColor: wdrStrength === 0 ? '#000000' : `rgba(2, 132, 199, ${0.4 + wdrStrength * 0.006})`,
-                      }}
-                    />
-                  </div>
-                  <div className="absolute bottom-2 left-3 text-[10px] font-mono text-slate-300 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-700">
-                    {wdrStrength === 0
-                      ? '⚠️ ปิด WDR: แสงภายนอกขาวโพลน บุคคลหน้าร้านมืดเป็นเงามัว'
-                      : '✅ เปิด True WDR: ปรับเกลี่ยแสงสว่างและส่วนมืดให้เห็นรายละเอียดใบหน้า'}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <LensDoriWdrSimulator />
           )}
 
           {/* TAB 4: POE CALCULATOR (TRANSMISSION SPECIFIC) */}

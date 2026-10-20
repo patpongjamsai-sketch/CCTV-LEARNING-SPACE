@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRoleplayStore } from '../../../store/useRoleplayStore';
 import { KNOWLEDGE_CARDS } from '../../../data/unit1RoleplayContent';
 import { Room101Mission1IsometricCanvas } from './Room101Mission1IsometricCanvas';
+import { LensDoriWdrSimulator } from './LensDoriWdrSimulator';
 
 interface Room101Mission1ModalProps {
   onClose: () => void;
@@ -29,8 +30,6 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
   // Randomized shuffled card order so answers aren't in 1-2-3-4 order
   const [shuffledCards] = useState(() => [...INITIAL_CARDS].sort(() => Math.random() - 0.5));
   const [activeSubTab, setActiveSubTab] = useState<'assembly' | 'lens_wdr'>('assembly');
-  const [selectedFocal, setSelectedFocal] = useState<number>(4.0);
-  const [wdrLevel, setWdrLevel] = useState<number>(80);
 
   const handleSlotClick = (index: number) => {
     if (!selectedCardId) {
@@ -124,117 +123,7 @@ export const Room101Mission1Modal: React.FC<Room101Mission1ModalProps> = ({
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           {activeSubTab === 'lens_wdr' ? (
-            <div className="space-y-5 animate-in fade-in duration-200">
-              {/* DORI Simulator */}
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>🔭</span>
-                    <span>เกณฑ์ระยะจำแนก DORI ตามทางยาวโฟกัส (EN 62676-4 Standard)</span>
-                  </h4>
-                  <span className="text-xs font-mono font-bold text-amber-400">
-                    เลนส์: {selectedFocal.toFixed(1)} mm
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
-                  {[2.8, 4.0, 6.0, 12.0].map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => setSelectedFocal(f)}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
-                        selectedFocal === f
-                          ? 'bg-amber-500 text-slate-950 shadow'
-                          : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {f.toFixed(1)} mm
-                    </button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                  <div className="bg-slate-900/90 p-2.5 rounded-xl border border-emerald-500/30">
-                    <span className="text-[10px] text-emerald-400 font-bold block">1. ตรวจจับ (Detection)</span>
-                    <span className="text-base font-bold font-mono text-white mt-0.5 block">
-                      {selectedFocal === 2.8 ? '43 ม.' : selectedFocal === 4.0 ? '63 ม.' : selectedFocal === 6.0 ? '90 ม.' : '180 ม.'}
-                    </span>
-                    <span className="text-[10px] text-slate-400">รู้ว่ามีสิ่งเคลื่อนไหว</span>
-                  </div>
-                  <div className="bg-slate-900/90 p-2.5 rounded-xl border border-sky-500/30">
-                    <span className="text-[10px] text-sky-400 font-bold block">2. สังเกต (Observation)</span>
-                    <span className="text-base font-bold font-mono text-white mt-0.5 block">
-                      {selectedFocal === 2.8 ? '17 ม.' : selectedFocal === 4.0 ? '25 ม.' : selectedFocal === 6.0 ? '36 ม.' : '72 ม.'}
-                    </span>
-                    <span className="text-[10px] text-slate-400">เห็นลักษณะเสื้อผ้า</span>
-                  </div>
-                  <div className="bg-slate-900/90 p-2.5 rounded-xl border border-amber-500/30">
-                    <span className="text-[10px] text-amber-400 font-bold block">3. จดจำ (Recognition)</span>
-                    <span className="text-base font-bold font-mono text-white mt-0.5 block">
-                      {selectedFocal === 2.8 ? '9 ม.' : selectedFocal === 4.0 ? '13 ม.' : selectedFocal === 6.0 ? '18 ม.' : '36 ม.'}
-                    </span>
-                    <span className="text-[10px] text-slate-400">ชี้ตัวคนคุ้นเคย</span>
-                  </div>
-                  <div className="bg-slate-900/90 p-2.5 rounded-xl border border-rose-500/30">
-                    <span className="text-[10px] text-rose-400 font-bold block">4. ชี้ชัด (Identification)</span>
-                    <span className="text-base font-bold font-mono text-white mt-0.5 block">
-                      {selectedFocal === 2.8 ? '4.5 ม.' : selectedFocal === 4.0 ? '6.5 ม.' : selectedFocal === 6.0 ? '9 ม.' : '18 ม.'}
-                    </span>
-                    <span className="text-[10px] text-slate-400">อ่านป้ายทะเบียนรถ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* WDR Simulator */}
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>☀️</span>
-                    <span>ทดสอบการเกลี่ยแสงย้อนหน้าร้าน True WDR (120dB Multi-Shutter)</span>
-                  </h4>
-                  <span className="text-xs font-mono font-bold text-sky-400">
-                    {wdrLevel === 0 ? 'WDR OFF (ปิด)' : `WDR Level: ${wdrLevel}%`}
-                  </span>
-                </div>
-
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="10"
-                  value={wdrLevel}
-                  onChange={(e) => setWdrLevel(parseInt(e.target.value, 10))}
-                  className="w-full accent-sky-400 cursor-pointer"
-                />
-
-                <div className="h-28 rounded-xl border border-slate-800 relative overflow-hidden flex items-center justify-center">
-                  <div
-                    className="absolute inset-0 transition-all duration-200"
-                    style={{
-                      background:
-                        wdrLevel === 0
-                          ? 'linear-gradient(to right, #090d16 45%, #ffffff 55%)'
-                          : `linear-gradient(to right, #1e293b 45%, rgba(186, 230, 253, ${1 - wdrLevel * 0.006}) 55%)`,
-                    }}
-                  />
-                  <div className="relative z-10 flex flex-col items-center">
-                    <div
-                      className="w-10 h-10 rounded-full border transition-all flex items-center justify-center text-[10px] font-bold"
-                      style={{
-                        backgroundColor: wdrLevel === 0 ? '#000000' : `rgba(246, 194, 155, ${0.4 + wdrLevel * 0.006})`,
-                        color: wdrLevel === 0 ? '#ffffff' : '#0f172a',
-                      }}
-                    >
-                      {wdrLevel === 0 ? '👤 เงา' : '😊 ชัด'}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-2 left-3 text-[10px] font-mono text-slate-300 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-700">
-                    {wdrLevel === 0 ? '⚠️ แสงย้อนจ้า บุคคลกลายเป็นเงามืด' : '✅ True WDR ปรับเกลี่ยแสงสว่างและเงาเห็นหน้าชัดเจน'}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <LensDoriWdrSimulator />
           ) : (
             <>
               {/* Scientific Concept Banner */}
