@@ -202,18 +202,68 @@ export default function LabsDirectoryPage() {
                     </div>
                 </div>
 
-                {/* เกมฝึกเข้าหัวสายแยกจาก Room 103 */}
-                <section className="relative overflow-hidden rounded-3xl border border-teal-400/50 bg-gradient-to-r from-[#102a36] via-[#103c45] to-[#10232f] p-6 md:p-8 shadow-2xl">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-                        <div className="max-w-2xl space-y-2">
-                            <span className="inline-flex rounded-lg border border-teal-300/40 bg-teal-300/10 px-3 py-1 text-[11px] font-bold tracking-wider text-teal-200">NEW GAME · RJ45 CAT6</span>
-                            <h2 className="text-2xl font-bold text-white">เกมฝึกเข้าหัวสาย RJ45 CAT6</h2>
-                            <p className="text-sm leading-relaxed text-slate-200">ฝึก 8 ขั้นตอนด้วยตนเอง: ตัด PoE, วัดและปอกสาย, เรียงสี T568B ทั้งสองปลาย, ย้ำหัว, อ่านผล Cable Tester และซ่อมหัวที่ผิด</p>
-                            <p className="text-xs text-teal-100/70">Section ฝึกอิสระ · แยกจากคะแนน Room 103</p>
+                {/* ทักษะปฏิบัติการเฉพาะทาง (Conduit Bending 3D Lab & RJ45 Game) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Conduit Bending Lab */}
+                    <section className="relative overflow-hidden rounded-3xl border border-sky-400/50 bg-gradient-to-br from-[#0c2238] via-[#093554] to-[#0a192f] p-6 md:p-7 shadow-2xl flex flex-col justify-between gap-5">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex rounded-lg border border-sky-300/40 bg-sky-300/10 px-2.5 py-0.5 text-[11px] font-bold tracking-wider text-sky-200">
+                                    NEW 3D LAB · uPVC CONDUIT
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold animate-pulse">
+                                    HOT
+                                </span>
+                            </div>
+                            <h2 className="text-xl font-bold text-white">
+                                คู่มือ 3D Interactive การดัดท่อร้อยสาย uPVC (20mm)
+                            </h2>
+                            <p className="text-xs leading-relaxed text-slate-200">
+                                ฝึก 6 ขั้นตอนเชิงช่างมาตรฐาน วสท. / TIA-569: วัดระยะ, ตัดท่อด้วยกรรไกร Ratchet, สอดสปริงดัดท่อ, ดัด 90° ด้วยเทคนิค Overbend, บิดคลายสปริง, และติดตั้งกล่องพักสาย IP66 พร้อมกล้อง IP
+                            </p>
+                            <p className="text-xs text-sky-200/70">
+                                ห้องปฏิบัติการ 3D เสริมสมรรถนะ · Room 103 Companion
+                            </p>
                         </div>
-                        <a href="/RJ45" className="inline-flex shrink-0 items-center justify-center gap-3 rounded-xl bg-teal-300 px-6 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-teal-400/20 transition hover:bg-teal-200">เข้าเล่นเกม RJ45 <span>→</span></a>
-                    </div>
-                </section>
+                        <a
+                            href="/labs/conduit-bending"
+                            className="inline-flex items-center justify-between rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 px-5 py-3 text-xs font-extrabold text-slate-950 shadow-lg shadow-sky-400/20 transition hover:from-cyan-300 hover:to-sky-300"
+                        >
+                            <span>เข้าสู่ห้องแล็บดัดท่อ 3D</span>
+                            <span>→</span>
+                        </a>
+                    </section>
+
+                    {/* RJ45 Cat6 Game */}
+                    <section className="relative overflow-hidden rounded-3xl border border-teal-400/50 bg-gradient-to-br from-[#102a36] via-[#103c45] to-[#10232f] p-6 md:p-7 shadow-2xl flex flex-col justify-between gap-5">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex rounded-lg border border-teal-300/40 bg-teal-300/10 px-2.5 py-0.5 text-[11px] font-bold tracking-wider text-teal-200">
+                                    NEW GAME · RJ45 CAT6
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                                    AVAILABLE
+                                </span>
+                            </div>
+                            <h2 className="text-xl font-bold text-white">
+                                เกมฝึกเข้าหัวสาย RJ45 CAT6
+                            </h2>
+                            <p className="text-xs leading-relaxed text-slate-200">
+                                ฝึก 8 ขั้นตอนด้วยตนเอง: ตัด PoE, วัดและปอกสาย, เรียงสี T568B ทั้งสองปลาย, ย้ำหัว, อ่านผล Cable Tester และซ่อมหัวที่ผิด
+                            </p>
+                            <p className="text-xs text-teal-100/70">
+                                Section ฝึกอิสระ · แยกจากคะแนน Room 103
+                            </p>
+                        </div>
+                        <a
+                            href="/RJ45"
+                            className="inline-flex items-center justify-between rounded-xl bg-teal-300 px-5 py-3 text-xs font-extrabold text-slate-950 shadow-lg shadow-teal-400/20 transition hover:bg-teal-200"
+                        >
+                            <span>เข้าเล่นเกม RJ45</span>
+                            <span>→</span>
+                        </a>
+                    </section>
+                </div>
 
                 {/* Labs Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

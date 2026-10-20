@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คู่มือ 3D Interactive การดัดท่อร้อยสาย uPVC กล้องวงจรปิด (White uPVC Conduit Bending)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Three.js and Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #070d18;
+      --card-bg: rgba(13, 23, 42, 0.85);
+      --card-border: rgba(56, 189, 248, 0.25);
+      --accent-cyan: #06b6d4;
+      --accent-sky: #38bdf8;
+      --accent-orange: #f97316;
+      --accent-emerald: #10b981;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      font-family: 'Kanit', sans-serif;
+      color: var(--text-main);
+    }
+
+    #webgl-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* UI Overlay */
+    .ui-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+    }
+
+    .interactive-element {
+      pointer-events: auto;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 10px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-unit {
+      background: linear-gradient(135deg, rgba(6,182,212,0.2), rgba(56,189,248,0.1));
+      border: 1px solid rgba(56,189,248,0.4);
+      color: var(--accent-sky);
+      font-family: 'Chakra Petch', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.8px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      text-transform: uppercase;
+    }
+
+    .title-box h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-box p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-family: 'Kanit', sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--accent-sky);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Main Info Card (Bottom-Left) */
+    .content-panel {
+      max-width: 440px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+      margin-bottom: 8px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-orange);
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      padding: 3px 9px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .step-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .spec-box {
+      background: rgba(15, 23, 42, 0.7);
+      border-left: 3px solid var(--accent-cyan);
+      border-radius: 0 10px 10px 0;
+      padding: 9px 12px;
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .spec-box strong {
+      color: var(--accent-sky);
+      font-weight: 600;
+    }
+
+    /* Step Navigation Buttons */
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.15);
+      padding-top: 14px;
+    }
+
+    .btn-step {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: 'Kanit', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-prev {
+      background: rgba(30, 41, 59, 0.8);
+      color: #94a3b8;
+      border-color: rgba(148, 163, 184, 0.2);
+    }
+    .btn-prev:hover:not(:disabled) {
+      background: rgba(51, 65, 85, 0.9);
+      color: #fff;
+    }
+    .btn-prev:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-sky));
+      color: #04101f;
+      box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    }
+    .btn-next:hover {
+      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+      transform: translateY(-1px);
+    }
+
+    /* Stepper Dots (Bottom Center) */
+    .stepper-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 30px;
+      padding: 8px 16px;
+      align-self: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #94a3b8;
+      font-size: 11px;
+      font-family: 'Chakra Petch', sans-serif;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .step-dot:hover {
+      border-color: var(--accent-sky);
+      color: #fff;
+    }
+
+    .step-dot.active {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-sky));
+      color: #04101f;
+      border-color: transparent;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+      transform: scale(1.15);
+    }
+
+    .step-dot.completed {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    /* Floating View Helper */
+    .view-tips {
+      position: absolute;
+      top: 76px;
+      right: 18px;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .view-tips span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Modal / Engineering Standards Info */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 7, 18, 0.8);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0f172a;
+      border: 1px solid var(--accent-cyan);
+      border-radius: 20px;
+      max-width: 520px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(148,163,184,0.15);
+      padding-bottom: 10px;
+    }
+    .modal-header h2 {
+      font-size: 16px;
+      color: #fff;
+    }
+    .modal-body {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      space-y: 10px;
+    }
+    .modal-body ul {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+    .modal-body li {
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 640px) {
+      .content-panel {
+        max-width: 100%;
+        padding: 14px;
+      }
+      .view-tips {
+        display: none;
+      }
+      .header-bar {
+        padding: 8px 12px;
+      }
+      .title-box h1 {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="webgl-container"></div>
+
+  <!-- UI Overlay -->
+  <div class="ui-layer">
+    <!-- Header -->
+    <header class="header-bar interactive-element">
+      <div class="header-left">
+        <span class="badge-unit">UNIT 03 · 3D LAB</span>
+        <div class="title-box">
+          <h1>⚡ การดัดท่อร้อยสาย uPVC สีขาว (20mm)</h1>
+          <p>มาตรฐานงานติดตั้งกล้องวงจรปิด IP CCTV (TIA-569 / มาตรฐาน วสท.)</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-action" id="btn-standards">
+          <span>📖 เกณฑ์มาตรฐานช่าง</span>
+        </button>
+        <button class="btn-action" id="btn-reset-cam">
+          <span>🎯 รีเซ็ตมุมมอง</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Tips -->
+    <div class="view-tips interactive-element">
+      <span>🖱️ <b>คลิกซ้ายลาก</b> : หมุนมุมมอง 360°</span>
+      <span>🔍 <b>Scroll</b> : ซูมเข้า / ออก</span>
+      <span>✋ <b>คลิกขวาลาก</b> : แพนเลื่อนตำแหน่ง</span>
+    </div>
+
+    <!-- Stepper Dots (Center) -->
+    <div class="stepper-container interactive-element">
+      <div class="step-dot active" data-step="1">1</div>
+      <div class="step-dot" data-step="2">2</div>
+      <div class="step-dot" data-step="3">3</div>
+      <div class="step-dot" data-step="4">4</div>
+      <div class="step-dot" data-step="5">5</div>
+      <div class="step-dot" data-step="6">6</div>
+    </div>
+
+    <!-- Content Panel (Bottom) -->
+    <div class="content-panel interactive-element">
+      <div class="step-badge" id="step-badge">STEP 1 / 6</div>
+      <h2 class="step-title" id="step-title">การสำรวจ วัดระยะ และมาร์คจุดกึ่งกลางดัด</h2>
+      <p class="step-desc" id="step-desc">
+        วัดระยะจากกล่องพักสาย uPVC ไปยังแนวกำแพง กำหนดตำแหน่งความสูง มาร์คจุดกึ่งกลางความโค้ง (Center of Bend) และเผื่อระยะสวมข้อต่อท่อ 15–20 มม.
+      </p>
+      <div class="spec-box" id="step-spec">
+        <strong>💡 ทิปส์ช่าง:</strong> ท่อ uPVC ขาว ขนาด 20 มม. (3/4") ต้องรักษารัศมีดัด (Bend Radius) ไม่น้อยกว่า 6 เท่าของเส้นผ่านศูนย์กลางภายนอกท่อ (R ≥ 120 มม.) เพื่อให้สาย UTP ไม่หักงอ
+      </div>
+      <div class="nav-controls">
+        <button class="btn-step btn-prev" id="btn-prev" disabled>
+          <span>← ย้อนกลับ</span>
+        </button>
+        <button class="btn-step btn-next" id="btn-next">
+          <span>ขั้นตอนถัดไป →</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Standards Modal -->
+  <div class="modal-backdrop" id="modal-standards">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>มาตรฐานการเดินท่อ uPVC สำหรับระบบ CCTV (วสท. / TIA-569)</h2>
+        <button class="btn-action" id="btn-close-modal">✕ ปิด</button>
+      </div>
+      <div class="modal-body">
+        <ul>
+          <li><b>ท่อร้อยสาย uPVC สีขาว:</b> เป็นท่อฉนวนไฟฟ้า ไม่ลามไฟ ทนทานต่อรังสียูวี เหมาะกับงานกล้อง IP ทั้งภายในและภายนอกอาคาร</li>
+          <li><b>ข้อห้ามการใช้ความร้อน:</b> การดัดท่อ uPVC ขาวขนาด 20 มม. แนะนำให้ใช้ <b>สปริงดัดท่อ (Cold Bending)</b> เสมอ หลีกเลี่ยงการใช้ไฟลน เพราะจะทำให้ท่อเสียคุณสมบัติไม่ลามไฟ และผิวด้านในเสียรูป</li>
+          <li><b>การชดเชยคืนตัว (Spring-back):</b> พลาสติก uPVC มีความยืดหยุ่น จึงต้องดัดเกินมุมฉากไปที่ประมาณ <b>95°–100° (Overbend)</b> เมื่อคลายแรง ท่อจะคืนตัวกลับมาได้ฉาก 90° พอดี</li>
+          <li><b>การติดตั้งกิ๊บก้ามปู:</b> กิ๊บจับท่อตัวแรกต้องห่างจากกล่องพักสาย uPVC ไม่เกิน <b>30 ซม.</b> และระยะห่างระหว่างกิ๊บแต่ละตัวไม่เกิน <b>1.0 เมตร</b> เพื่อความมั่นคงแข็งแรง</li>
+          <li><b>กล่องพักสายกันน้ำ (IP66):</b> ต้องติดตั้งซีลยางและเจาะรูระบายน้ำทิ้งด้านล่างกล่องเสมอ เพื่อป้องกันน้ำขังสะสมจากความชื้น</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =====================================================================
+       3D SCENE & ENGINE INITIALIZATION
+    ===================================================================== */
+    const container = document.getElementById('webgl-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x070d18);
+    scene.fog = new THREE.FogExp2(0x070d18, 0.05);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2.4, 1.8, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05;
+    controls.minDistance = 1.0;
+    controls.maxDistance = 8.0;
+    controls.target.set(0, 0.5, 0);
+
+    /* =====================================================================
+       LIGHTING SETUP
+    ===================================================================== */
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    mainLight.position.set(4, 6, 4);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far = 15;
+    mainLight.shadow.bias = -0.0005;
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.5);
+    fillLight.position.set(-4, 3, -3);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0x06b6d4, 0.8);
+    rimLight.position.set(0, 4, -4);
+    scene.add(rimLight);
+
+    /* =====================================================================
+       MATERIALS CATALOG
+    ===================================================================== */
+    // White uPVC Conduit Material
+    const upvcMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.25,
+      metalness: 0.05,
+    });
+
+    const upvcTranslucentMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.3,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.45,
+    });
+
+    // Spring Steel Material
+    const springSteelMaterial = new THREE.MeshStandardMaterial({
+      color: 0x94a3b8,
+      roughness: 0.3,
+      metalness: 0.85,
+    });
+
+    // Orange Pull Cord
+    const cordMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf97316,
+      roughness: 0.6,
+      metalness: 0.1,
+    });
+
+    // Ratchet Cutter Orange/Red Body
+    const cutterBodyMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe11d48,
+      roughness: 0.35,
+      metalness: 0.3,
+    });
+
+    const cutterBladeMaterial = new THREE.MeshStandardMaterial({
+      color: 0xe2e8f0,
+      roughness: 0.1,
+      metalness: 0.95,
+    });
+
+    // Junction Box Material
+    const boxMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.05,
+    });
+
+    // Concrete Wall Material
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.8,
+      metalness: 0.1,
+    });
+
+    // Benchmark Floor Grid
+    const gridHelper = new THREE.GridHelper(10, 20, 0x0284c7, 0x1e293b);
+    gridHelper.position.y = -0.5;
+    scene.add(gridHelper);
+
+    /* =====================================================================
+       ENVIRONMENT (CONCRETE WALL & BENCH)
+    ===================================================================== */
+    const wallGeo = new THREE.BoxGeometry(4.5, 3.2, 0.15);
+    const wall = new THREE.Mesh(wallGeo, wallMaterial);
+    wall.position.set(0, 0.9, -1.0);
+    wall.receiveShadow = true;
+    scene.add(wall);
+
+    // Workbench Table
+    const tableGeo = new THREE.BoxGeometry(3.2, 0.08, 1.4);
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.4 });
+    const table = new THREE.Mesh(tableGeo, tableMat);
+    table.position.set(0, -0.46, 0.1);
+    table.receiveShadow = true;
+    scene.add(table);
+
+    /* =====================================================================
+       3D ASSETS HIERARCHY
+    ===================================================================== */
+    const stageGroups = [];
+    for (let i = 1; i <= 6; i++) {
+      const g = new THREE.Group();
+      scene.add(g);
+      stageGroups.push(g);
+    }
+
+    /* ---------------------------------------------------------------------
+       STAGE 1: Survey, Measure & Mark Center
+    --------------------------------------------------------------------- */
+    (function buildStage1() {
+      const group = stageGroups[0];
+
+      // Straight Straight uPVC Pipe (1.8m)
+      const pipeGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.8, 32);
+      const pipe = new THREE.Mesh(pipeGeo, upvcMaterial);
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set(0, 0.2, 0);
+      pipe.castShadow = true;
+      group.add(pipe);
+
+      // Marker line at center
+      const markGeo = new THREE.CylinderGeometry(0.0405, 0.0405, 0.015, 32);
+      const markMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      const mark = new THREE.Mesh(markGeo, markMat);
+      mark.rotation.z = Math.PI / 2;
+      mark.position.set(0, 0.2, 0);
+      group.add(mark);
+
+      // Measurement Tape Body
+      const tapeBodyGeo = new THREE.BoxGeometry(0.12, 0.12, 0.08);
+      const tapeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+      const tape = new THREE.Mesh(tapeBodyGeo, tapeMat);
+      tape.position.set(-0.85, 0.2, 0.06);
+      tape.castShadow = true;
+      group.add(tape);
+
+      // Extended yellow measuring ribbon
+      const ribbonGeo = new THREE.PlaneGeometry(1.4, 0.025);
+      const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6, side: THREE.DoubleSide });
+      const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat);
+      ribbon.rotation.x = -Math.PI / 2;
+      ribbon.position.set(-0.15, 0.245, 0);
+      group.add(ribbon);
+
+      // Marker Pen
+      const penGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.18, 16);
+      const penMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
+      const pen = new THREE.Mesh(penGeo, penMat);
+      pen.rotation.x = Math.PI / 3;
+      pen.rotation.z = Math.PI / 6;
+      pen.position.set(0.02, 0.32, 0.06);
+      pen.castShadow = true;
+      group.add(pen);
+    })();
+
+    /* ---------------------------------------------------------------------
+       STAGE 2: Square Cutting with Ratchet Pipe Cutter
+    --------------------------------------------------------------------- */
+    (function buildStage2() {
+      const group = stageGroups[1];
+
+      // Pipe to be cut
+      const pipeGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 32);
+      const pipe = new THREE.Mesh(pipeGeo, upvcMaterial);
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set(-0.1, 0.2, 0);
+      pipe.castShadow = true;
+      group.add(pipe);
+
+      // Cutter Model Assembly
+      const cutterGroup = new THREE.Group();
+      cutterGroup.position.set(0.2, 0.2, 0);
+
+      // Lower Jaw (Curve)
+      const jawGeo = new THREE.TorusGeometry(0.09, 0.025, 16, 32, Math.PI);
+      const jaw = new THREE.Mesh(jawGeo, cutterBodyMaterial);
+      jaw.rotation.x = Math.PI / 2;
+      jaw.rotation.z = -Math.PI / 2;
+      cutterGroup.add(jaw);
+
+      // Handles
+      const handle1Geo = new THREE.CylinderGeometry(0.02, 0.022, 0.35, 16);
+      const handle1 = new THREE.Mesh(handle1Geo, cutterBodyMaterial);
+      handle1.position.set(0.12, -0.15, 0.08);
+      handle1.rotation.z = -0.3;
+      cutterGroup.add(handle1);
+
+      const handle2 = handle1.clone();
+      handle2.position.set(0.12, 0.15, 0.08);
+      handle2.rotation.z = 0.3;
+      cutterGroup.add(handle2);
+
+      // Stainless Blade
+      const bladeGeo = new THREE.BoxGeometry(0.005, 0.1, 0.08);
+      const blade = new THREE.Mesh(bladeGeo, cutterBladeMaterial);
+      blade.position.set(0, 0.02, 0);
+      cutterGroup.add(blade);
+
+      group.add(cutterGroup);
+      group.cutterAssembly = cutterGroup;
+    })();
+
+    /* ---------------------------------------------------------------------
+       STAGE 3: Inserting Bending Spring & Pull Cord
+    --------------------------------------------------------------------- */
+    (function buildStage3() {
+      const group = stageGroups[2];
+
+      // Translucent pipe showing spring inside
+      const pipeGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.6, 32);
+      const pipe = new THREE.Mesh(pipeGeo, upvcTranslucentMaterial);
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set(0, 0.2, 0);
+      group.add(pipe);
+
+      // Steel Spring Coil Assembly
+      const springGroup = new THREE.Group();
+      const coilCount = 42;
+      for (let i = 0; i < coilCount; i++) {
+        const ringGeo = new THREE.TorusGeometry(0.032, 0.004, 10, 24);
+        const ring = new THREE.Mesh(ringGeo, springSteelMaterial);
+        ring.rotation.y = Math.PI / 2;
+        ring.position.x = (i - coilCount / 2) * 0.016;
+        springGroup.add(ring);
+      }
+      springGroup.position.set(0, 0.2, 0);
+      group.add(springGroup);
+
+      // Orange Pull Cord attached to loop
+      const cordGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.9, 12);
+      const cord = new THREE.Mesh(cordGeo, cordMaterial);
+      cord.rotation.z = Math.PI / 2;
+      cord.position.set(0.85, 0.2, 0);
+      group.add(cord);
+    })();
+
+    /* ---------------------------------------------------------------------
+       STAGE 4: 90° Bending with Overbend Technique
+    --------------------------------------------------------------------- */
+    (function buildStage4() {
+      const group = stageGroups[3];
+
+      // Bent uPVC Pipe Geometry (Toroidal 90° arc + 2 straight ends)
+      const bentPipeGroup = new THREE.Group();
+
+      // Horizontal Leg
+      const leg1Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
+      const leg1 = new THREE.Mesh(leg1Geo, upvcMaterial);
+      leg1.rotation.z = Math.PI / 2;
+      leg1.position.set(-0.55, 0, 0);
+      bentPipeGroup.add(leg1);
+
+      // Curved Elbow 90° (Quarter Torus)
+      const bendRadius = 0.25;
+      const elbowGeo = new THREE.TorusGeometry(bendRadius, 0.04, 16, 32, Math.PI / 2);
+      const elbow = new THREE.Mesh(elbowGeo, upvcMaterial);
+      elbow.position.set(-0.2, 0.25, 0);
+      elbow.rotation.z = -Math.PI / 2;
+      bentPipeGroup.add(elbow);
+
+      // Vertical Leg (Stub-up)
+      const leg2Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
+      const leg2 = new THREE.Mesh(leg2Geo, upvcMaterial);
+      leg2.position.set(0.05, 0.6, 0);
+      bentPipeGroup.add(leg2);
+
+      bentPipeGroup.position.set(0, 0.1, 0);
+      group.add(bentPipeGroup);
+      group.bentPipeAssembly = bentPipeGroup;
+
+      // 90-Degree Angle Helper Ring
+      const angleRingGeo = new THREE.RingGeometry(0.12, 0.14, 32, 1, 0, Math.PI / 2);
+      const angleRingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+      const angleRing = new THREE.Mesh(angleRingGeo, angleRingMat);
+      angleRing.position.set(-0.05, 0.35, 0.05);
+      group.add(angleRing);
+
+      // Level / Square indicator
+      const levelGeo = new THREE.BoxGeometry(0.05, 0.3, 0.03);
+      const levelMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
+      const level = new THREE.Mesh(levelGeo, levelMat);
+      level.position.set(0.11, 0.6, 0);
+      group.add(level);
+    })();
+
+    /* ---------------------------------------------------------------------
+       STAGE 5: Twisting & Spring Extraction
+    --------------------------------------------------------------------- */
+    (function buildStage5() {
+      const group = stageGroups[4];
+
+      // Bent Pipe
+      const bentPipeGroup = new THREE.Group();
+      const leg1Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
+      const leg1 = new THREE.Mesh(leg1Geo, upvcMaterial);
+      leg1.rotation.z = Math.PI / 2;
+      leg1.position.set(-0.55, 0, 0);
+      bentPipeGroup.add(leg1);
+
+      const elbowGeo = new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 2);
+      const elbow = new THREE.Mesh(elbowGeo, upvcMaterial);
+      elbow.position.set(-0.2, 0.25, 0);
+      elbow.rotation.z = -Math.PI / 2;
+      bentPipeGroup.add(elbow);
+
+      const leg2Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
+      const leg2 = new THREE.Mesh(leg2Geo, upvcMaterial);
+      leg2.position.set(0.05, 0.6, 0);
+      bentPipeGroup.add(leg2);
+
+      bentPipeGroup.position.set(0, 0.1, 0);
+      group.add(bentPipeGroup);
+
+      // Extracted Spring halfway out of horizontal end
+      const springGroup = new THREE.Group();
+      const coilCount = 28;
+      for (let i = 0; i < coilCount; i++) {
+        const ringGeo = new THREE.TorusGeometry(0.031, 0.0035, 10, 20);
+        const ring = new THREE.Mesh(ringGeo, springSteelMaterial);
+        ring.rotation.y = Math.PI / 2;
+        ring.position.x = (i - coilCount / 2) * 0.015;
+        springGroup.add(ring);
+      }
+      springGroup.position.set(-0.85, 0.1, 0);
+      group.add(springGroup);
+
+      // Cord pulled taut
+      const cordGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.6, 12);
+      const cord = new THREE.Mesh(cordGeo, cordMaterial);
+      cord.rotation.z = Math.PI / 2;
+      cord.position.set(-1.3, 0.1, 0);
+      group.add(cord);
+    })();
+
+    /* ---------------------------------------------------------------------
+       STAGE 6: Complete Installation (Box, Clamps, Cat6, Bullet Camera)
+    --------------------------------------------------------------------- */
+    (function buildStage6() {
+      const group = stageGroups[5];
+
+      // Final installed uPVC conduit run on wall
+      const runGroup = new THREE.Group();
+      runGroup.position.set(0, 0.5, -0.9);
+
+      // Horizontal pipe run
+      const hPipeGeo = new THREE.CylinderGeometry(0.035, 0.035, 1.2, 32);
+      const hPipe = new THREE.Mesh(hPipeGeo, upvcMaterial);
+      hPipe.rotation.z = Math.PI / 2;
+      hPipe.position.set(-0.6, 0, 0.06);
+      runGroup.add(hPipe);
+
+      // 90-deg Elbow
+      const elbowGeo = new THREE.TorusGeometry(0.2, 0.035, 16, 32, Math.PI / 2);
+      const elbow = new THREE.Mesh(elbowGeo, upvcMaterial);
+      elbow.position.set(0.0, 0.2, 0.06);
+      elbow.rotation.z = -Math.PI / 2;
+      runGroup.add(elbow);
+
+      // Vertical pipe going up into junction box
+      const vPipeGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.5, 32);
+      const vPipe = new THREE.Mesh(vPipeGeo, upvcMaterial);
+      vPipe.position.set(0.2, 0.45, 0.06);
+      runGroup.add(vPipe);
+
+      // uPVC Snap Clips (กิ๊บก้ามปูขาว 3 จุด)
+      const clipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+      const createClip = (x, y) => {
+        const clipG = new THREE.Group();
+        const base = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), clipMat);
+        base.position.set(x, y, 0.03);
+        clipG.add(base);
+        return clipG;
+      };
+      runGroup.add(createClip(-1.0, 0));
+      runGroup.add(createClip(-0.35, 0));
+      runGroup.add(createClip(0.2, 0.35));
+
+      // 4x4 Waterproof uPVC Junction Box
+      const boxGeo = new THREE.BoxGeometry(0.3, 0.3, 0.16);
+      const box = new THREE.Mesh(boxGeo, boxMaterial);
+      box.position.set(0.2, 0.85, 0.08);
+      box.castShadow = true;
+      runGroup.add(box);
+
+      // Box Cover Screw details
+      const screwMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+      [[-0.12, 0.12], [0.12, 0.12], [-0.12, -0.12], [0.12, -0.12]].forEach(([sx, sy]) => {
+        const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.01, 8), screwMat);
+        screw.rotation.x = Math.PI / 2;
+        screw.position.set(0.2 + sx, 0.85 + sy, 0.165);
+        runGroup.add(screw);
+      });
+
+      // IP Bullet Camera mounted on Box Lid
+      const camGroup = new THREE.Group();
+      camGroup.position.set(0.2, 0.85, 0.16);
+
+      // Bracket Arm
+      const armGeo = new THREE.CylinderGeometry(0.02, 0.025, 0.12, 16);
+      const arm = new THREE.Mesh(armGeo, boxMaterial);
+      arm.rotation.x = Math.PI / 2;
+      arm.position.set(0, 0, 0.06);
+      camGroup.add(arm);
+
+      // Bullet Body Cylinder
+      const bodyGeo = new THREE.CylinderGeometry(0.05, 0.045, 0.24, 24);
+      const camBody = new THREE.Mesh(bodyGeo, boxMaterial);
+      camBody.rotation.x = Math.PI / 2 - 0.25;
+      camBody.position.set(0, -0.03, 0.2);
+      camBody.castShadow = true;
+      camGroup.add(camBody);
+
+      // Sunshield Visor
+      const shieldGeo = new THREE.CylinderGeometry(0.055, 0.052, 0.16, 24, 1, false, 0, Math.PI);
+      const shield = new THREE.Mesh(shieldGeo, new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 }));
+      shield.rotation.x = Math.PI / 2 - 0.25;
+      shield.rotation.z = Math.PI;
+      shield.position.set(0, -0.02, 0.22);
+      camGroup.add(shield);
+
+      // Front Lens Ring
+      const lensGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.015, 24);
+      const lensMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.1, metalness: 0.9 });
+      const lens = new THREE.Mesh(lensGeo, lensMat);
+      lens.rotation.x = Math.PI / 2 - 0.25;
+      lens.position.set(0, -0.06, 0.32);
+      camGroup.add(lens);
+
+      runGroup.add(camGroup);
+      group.add(runGroup);
+    })();
+
+    /* =====================================================================
+       STAGE DATA & STEP CONTROLLER
+    ===================================================================== */
+    const stagesData = [
+      {
+        step: 1,
+        badge: "STEP 1 / 6 · SURVEY & MARK",
+        title: "การสำรวจ วัดระยะ และมาร์คจุดกึ่งกลางดัด",
+        desc: "วัดระยะจากกล่องพักสาย uPVC ไปยังแนวกำแพง กำหนดตำแหน่งความสูง มาร์คจุดกึ่งกลางความโค้ง (Center of Bend) และเผื่อระยะสวมข้อต่อท่อ 15–20 มม.",
+        spec: "💡 <strong>ทิปส์ช่าง:</strong> ท่อ uPVC ขาว ขนาด 20 มม. (3/4\") ต้องรักษารัศมีดัด (Bend Radius) ไม่น้อยกว่า 6 เท่าของเส้นผ่านศูนย์กลางภายนอกท่อ (R ≥ 120 มม.) เพื่อให้สาย UTP Cat6 ร้อยผ่านได้สะดวก ไม่หักพับ",
+        camPos: { x: 0.2, y: 1.2, z: 2.4 },
+        target: { x: 0, y: 0.2, z: 0 }
+      },
+      {
+        step: 2,
+        badge: "STEP 2 / 6 · RATCHET PIPE CUTTER",
+        title: "การตัดท่อ uPVC ด้วยกรรไกรตัดท่อ PVC",
+        desc: "ใช้กรรไกรตัดท่อ PVC กลไกเฟืองผ่อนแรง (Ratchet Pipe Cutter) ตัดท่อให้ได้ฉาก 90° ขอบคมเรียบ ไร้เศษขุยขี้เลื่อย ไม่ทำให้ท่อแตกหักและไม่ต้องใช้ตะไบลบคม",
+        spec: "⚠️ <strong>ข้อควรระวัง:</strong> หลีกเลี่ยงการใช้เลื่อยตัดเหล็กเพราะจะทำให้เกิดเศษผงพลาสติกตกค้างในท่อ ซึ่งอาจสร้างความเสียหายต่อเปลือกสายสัญญาณระหว่างร้อยสาย",
+        camPos: { x: 0.5, y: 0.8, z: 1.6 },
+        target: { x: 0.1, y: 0.2, z: 0 }
+      },
+      {
+        step: 3,
+        badge: "STEP 3 / 6 · BENDING SPRING INSERTION",
+        title: "การสอดสปริงดัดท่อ uPVC พร้อมเชือกดึง",
+        desc: "สอดสปริงดัดท่อเหล็กชุบซิงค์ขนาด 20 มม. เข้าไปในท่อ โดยผูกเชือกไนลอนเข้ากับห่วงสปริง ให้ตำแหน่งกึ่งกลางสปริงตรงกับรอยมาร์คดัดพอดีเพื่อป้องกันท่อบี้แบน",
+        spec: "💡 <strong>ทิปส์ช่าง:</strong> หากแนวสอดสปริงลึกมาก ให้ทาสารหล่อลื่นชนิดแห้งหรือผงแป้งเบาๆ และต้องผูกปลายเชือกไว้ภายนอกท่อเสมอ ป้องกันสปริงติดค้าง",
+        camPos: { x: 0.3, y: 0.9, z: 2.1 },
+        target: { x: 0, y: 0.2, z: 0 }
+      },
+      {
+        step: 4,
+        badge: "STEP 4 / 6 · 90° OVERBEND TECHNIQUE",
+        title: "การดัดท่อ 90° ด้วยเทคนิค Overbend",
+        desc: "ใช้เข่าหรือแขนค่อยๆ ออกแรงดัดท่ออย่างสม่ำเสมอ โดยดัดให้เลยมุมฉากเล็กน้อย (~95°–100°) เพื่อชดเชยแรงคืนตัว (Spring-back) ของวัสดุ uPVC ให้คืนรูปที่ 90° ได้ฉากสมบูรณ์",
+        spec: "📏 <strong>การตรวจสอบ:</strong> ใช้ระดับน้ำหรือฉากเหล็กทาบตรวจสอบ หากยังไม่ได้ 90° พอดี สามารถดัดแต่งซ้ำเบาๆ ได้ในขณะที่สปริงยังอยู่ด้านใน",
+        camPos: { x: 0.1, y: 0.8, z: 2.0 },
+        target: { x: -0.1, y: 0.3, z: 0 }
+      },
+      {
+        step: 5,
+        badge: "STEP 5 / 6 · TWIST & EXTRACT SPRING",
+        title: "การบิดคลายและดึงสปริงดัดท่อออก",
+        desc: "หมุนบิดท่อทวนทิศทางเกลียวของสปริงเล็กน้อยเพื่อให้เส้นผ่านศูนย์กลางสปริงยุบตัวคลายแรงเสียดทาน จากนั้นดึงเชือกไนลอนนำสปริงออกจากท่ออย่างนุ่มนวล",
+        spec: "🔍 <strong>ตรวจรับงาน:</strong> ส่องไฟดูช่องด้านในท่อ รอยโค้งต้องกลม เรียบเนียน ไร้รอยคอดหรือรอยพับแตกร้าวที่ผิวท่อ",
+        camPos: { x: -0.4, y: 0.8, z: 2.2 },
+        target: { x: -0.3, y: 0.2, z: 0 }
+      },
+      {
+        step: 6,
+        badge: "STEP 6 / 6 · MOUNTING & BULLET CAMERA",
+        title: "การติดตั้งกล่องพักสาย กิ๊บก้ามปู และกล้อง IP",
+        desc: "สวมข้อต่อท่อ uPVC เข้ากล่องกันน้ำ IP66, กดล็อกท่อเข้ากับกิ๊บก้ามปู (Snap Clip), ร้อยสาย Cat6 ด้วย Fish Tape และติดตั้งกล้อง IP Bullet พร้อมซีลกันน้ำ PoE",
+        spec: "✅ <strong>มาตรฐาน วสท. / TIA-569:</strong> กิ๊บก้ามปูตัวแรกต้องห่างจากกล่องไม่เกิน 30 ซม. และตัวถัดไปห่างกันไม่เกิน 1.0 ม. พร้อมซีลซิลิโคนรอบจุดเจาะผนัง",
+        camPos: { x: 0.6, y: 1.4, z: 2.6 },
+        target: { x: 0.1, y: 0.8, z: -0.8 }
+      }
+    ];
+
+    let currentStep = 1;
+
+    function applyStageVisibility(stepNumber) {
+      stageGroups.forEach((g, idx) => {
+        const isCurrent = (idx + 1) === stepNumber;
+        g.visible = isCurrent;
+      });
+
+      // Update UI texts
+      const data = stagesData[stepNumber - 1];
+      document.getElementById('step-badge').innerText = data.badge;
+      document.getElementById('step-title').innerText = data.title;
+      document.getElementById('step-desc').innerText = data.desc;
+      document.getElementById('step-spec').innerHTML = data.spec;
+
+      // Update Stepper Dots
+      document.querySelectorAll('.step-dot').forEach((dot) => {
+        const s = parseInt(dot.getAttribute('data-step'));
+        dot.classList.remove('active', 'completed');
+        if (s === stepNumber) {
+          dot.classList.add('active');
+        } else if (s < stepNumber) {
+          dot.classList.add('completed');
+        }
+      });
+
+      // Update Buttons
+      document.getElementById('btn-prev').disabled = (stepNumber === 1);
+      const nextBtn = document.getElementById('btn-next');
+      if (stepNumber === 6) {
+        nextBtn.innerHTML = "<span>✨ ปฏิบัติการสำเร็จ</span>";
+      } else {
+        nextBtn.innerHTML = "<span>ขั้นตอนถัดไป →</span>";
+      }
+
+      // Smooth Camera Transition via GSAP
+      gsap.to(camera.position, {
+        x: data.camPos.x,
+        y: data.camPos.y,
+        z: data.camPos.z,
+        duration: 1.2,
+        ease: "power2.out"
+      });
+
+      gsap.to(controls.target, {
+        x: data.target.x,
+        y: data.target.y,
+        z: data.target.z,
+        duration: 1.2,
+        ease: "power2.out"
+      });
+    }
+
+    // Step change listeners
+    document.getElementById('btn-next').addEventListener('click', () => {
+      if (currentStep < 6) {
+        currentStep++;
+        applyStageVisibility(currentStep);
+      }
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      if (currentStep > 1) {
+        currentStep--;
+        applyStageVisibility(currentStep);
+      }
+    });
+
+    document.querySelectorAll('.step-dot').forEach((dot) => {
+      dot.addEventListener('click', () => {
+        currentStep = parseInt(dot.getAttribute('data-step'));
+        applyStageVisibility(currentStep);
+      });
+    });
+
+    document.getElementById('btn-reset-cam').addEventListener('click', () => {
+      applyStageVisibility(currentStep);
+    });
+
+    // Standards Modal toggle
+    const modal = document.getElementById('modal-standards');
+    document.getElementById('btn-standards').addEventListener('click', () => {
+      modal.classList.add('show');
+    });
+    document.getElementById('btn-close-modal').addEventListener('click', () => {
+      modal.classList.remove('show');
+    });
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('show');
+    });
+
+    // Initialize with Stage 1
+    applyStageVisibility(1);
+
+    /* =====================================================================
+       ANIMATION LOOP & RENDER
+    ===================================================================== */
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+
+      // Subtle breathing motion for Cutter at Stage 2
+      if (currentStep === 2 && stageGroups[1].cutterAssembly) {
+        stageGroups[1].cutterAssembly.rotation.x = Math.sin(elapsedTime * 2.5) * 0.05;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    /* =====================================================================
+       WINDOW RESIZE HANDLING
+    ===================================================================== */
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  </script>
+</body>
+</html>
