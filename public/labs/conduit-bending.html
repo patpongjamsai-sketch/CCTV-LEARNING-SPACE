@@ -900,6 +900,119 @@
       return kneeGroup;
     }
 
+    let activePipeCutter = null;
+
+    /**
+     * 3D Ratchet PVC Pipe Cutter Module for Three.js
+     */
+    function createPipeCutter3D(THREE, options = {}) {
+      const bodyColor = options.bodyColor || '#eab308';
+      const root = new THREE.Group();
+      root.name = 'PipeCutter3D';
+
+      // 1. PBR Materials
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: bodyColor,
+        roughness: 0.38,
+        metalness: 0.25
+      });
+      const gripMat = new THREE.MeshStandardMaterial({
+        color: 0x18181b,
+        roughness: 0.85,
+        metalness: 0.05
+      });
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        roughness: 0.2,
+        metalness: 0.88
+      });
+      const pinMat = new THREE.MeshStandardMaterial({
+        color: 0xf8fafc,
+        roughness: 0.15,
+        metalness: 0.92
+      });
+
+      // 2. Upper Body & Pipe Cradle Jaw
+      const upperShape = new THREE.Shape();
+      upperShape.moveTo(-4.8, 0.2);
+      upperShape.quadraticCurveTo(-4.8, 2.7, -2.5, 2.8);
+      upperShape.lineTo(0.2, 2.5);
+      upperShape.quadraticCurveTo(1.2, 2.4, 2.2, 1.4);
+      upperShape.quadraticCurveTo(4.5, 1.35, 6.2, 0.7);
+      upperShape.quadraticCurveTo(6.6, 0.45, 6.4, 0.05);
+      upperShape.quadraticCurveTo(4.2, 0.35, 1.8, 0.45);
+      upperShape.lineTo(-0.3, 0.45);
+      upperShape.absarc(-2.6, 0.65, 1.18, 0.15 * Math.PI, 1.32 * Math.PI, false);
+      upperShape.quadraticCurveTo(-4.2, -1.1, -4.65, -0.75);
+      upperShape.quadraticCurveTo(-4.95, -0.4, -4.8, 0.2);
+
+      const plateGeo = new THREE.ExtrudeGeometry(upperShape, {
+        depth: 0.22, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.06, bevelThickness: 0.06
+      });
+      const leftPlate = new THREE.Mesh(plateGeo, bodyMat);
+      leftPlate.position.z = 0.16;
+      leftPlate.castShadow = true;
+      const rightPlate = new THREE.Mesh(plateGeo, bodyMat);
+      rightPlate.position.z = -0.38;
+      rightPlate.castShadow = true;
+      root.add(leftPlate, rightPlate);
+
+      // 3. V-Edge Stainless Blade Group (Pivots at [-0.25, 1.65, 0])
+      const bladePivot = new THREE.Group();
+      bladePivot.position.set(-0.25, 1.65, 0);
+      const bladeShape = new THREE.Shape();
+      bladeShape.moveTo(0.4, 0.45);
+      bladeShape.lineTo(-2.85, 0.65);
+      bladeShape.lineTo(-3.45, -0.35);
+      bladeShape.lineTo(-2.15, -1.25);
+      bladeShape.lineTo(-0.85, -0.45);
+      bladeShape.lineTo(0.4, 0.45);
+      const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, {
+        depth: 0.14, bevelEnabled: true, bevelSegments: 2, bevelSize: 0.03, bevelThickness: 0.03
+      });
+      const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
+      bladeMesh.position.z = -0.07;
+      bladeMesh.castShadow = true;
+      bladePivot.add(bladeMesh);
+      root.add(bladePivot);
+
+      // 4. Lower Squeeze Lever (Pivots at [0.65, 0.55, 0])
+      const lowerHandle = new THREE.Group();
+      lowerHandle.position.set(0.65, 0.55, 0);
+      const lowerShape = new THREE.Shape();
+      lowerShape.moveTo(-0.45, 0.25);
+      lowerShape.quadraticCurveTo(0.2, 0.45, 1.2, -0.15);
+      lowerShape.quadraticCurveTo(3.4, -0.85, 5.4, -1.35);
+      lowerShape.quadraticCurveTo(5.75, -1.5, 5.55, -1.9);
+      lowerShape.quadraticCurveTo(5.2, -2.15, 4.5, -1.85);
+      lowerShape.quadraticCurveTo(2.3, -1.15, -0.45, 0.25);
+      const lowerGeo = new THREE.ExtrudeGeometry(lowerShape, {
+        depth: 0.48, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.06, bevelThickness: 0.06
+      });
+      const lowerMesh = new THREE.Mesh(lowerGeo, bodyMat);
+      lowerMesh.position.z = -0.24;
+      lowerMesh.castShadow = true;
+      lowerHandle.add(lowerMesh);
+      root.add(lowerHandle);
+
+      // 5. Pivot Bolts
+      const boltGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.98, 6);
+      boltGeo.rotateX(Math.PI / 2);
+      const mainBolt = new THREE.Mesh(boltGeo, pinMat);
+      mainBolt.position.set(-0.25, 1.65, 0);
+      root.add(mainBolt);
+
+      // Helper API: สั่งขยับใบมีดและด้ามบีบ (progress: 0.0 = อ้าสุด, 1.0 = ตัดสุด)
+      root.setCutProgress = function(progress) {
+        const t = Math.max(0, Math.min(1, progress));
+        bladePivot.rotation.z = -0.52 + t * 0.90;
+        lowerHandle.rotation.z = -0.18 + t * 0.25 + Math.sin(t * Math.PI * 5) * 0.14;
+      };
+
+      root.setCutProgress(0.25);
+      return root;
+    }
+
     /* =====================================================================
        GROUPS HIERARCHY FOR DUAL MODES
     ===================================================================== */
@@ -963,6 +1076,25 @@
       cord.rotation.z = Math.PI / 2;
       cord.position.set(0.75, 0.2, 0);
       group.add(cord);
+
+      // Cut mark ring at x = 0.52
+      group.add(createMarkerBand(0.52, 0.2, 0, markRed));
+
+      // 3D Ratchet PVC Pipe Cutter Model (Centered on pipe axis with cutterPivot)
+      const cutterPivot = new THREE.Group();
+      cutterPivot.position.set(0.52, 0.2, 0);
+
+      const cutter = createPipeCutter3D(THREE, { bodyColor: '#f59e0b' });
+      const S = 0.0322;
+      cutter.scale.set(S, S, S);
+      cutter.rotation.y = -Math.PI / 2;
+      cutter.position.set(0, -0.65 * S, 2.6 * S);
+      cutterPivot.add(cutter);
+
+      // Ergonomic presentation tilt around pipe axis towards camera
+      cutterPivot.rotation.x = -0.35;
+      group.add(cutterPivot);
+      activePipeCutter = cutter;
     })();
 
     // Stage 3: Knee Stroke 1 (25cm mark ~25-30°) -> SEAMLESS CONTINUOUS TUBE
@@ -1242,12 +1374,12 @@
       {
         step: 2,
         badge: "โหมด 1 (90°) · STEP 2 / 6",
-        formula: "✂️ ตัดได้ฉาก + สอดสปริงคลุมแนว 25–35 cm",
-        title: "การตัดท่อ uPVC & สอดสปริงดัดท่อ",
-        desc: "ใช้กรรไกรตัดท่อ Ratchet ให้ได้ฉาก 90° ขอบคมเรียบ จากนั้นสอดสปริงดัดท่อเหล็กชุบซิงค์ 20 มม. พร้อมผูกเชือกไนลอน โดยจัดตำแหน่งให้แกนกลางสปริงคลุมแนว 25–35 ซม. พอดี",
-        spec: "⚠️ <strong>ข้อควรระวัง:</strong> ต้องผูกเชือกดึงไว้กับห่วงปลายสปริงและจับปลายเชือกไว้นอกท่อเสมอ เพื่อให้สามารถดึงสปริงกลับออกมาได้ง่าย",
-        camPos: { x: 0.4, y: 0.9, z: 2.1 },
-        target: { x: 0, y: 0.2, z: 0 }
+        formula: "✂️ Ratchet Cutter V-Edge ตัดฉาก 90° + สอดสปริงคลุมแนว 25–35 cm",
+        title: "การตัดท่อ uPVC ด้วยกรรไกรตัดท่อ Ratchet & สอดสปริงดัดท่อ",
+        desc: "ใช้กรรไกรตัดท่อระบบเฟืองผ่อนแรง (Ratchet PVC Cutter) ใบมีดสเตนเลส V-Edge สับตัดเนื้อท่อเป็นจังหวะได้ฉาก 90° คมกริบ ไร้เศษขุยขี้เลื่อย จากนั้นสอดสปริงดัดท่อเหล็กชุบซิงค์ 20 มม. ให้กึ่งกลางคลุมแนว 25–35 ซม.",
+        spec: "💡 <strong>กลไกเฟือง Ratchet:</strong> ด้ามบีบผ่อนแรงพร้อมฟันเฟืองช่วยให้ช่างตัดท่อ uPVC ได้ตรงฉากง่ายดายโดยท่อไม่บี้แบน และสอดสปริงได้พอดีโดยผูกเชือกดึงปลายเสมอ",
+        camPos: { x: 0.45, y: 0.85, z: 1.9 },
+        target: { x: 0.35, y: 0.2, z: 0 }
       },
       {
         step: 3,
@@ -1642,6 +1774,15 @@
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
+
+      // Ratchet Pipe Cutter Animation in Step 2 of Mode 90
+      if (currentMode === '90' && currentStep === 2 && activePipeCutter) {
+        const elapsedTime = clock.getElapsedTime();
+        // 3.6s periodic cycle: blade gradually bites down (0.0 -> 1.0) with ratchet handle pumping
+        const cycle = (elapsedTime % 3.6) / 3.6;
+        activePipeCutter.setCutProgress(cycle);
+      }
+
       renderer.render(scene, camera);
     }
     animate();
