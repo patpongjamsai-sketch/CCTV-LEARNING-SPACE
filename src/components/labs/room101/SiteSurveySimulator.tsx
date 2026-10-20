@@ -20,11 +20,56 @@ import {
   Activity,
   AlertCircle,
   Zap,
+  Edit3,
+  Send,
+  Award,
+  Sparkles,
+  Sliders,
 } from 'lucide-react';
+import { UbonCampus2DMap } from './UbonCampus2DMap';
 
 // ==========================================
 // TYPES & DATA STRUCTURES
 // ==========================================
+
+export interface StudentSurveyInput {
+  environmentType: string;
+  lightingCond: string;
+  recommendedCamera: string;
+  lensSpec: string;
+  conduitType: string;
+  pdpaAction: string;
+  pdpaAgreed: boolean;
+}
+
+export interface StudentSurveyData extends StudentSurveyInput {
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+  feedback: string[];
+  fieldScores: {
+    environment: number;
+    lighting: number;
+    camera: number;
+    lens: number;
+    conduit: number;
+    pdpa: number;
+  };
+  submittedAt: string;
+}
+
+export interface SurveyEvaluationResult {
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+  feedback: string[];
+  fieldScores: {
+    environment: number;
+    lighting: number;
+    camera: number;
+    lens: number;
+    conduit: number;
+    pdpa: number;
+  };
+}
 
 export interface StrategicZone {
   id: string;
@@ -374,6 +419,440 @@ export const FAULT_SCENARIOS = [
   },
 ];
 
+// Suggestion options for students to quickly study and fill in findings
+export const ZONE_SUGGESTIONS: Record<string, {
+  environment: string[];
+  lighting: string[];
+  camera: string[];
+  lens: string[];
+  conduit: string[];
+  pdpa: string[];
+}> = {
+  gate: {
+    environment: [
+      'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ',
+      'กลางแจ้งสมบูรณ์ (Full Outdoor) แดดจัด',
+      'ในร่ม (Indoor) ปราศจากฝุ่น',
+    ],
+    lighting: [
+      'ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน',
+      'แสงสว่างสม่ำเสมอจากหลอด LED',
+      'แสงสลัวตลอดทั้งวัน',
+    ],
+    camera: [
+      'Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m)',
+      'Speed Dome PTZ 25x Zoom IP67',
+      'Dome IP Camera 2MP ทรงโดมพลาสติก',
+    ],
+    lens: [
+      'เลนส์ 4.0mm หรือ 6.0mm (มุมมองแคบเพื่อจับป้ายทะเบียนและใบหน้า)',
+      'เลนส์ 2.8mm (มุมมองกว้าง 103°)',
+      'เลนส์ฟิชอาย 360°',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว 20mm + กล่องพักสายกันน้ำ IP66 พร้อม Cable Gland',
+      'ท่อเหล็ก EMT แข็งแรงทนกระแทก',
+      'ราง Wireway โลหะ',
+    ],
+    pdpa: [
+      'ติดตั้งป้ายเตือน CCTV in Operation และห้ามส่องข้ามรั้วไปยังบ้านพักชุมชน',
+      'ไม่จำเป็นต้องติดป้ายเตือน',
+      'เปิดสตรีมภาพสาธารณะให้ทุกคนดูได้',
+    ],
+  },
+  flagpole: {
+    environment: [
+      'กลางแจ้งสมบูรณ์ (Full Outdoor) / แดด ฝน ลมแรง',
+      'กึ่งกลางแจ้ง (Semi-Outdoor) มีหลังคาคลุม',
+      'ในร่ม (Indoor) ควบคุมอุณหภูมิ',
+    ],
+    lighting: [
+      'แดดจัดช่วงเช้าและเที่ยง / มืดสนิทช่วงกลางคืน',
+      'แสงสว่างสม่ำเสมอ',
+      'แสงวาบจากการเชื่อมอาร์ก',
+    ],
+    camera: [
+      'Speed Dome PTZ หรือ Bullet มุมกว้าง กันน้ำมาตรฐาน IP67',
+      'Dome IP Camera ภายในอาคาร',
+      'กล้องเว็บแคม USB',
+    ],
+    lens: [
+      'เลนส์ 2.8mm (มุมกว้าง 103°) หรือ PTZ ซูมเลนส์ 25x Optical Zoom',
+      'เลนส์ 6.0mm มุมแคบ',
+      'เลนส์มาโคร',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว/PE กันแดด UV + กล่องพักสาย IP67 พร้อมสายดินกราวด์ & SPD',
+      'เดินสายเปลือยรัดกับกิ่งไม้',
+      'รางกระดูกงูพลาสติก',
+    ],
+    pdpa: [
+      'ครอบคลุมพื้นที่สาธารณะของวิทยาลัย กำหนดสิทธิ์ดูภาพเฉพาะ รปภ. และผู้บริหาร',
+      'ติดกล้องส่องเข้าไปในห้องเรียนข้างเคียง',
+    ],
+  },
+  workshop: {
+    environment: [
+      'ในอาคารโรงงานสูง มีฝุ่นละออง ประกายไฟ ละอองน้ำมัน และการสั่นสะเทือน',
+      'ห้องปลอดเชื้อควบคุมฝุ่น',
+      'กลางแจ้งสมบูรณ์ มีน้ำท่วมขัง',
+    ],
+    lighting: [
+      'แสงไฟโคม High-bay และแสงวาบจากการเชื่อมอาร์กไฟฟ้า',
+      'แสงธรรมชาติรำไร',
+      'มืดสนิทตลอดเวลา',
+    ],
+    camera: [
+      'Vandal-Proof Bullet หรือ Dome โครงสร้างโลหะ มาตรฐาน IK10 & IP67',
+      'กล้องโดมพลาสติกขนาดเล็ก',
+      'กล้องโซล่าเซลล์ไร้สาย',
+    ],
+    lens: [
+      'เลนส์ 4.0mm หรือ 2.8mm มุมกว้างครอบคลุมแนวยาวแถวเครื่องจักร',
+      'เลนส์เทเล 12.0mm',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว หรือท่อเหล็ก EMT ในจุดเสี่ยงต่อการกระแทกเชิงกล',
+      'ตีกิ๊บสายเปลือยกับโครงสร้างเหล็ก',
+    ],
+    pdpa: [
+      'ใช้เพื่อกำกับความปลอดภัย หลีกเลี่ยงมุมกล้องส่องจุดแต่งตัวหรือล็อกเกอร์ส่วนบุคคล',
+      'ติดกล้องส่องโต๊ะพักผ่อนส่วนบุคคลแบบจับผิด',
+    ],
+  },
+  academic: {
+    environment: [
+      'ในร่ม (Indoor) โถงทางเดิน ฝ้าเพดาน T-Bar หรือคอนกรีต',
+      'กลางแจ้งแดดจัด',
+      'พื้นที่เปียกชื้นตลอดเวลา',
+    ],
+    lighting: [
+      'แสงสว่างสม่ำเสมอจากหลอด LED ตลอดช่วงเวลาทำการ',
+      'ย้อนแสงจากไฟสปอตไลต์',
+    ],
+    camera: [
+      'Dome IP Camera 4MP เลนส์กว้าง ดีไซน์เรียบร้อยกลมกลืนกับสถาปัตยกรรม',
+      'กล้องทรงกระบอกเหล็กขนาดใหญ่',
+    ],
+    lens: [
+      'เลนส์ 2.8mm (มุมมองกว้าง 100°+ เพื่อครอบคลุมทั้งแนวทางเดิน)',
+      'เลนส์ 8.0mm มุมแคบ',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้าเพดาน หรือรางเก็บสายพลาสติก',
+      'ท่อเหล็กหนาพิเศษฝังพื้นคอนกรีต',
+    ],
+    pdpa: [
+      'ตั้งค่า Privacy Masking (หน้ากากดำ) ปิดบังประตูห้องน้ำและโต๊ะลงทะเบียนเอกสาร',
+      'ถ่ายทอดสดโถงทางเดินและประตูห้องน้ำลงอินเทอร์เน็ต',
+    ],
+  },
+  server: {
+    environment: [
+      'ห้องควบคุมระบบปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
+      'กึ่งกลางแจ้ง มีฝุ่นควัน',
+    ],
+    lighting: [
+      'แสงสว่างหลอดไฟห้องคอมพิวเตอร์ตลอดเวลา',
+      'มืดสนิท 24 ชั่วโมง',
+    ],
+    camera: [
+      'Dome Camera 2MP ตรวจจับการเข้า-ออกของเจ้าหน้าที่ในห้องเซิร์ฟเวอร์',
+      'Speed Dome PTZ ขนาดใหญ่',
+    ],
+    lens: [
+      'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack และประตูทางเข้าหลัก',
+      'เลนส์ซูมไกล 50 เมตร',
+    ],
+    conduit: [
+      'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้วอย่างเป็นระเบียบ',
+      'ปล่อยสายกองบนพื้นห้องเซิร์ฟเวอร์',
+    ],
+    pdpa: [
+      'พื้นที่ความลับสูงสุด (Zone Data Processor) บันทึก Log การเข้าถึงและสืบค้นตามกฎหมาย',
+      'อนุญาตให้บุคคลภายนอกเข้าดู NVR ได้อิสระ',
+    ],
+  },
+};
+
+// Evaluation Engine
+export function evaluateStudentSurvey(zoneId: string, input: StudentSurveyInput): SurveyEvaluationResult {
+  let envScore = 0;
+  let lightScore = 0;
+  let camScore = 0;
+  let lensScore = 0;
+  let conduitScore = 0;
+  let pdpaScore = 0;
+  const feedback: string[] = [];
+
+  const envLower = (input.environmentType || '').toLowerCase();
+  const lightLower = (input.lightingCond || '').toLowerCase();
+  const camLower = (input.recommendedCamera || '').toLowerCase();
+  const lensLower = (input.lensSpec || '').toLowerCase();
+  const condLower = (input.conduitType || '').toLowerCase();
+  const pdpaLower = (input.pdpaAction || '').toLowerCase();
+
+  switch (zoneId) {
+    case 'gate':
+      // Environment (20)
+      if (envLower.includes('กึ่งกลางแจ้ง') || envLower.includes('semi') || envLower.includes('ฝุ่น') || envLower.includes('ยานพาหนะ') || envLower.includes('ถนน')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+        feedback.push('สภาพพื้นที่ควรระบุปัจจัยเรื่องฝุ่นควันยานพาหนะหรือพื้นที่กึ่งกลางแจ้ง (Semi-Outdoor)');
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('ย้อนแสง') || lightLower.includes('wdr') || lightLower.includes('ไฟหน้า') || lightLower.includes('แดด') || lightLower.includes('กลางคืน')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+        feedback.push('ควรคำนึงถึงปัญหาย้อนแสงเวลากลางวันและแสงไฟหน้ารถยนต์ส่องตรง');
+      }
+
+      // Camera (25)
+      if (camLower.includes('bullet') || camLower.includes('กระบอก') || camLower.includes('wdr') || camLower.includes('4mp') || camLower.includes('ip66') || camLower.includes('ip67')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+        feedback.push('ซุ้มประตูควรใช้กล้องทรง Bullet IP ที่มีฟังก์ชัน True WDR เพื่อตัดแสงย้อน');
+      }
+
+      // Lens (15)
+      if (lensLower.includes('4') || lensLower.includes('6') || lensLower.includes('แคบ') || lensLower.includes('ทะเบียน') || lensLower.includes('ใบหน้า') || lensLower.includes('identify')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+        feedback.push('ซุ้มประตูต้องการภาพระดับ Identify จับป้ายทะเบียน/ใบหน้า ควรใช้เลนส์ 4.0-6.0mm');
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('ip66') || condLower.includes('กันน้ำ') || condLower.includes('gland') || condLower.includes('20')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+        feedback.push('ภายนอกอาคารควรใช้ท่อ uPVC หรือกล่องพักสายกันน้ำ IP66 พร้อม Cable Gland');
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('ป้าย') || pdpaLower.includes('เตือน') || pdpaLower.includes('รั้ว') || pdpaLower.includes('ชุมชน') || pdpaLower.includes('cctv') || pdpaLower.includes('operation')) {
+        pdpaScore += 5;
+      } else if (!input.pdpaAgreed) {
+        feedback.push('ต้องทำเครื่องหมายยืนยันและระบุการติดป้ายเตือน CCTV in Operation ตาม PDPA');
+      }
+      break;
+
+    case 'flagpole':
+      // Environment (20)
+      if (envLower.includes('กลางแจ้ง') || envLower.includes('outdoor') || envLower.includes('แดด') || envLower.includes('ฝน') || envLower.includes('ลาน') || envLower.includes('สนาม')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('แดด') || lightLower.includes('มืด') || lightLower.includes('กลางคืน') || lightLower.includes('สว่าง') || lightLower.includes('เที่ยง')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('ptz') || camLower.includes('speed dome') || camLower.includes('ip67') || camLower.includes('bullet') || camLower.includes('มุมกว้าง') || camLower.includes('หมุน')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('103') || lensLower.includes('zoom') || lensLower.includes('ซูม') || lensLower.includes('25x')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('pe') || condLower.includes('ip67') || condLower.includes('กราวด์') || condLower.includes('spd') || condLower.includes('surge') || condLower.includes('ท่อ')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('สาธารณะ') || pdpaLower.includes('รปภ') || pdpaLower.includes('ผู้บริหาร') || pdpaLower.includes('สิทธิ์') || pdpaLower.includes('ปลอดภัย') || pdpaLower.includes('กิจกรรม')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'workshop':
+      // Environment (20)
+      if (envLower.includes('โรงช่าง') || envLower.includes('ฝึกงาน') || envLower.includes('ฝุ่น') || envLower.includes('ประกายไฟ') || envLower.includes('น้ำมัน') || envLower.includes('เครื่องจักร') || envLower.includes('สั่นสะเทือน') || envLower.includes('อาคาร')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('high-bay') || lightLower.includes('อาร์ก') || lightLower.includes('เชื่อม') || lightLower.includes('วาบ') || lightLower.includes('โคม') || lightLower.includes('ไฟ')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('vandal') || camLower.includes('ik10') || camLower.includes('โลหะ') || camLower.includes('bullet') || camLower.includes('dome') || camLower.includes('ip67')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('4') || lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('แถว') || lensLower.includes('เครื่องจักร')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('emt') || condLower.includes('เหล็ก') || condLower.includes('upvc') || condLower.includes('กระแทก') || condLower.includes('ท่อ')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('ความปลอดภัย') || pdpaLower.includes('อุบัติเหตุ') || pdpaLower.includes('แต่งตัว') || pdpaLower.includes('ล็อกเกอร์') || pdpaLower.includes('ส่วนบุคคล')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'academic':
+      // Environment (20)
+      if (envLower.includes('ในร่ม') || envLower.includes('indoor') || envLower.includes('ทางเดิน') || envLower.includes('ฝ้า') || envLower.includes('t-bar') || envLower.includes('ห้องสมุด') || envLower.includes('อาคารเรียน')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('led') || lightLower.includes('สม่ำเสมอ') || lightLower.includes('หลอดไฟ') || lightLower.includes('สว่าง')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('dome') || camLower.includes('โดม') || camLower.includes('4mp') || camLower.includes('ip') || camLower.includes('เรียบร้อย') || camLower.includes('กลมกลืน')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('100') || lensLower.includes('103') || lensLower.includes('ทางเดิน')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('ฝ้า') || condLower.includes('ราง') || condLower.includes('ซ่อน') || condLower.includes('พลาสติก')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('mask') || pdpaLower.includes('หน้ากาก') || pdpaLower.includes('ห้องน้ำ') || pdpaLower.includes('เอกสาร') || pdpaLower.includes('ส่วนบุคคล') || pdpaLower.includes('privacy')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'server':
+      // Environment (20)
+      if (envLower.includes('ปรับอากาศ') || envLower.includes('แอร์') || envLower.includes('คีย์การ์ด') || envLower.includes('ควบคุม') || envLower.includes('24') || envLower.includes('server') || envLower.includes('ตู้')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('หลอดไฟ') || lightLower.includes('คอมพิวเตอร์') || lightLower.includes('สว่าง') || lightLower.includes('led')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('dome') || camLower.includes('โดม') || camLower.includes('2mp') || camLower.includes('rack') || camLower.includes('ประตู') || camLower.includes('เข้า-ออก')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('rack') || lensLower.includes('ประตู')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('wireway') || condLower.includes('วายเวย์') || condLower.includes('rack') || condLower.includes('รางโลหะ') || condLower.includes('ราง')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('log') || pdpaLower.includes('ความลับ') || pdpaLower.includes('processor') || pdpaLower.includes('สืบค้น') || pdpaLower.includes('บันทึก')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    default:
+      envScore = 15;
+      lightScore = 10;
+      camScore = 20;
+      lensScore = 10;
+      conduitScore = 10;
+      pdpaScore = 8;
+  }
+
+  const totalScore = envScore + lightScore + camScore + lensScore + conduitScore + pdpaScore;
+  let grade: 'A' | 'B' | 'C' | 'D' = 'D';
+  if (totalScore >= 80) grade = 'A';
+  else if (totalScore >= 60) grade = 'B';
+  else if (totalScore >= 40) grade = 'C';
+
+  if (feedback.length === 0) {
+    if (totalScore >= 80) {
+      feedback.push('ผลการสำรวจและสเปกทางวิศวกรรมถูกต้องสมบูรณ์แบบตามมาตรฐานงานช่าง CCTV วท.อุบลราชธานี');
+    } else {
+      feedback.push('บันทึกข้อมูลสำเร็จ ตรวจสอบความครบถ้วนของสเปกเพื่อเพิ่มคะแนนวิชาชีพ');
+    }
+  }
+
+  return {
+    score: totalScore,
+    grade,
+    feedback,
+    fieldScores: {
+      environment: envScore,
+      lighting: lightScore,
+      camera: camScore,
+      lens: lensScore,
+      conduit: conduitScore,
+      pdpa: pdpaScore,
+    },
+  };
+}
+
 export function SiteSurveySimulator() {
   const [activeTab, setActiveTab] = useState<'survey' | 'workflow' | 'components' | 'commissioning'>('survey');
   const [selectedZoneId, setSelectedZoneId] = useState<string>('gate');
@@ -384,6 +863,28 @@ export function SiteSurveySimulator() {
     workshop: false,
     academic: false,
     server: false,
+  });
+
+  // Student submitted survey answers and scores
+  const [submittedSurveys, setSubmittedSurveys] = useState<Record<string, StudentSurveyData>>({});
+
+  // Active form drafts per zone
+  const [surveyDrafts, setSurveyDrafts] = useState<Record<string, {
+    environmentType: string;
+    lightingCond: string;
+    recommendedCamera: string;
+    lensSpec: string;
+    conduitType: string;
+    pdpaAction: string;
+  }>>({
+    gate: {
+      environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ',
+      lightingCond: '',
+      recommendedCamera: '',
+      lensSpec: '',
+      conduitType: '',
+      pdpaAction: '',
+    },
   });
 
   // Workflow Sequencer State
@@ -418,12 +919,94 @@ export function SiteSurveySimulator() {
   const currentZone: StrategicZone = UBON_ZONES.find((z) => z.id === selectedZoneId) ?? UBON_ZONES[0]!;
   const currentComponent: ComponentDetail = CCTV_5_COMPONENTS.find((c) => c.id === selectedComponentId) ?? CCTV_5_COMPONENTS[0]!;
 
-  // Mark zone surveyed
-  const handleMarkSurveyed = (zoneId: string) => {
+  // Current draft & submission
+  const currentDraft = surveyDrafts[selectedZoneId] || {
+    environmentType: submittedSurveys[selectedZoneId]?.environmentType || '',
+    lightingCond: submittedSurveys[selectedZoneId]?.lightingCond || '',
+    recommendedCamera: submittedSurveys[selectedZoneId]?.recommendedCamera || '',
+    lensSpec: submittedSurveys[selectedZoneId]?.lensSpec || '',
+    conduitType: submittedSurveys[selectedZoneId]?.conduitType || '',
+    pdpaAction: submittedSurveys[selectedZoneId]?.pdpaAction || '',
+  };
+
+  const isCurrentZoneSubmitted = !!submittedSurveys[selectedZoneId];
+  const currentSubmission = submittedSurveys[selectedZoneId];
+
+  // Update a field in the active zone draft
+  const handleUpdateDraft = (field: string, value: string) => {
+    setSurveyDrafts((prev) => ({
+      ...prev,
+      [selectedZoneId]: {
+        ...(prev[selectedZoneId] || {
+          environmentType: '',
+          lightingCond: '',
+          recommendedCamera: '',
+          lensSpec: '',
+          conduitType: '',
+          pdpaAction: '',
+        }),
+        [field]: value,
+      },
+    }));
+  };
+
+  // Quick fill from suggestions
+  const handleApplySuggestion = (field: string, value: string) => {
+    handleUpdateDraft(field, value);
+  };
+
+  // Fill standard sample specifications for self-study
+  const handleFillStandardSpec = (zone: StrategicZone) => {
+    setSurveyDrafts((prev) => ({
+      ...prev,
+      [zone.id]: {
+        environmentType: zone.environmentType,
+        lightingCond: zone.lightingCond,
+        recommendedCamera: zone.recommendedCamera,
+        lensSpec: zone.lensSpec,
+        conduitType: zone.conduitType,
+        pdpaAction: zone.pdpaAction,
+      },
+    }));
+    setPdpaAgreed((prev) => ({ ...prev, [zone.id]: true }));
+  };
+
+  // Submit survey for evaluation
+  const handleSubmitSurvey = (zoneId: string) => {
+    const draft = surveyDrafts[zoneId] || {
+      environmentType: '',
+      lightingCond: '',
+      recommendedCamera: '',
+      lensSpec: '',
+      conduitType: '',
+      pdpaAction: '',
+    };
+    const isPdpaAgreed = pdpaAgreed[zoneId] || false;
+
+    const evaluation = evaluateStudentSurvey(zoneId, {
+      ...draft,
+      pdpaAgreed: isPdpaAgreed,
+    });
+
+    const surveyData: StudentSurveyData = {
+      environmentType: draft.environmentType,
+      lightingCond: draft.lightingCond,
+      recommendedCamera: draft.recommendedCamera,
+      lensSpec: draft.lensSpec,
+      conduitType: draft.conduitType,
+      pdpaAction: draft.pdpaAction,
+      pdpaAgreed: isPdpaAgreed,
+      score: evaluation.score,
+      grade: evaluation.grade,
+      feedback: evaluation.feedback,
+      fieldScores: evaluation.fieldScores,
+      submittedAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setSubmittedSurveys((prev) => ({ ...prev, [zoneId]: surveyData }));
     if (!surveyedZones.includes(zoneId)) {
-      setSurveyedZones([...surveyedZones, zoneId]);
+      setSurveyedZones((prev) => [...prev, zoneId]);
     }
-    setPdpaAgreed((prev) => ({ ...prev, [zoneId]: true }));
   };
 
   // Reorder steps
@@ -608,290 +1191,342 @@ export function SiteSurveySimulator() {
            ----------------------------------------------------------------- */}
         {activeTab === 'survey' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left 7 Cols: Interactive SVG Map Layout */}
-            <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-5 flex flex-col justify-between shadow-xl">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    แผนผังจำลองวิทยาเขต: วิทยาลัยเทคนิคอุบลราชธานี
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-mono">
-                  คลิกที่จุดเพื่อตรวจสอบสภาพแวดล้อม
-                </span>
-              </div>
-
-              {/* Interactive Campus SVG Viewport */}
-              <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-xl overflow-hidden border border-slate-800">
-                <svg
-                  viewBox="0 0 760 500"
-                  className="w-full h-full select-none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {/* Grid Lines */}
-                  <defs>
-                    <pattern id="campusGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" strokeWidth="0.8" />
-                    </pattern>
-                    <radialGradient id="serverGlow" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
-                    </radialGradient>
-                  </defs>
-                  <rect width="760" height="500" fill="url(#campusGrid)" />
-
-                  {/* Campus Boundary & Roads */}
-                  <path
-                    d="M 60 440 L 700 440 L 700 80 L 60 80 Z"
-                    fill="none"
-                    stroke="#334155"
-                    strokeWidth="2"
-                    strokeDasharray="6 4"
-                  />
-                  {/* Main Road through Gate */}
-                  <path
-                    d="M 180 480 L 180 340 L 520 340 L 520 180"
-                    fill="none"
-                    stroke="#1e293b"
-                    strokeWidth="32"
-                  />
-                  <path
-                    d="M 180 480 L 180 340 L 520 340 L 520 180"
-                    fill="none"
-                    stroke="#475569"
-                    strokeWidth="2"
-                    strokeDasharray="10 8"
-                  />
-
-                  {/* UTP Cabling Lines from Server Room (Zone 5) to each Zone */}
-                  {UBON_ZONES.map((z) => {
-                    if (z.id === 'server') return null;
-                    const serverPos = UBON_ZONES.find((x) => x.id === 'server')!.svgPos;
-                    const isSelected = selectedZoneId === z.id;
-                    return (
-                      <g key={`cable-${z.id}`}>
-                        <line
-                          x1={serverPos.x}
-                          y1={serverPos.y}
-                          x2={z.svgPos.x}
-                          y2={z.svgPos.y}
-                          stroke={isSelected ? '#38bdf8' : '#334155'}
-                          strokeWidth={isSelected ? '2.5' : '1.5'}
-                          strokeDasharray={isSelected ? 'none' : '4 3'}
-                        />
-                        {/* Midpoint distance label */}
-                        <rect
-                          x={(serverPos.x + z.svgPos.x) / 2 - 20}
-                          y={(serverPos.y + z.svgPos.y) / 2 - 10}
-                          width="40"
-                          height="18"
-                          rx="4"
-                          fill="#0f172a"
-                          stroke={isSelected ? '#38bdf8' : '#334155'}
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={(serverPos.x + z.svgPos.x) / 2}
-                          y={(serverPos.y + z.svgPos.y) / 2 + 3}
-                          fill={z.distanceMeters > 90 ? '#f59e0b' : '#94a3b8'}
-                          fontSize="10"
-                          fontFamily="monospace"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                        >
-                          {z.distanceMeters}m
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Buildings Visual Layout */}
-                  {/* Gate Area */}
-                  <rect x="130" y="360" width="100" height="60" rx="8" fill="#1e293b" stroke="#334155" strokeWidth="1.5" />
-                  <text x="180" y="405" fill="#94a3b8" fontSize="10" textAnchor="middle" fontWeight="bold">ซุ้มประตู วท.อบ.</text>
-
-                  {/* Flagpole & Plaza */}
-                  <circle cx="380" cy="340" r="42" fill="#0f2b38" stroke="#0284c7" strokeWidth="1.5" />
-                  <text x="380" y="344" fill="#38bdf8" fontSize="10" textAnchor="middle" fontWeight="bold">เสาธง/ลานรวม</text>
-
-                  {/* Workshop building */}
-                  <rect x="510" y="340" width="130" height="80" rx="6" fill="#292524" stroke="#78350f" strokeWidth="1.5" />
-                  <text x="575" y="385" fill="#f59e0b" fontSize="10" textAnchor="middle" fontWeight="bold">โรงช่างอุตสาหกรรม</text>
-
-                  {/* Academic / Library */}
-                  <rect x="280" y="140" width="130" height="80" rx="6" fill="#1e1b4b" stroke="#4338ca" strokeWidth="1.5" />
-                  <text x="345" y="185" fill="#a5b4fc" fontSize="10" textAnchor="middle" fontWeight="bold">อาคารเรียน/วิทยบริการ</text>
-
-                  {/* Server Room */}
-                  <circle cx="510" cy="150" r="40" fill="url(#serverGlow)" />
-                  <rect x="460" y="115" width="100" height="70" rx="8" fill="#082f49" stroke="#0284c7" strokeWidth="2" />
-                  <text x="510" y="148" fill="#38bdf8" fontSize="10" textAnchor="middle" fontWeight="bold">Server Room</text>
-                  <text x="510" y="163" fill="#7dd3fc" fontSize="8" textAnchor="middle">NVR 32CH / UPS</text>
-
-                  {/* Interactive Zone Markers */}
-                  {UBON_ZONES.map((zone) => {
-                    const isSelected = selectedZoneId === zone.id;
-                    const isSurveyed = surveyedZones.includes(zone.id);
-
-                    return (
-                      <g
-                        key={zone.id}
-                        transform={`translate(${zone.svgPos.x}, ${zone.svgPos.y})`}
-                        onClick={() => setSelectedZoneId(zone.id)}
-                        className="cursor-pointer transition-transform hover:scale-110"
-                      >
-                        {/* Outer Glow on Selected */}
-                        {isSelected && (
-                          <circle r="24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 2">
-                            <animateTransform
-                              attributeName="transform"
-                              type="rotate"
-                              from="0"
-                              to="360"
-                              dur="6s"
-                              repeatCount="indefinite"
-                            />
-                          </circle>
-                        )}
-                        {/* Pulse Ring */}
-                        <circle
-                          r="18"
-                          fill={isSurveyed ? '#059669' : '#0284c7'}
-                          fillOpacity={isSelected ? '0.9' : '0.7'}
-                          stroke="#ffffff"
-                          strokeWidth="2"
-                        />
-                        {/* Icon/Number */}
-                        <text
-                          y="4"
-                          fill="#ffffff"
-                          fontSize="11"
-                          fontFamily="sans-serif"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                        >
-                          {zone.nameTh[0]}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-
-                {/* Legend overlay */}
-                <div className="absolute bottom-2 left-2 right-2 bg-slate-900/90 backdrop-blur-sm border border-slate-800 rounded-lg p-2 flex items-center justify-between text-[11px] text-slate-300">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> สำรวจแล้ว
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" /> ยังไม่สำรวจ
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" /> สาย UTP &gt; 90m (ระวัง)
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setShowSurveyReport(true)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-white font-medium transition cursor-pointer text-[10px]"
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>ออกใบบันทึกผลการสำรวจ</span>
-                  </button>
-                </div>
-              </div>
+            {/* Left 7 Cols: 2D Architectural / Satellite Map of Ubon Ratchathani Technical College */}
+            <div className="lg:col-span-7 flex flex-col gap-3">
+              <UbonCampus2DMap
+                selectedZoneId={selectedZoneId}
+                onSelectZone={(zoneId) => setSelectedZoneId(zoneId)}
+                surveyedZones={surveyedZones}
+                submittedSurveys={submittedSurveys}
+              />
 
               {/* Zone Selector Buttons Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {UBON_ZONES.map((zone) => {
                   const isSelected = selectedZoneId === zone.id;
-                  const isSurveyed = surveyedZones.includes(zone.id);
+                  const isSubmitted = !!submittedSurveys[zone.id];
+                  const submission = submittedSurveys[zone.id];
 
                   return (
                     <button
                       key={zone.id}
+                      type="button"
                       onClick={() => setSelectedZoneId(zone.id)}
-                      className={`text-left p-2 rounded-xl border transition-all cursor-pointer ${
+                      className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-sky-950/80 border-sky-500 text-white shadow-md'
-                          : 'bg-slate-950/50 border-slate-800 text-slate-300 hover:border-slate-700'
+                          ? 'bg-sky-950/90 border-sky-400 text-white shadow-lg ring-1 ring-sky-500/50'
+                          : isSubmitted
+                          ? 'bg-slate-900/80 border-emerald-500/40 text-slate-200 hover:border-emerald-400'
+                          : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-white'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-mono text-sky-400 font-bold">{zone.distanceMeters}m</span>
-                        {isSurveyed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-[10px] font-mono text-sky-400 font-bold">
+                          #{zone.id === 'gate' ? '1' : zone.id === 'flagpole' ? '2' : zone.id === 'workshop' ? '3' : zone.id === 'academic' ? '4' : '5'} • {zone.distanceMeters}m
+                        </span>
+                        {isSubmitted && submission ? (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            {submission.score}%
+                          </span>
                         ) : (
                           <div className="w-2 h-2 rounded-full bg-slate-600" />
                         )}
                       </div>
-                      <p className="text-xs font-semibold truncate">{zone.nameTh.replace(/^\d+\.\s*/, '')}</p>
+                      <p className="text-xs font-semibold truncate">
+                        {zone.nameTh.replace(/^\d+\.\s*/, '')}
+                      </p>
                     </button>
                   );
                 })}
               </div>
+
+              {/* Map Footer helper note */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-sky-400" />
+                  <span>
+                    พื้นที่จริง: <strong className="text-white">วิทยาลัยเทคนิคอุบลราชธานี</strong> (แผนผัง 2D ไร้ป้ายตัวหนังสือตามโจทย์)
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSurveyReport(true)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold transition cursor-pointer text-xs"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>ออกใบบันทึกผลการสำรวจ ({Object.keys(submittedSurveys).length}/5)</span>
+                </button>
+              </div>
             </div>
 
-            {/* Right 5 Cols: Detail Inspection & PDPA Checklist */}
-            <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl">
+            {/* Right 5 Cols: Student Survey Input Form & Technical Grading */}
+            <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl space-y-4">
               <div>
-                {/* Header */}
-                <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
+                {/* Zone Header */}
+                <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-3 mb-3">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider">
-                      สเปกการสำรวจหน้างานวิทยาลัย
-                    </span>
-                    <h2 className="text-base font-bold text-white mt-0.5">{currentZone.nameTh}</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                        จุดสำรวจที่ {currentZone.id === 'gate' ? '1' : currentZone.id === 'flagpole' ? '2' : currentZone.id === 'workshop' ? '3' : currentZone.id === 'academic' ? '4' : '5'}
+                      </span>
+                      {currentSubmission && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          currentSubmission.score >= 80
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        }`}>
+                          เกรด {currentSubmission.grade} ({currentSubmission.score}/100)
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-base font-bold text-white mt-1">{currentZone.nameTh}</h2>
                     <p className="text-[11px] text-slate-400">{currentZone.nameEn}</p>
                   </div>
+
                   <div className="text-right">
-                    <span className="text-xs px-2 py-0.5 rounded-full font-mono font-bold bg-slate-800 text-sky-400 border border-slate-700">
-                      ระยะสาย: {currentZone.distanceMeters}m
+                    <span className="text-xs px-2.5 py-1 rounded-lg font-mono font-bold bg-slate-950 text-sky-400 border border-slate-800 inline-block">
+                      {currentZone.distanceMeters}m UTP
                     </span>
                     {currentZone.distanceMeters >= 90 && (
                       <span className="block text-[10px] text-amber-400 font-bold mt-1">
-                        ⚠️ กฎ 100m UTP Limit
+                        ⚠️ เสี่ยงเกินขีด 100m
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Survey Checklist Details */}
-                <div className="space-y-3 text-xs">
+                {/* Subtitle / Task Instructions */}
+                <div className="bg-sky-950/30 border border-sky-800/40 rounded-xl p-2.5 mb-3 text-xs text-sky-200/90 flex items-start gap-2">
+                  <Edit3 className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-sky-200">
+                      ให้นักเรียนสำรวจพื้นที่จริง แล้วพิมพ์ข้อมูลวิศวกรรมลงในช่องกรอกข้อมูล:
+                    </p>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      สามารถคลิกแท็กคำศัพท์แนะนำเพื่อกรอกข้อมูลอย่างรวดเร็ว หรือพิมพ์ระบุสภาพแวดล้อมจริง
+                    </p>
+                  </div>
+                </div>
+
+                {/* 6 Form Input Fields */}
+                <div className="space-y-3.5 text-xs max-h-[52vh] overflow-y-auto pr-1">
+                  {/* Field 1: สภาพพื้นที่และสิ่งแวดล้อม */}
                   <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                      <Zap className="w-3 h-3 text-amber-400" /> สภาวะแสงสว่างและสิ่งแวดล้อม
-                    </span>
-                    <p className="text-slate-200 font-medium">{currentZone.lightingCond}</p>
-                    <p className="text-slate-400 text-[11px] mt-1">สภาพพื้นที่: {currentZone.environmentType}</p>
+                    <label className="text-[11px] font-bold text-slate-300 block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                        สภาพพื้นที่และสิ่งแวดล้อม (Environment / Conditions)
+                      </span>
+                      {currentSubmission && (
+                        <span className="text-[10px] text-emerald-400 font-mono">
+                          {currentSubmission.fieldScores.environment}/20 คะแนน
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentDraft.environmentType}
+                      onChange={(e) => handleUpdateDraft('environmentType', e.target.value)}
+                      placeholder="เช่น กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
+                    />
+                    {/* Suggestions Chips */}
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
+                      {ZONE_SUGGESTIONS[currentZone.id]?.environment.map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySuggestion('environmentType', chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
+                  {/* Field 2: สภาวะแสงสว่างและปัญหาแสง */}
                   <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                      <Camera className="w-3 h-3 text-sky-400" /> กล้องและเลนส์ที่วิศวกรกำหนด
-                    </span>
-                    <p className="text-sky-300 font-semibold">{currentZone.recommendedCamera}</p>
-                    <p className="text-slate-300 text-[11px] mt-1">เลนส์: {currentZone.lensSpec}</p>
-                    <p className="text-slate-400 text-[11px]">ความสูงติดตั้ง: {currentZone.mountingHeight}</p>
+                    <label className="text-[11px] font-bold text-slate-300 block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                        สภาวะแสงสว่างและปัญหาแสง (Lighting & Contrast)
+                      </span>
+                      {currentSubmission && (
+                        <span className="text-[10px] text-emerald-400 font-mono">
+                          {currentSubmission.fieldScores.lighting}/15 คะแนน
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentDraft.lightingCond}
+                      onChange={(e) => handleUpdateDraft('lightingCond', e.target.value)}
+                      placeholder="เช่น ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
+                    />
+                    {/* Suggestions Chips */}
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
+                      {ZONE_SUGGESTIONS[currentZone.id]?.lighting.map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySuggestion('lightingCond', chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
+                  {/* Field 3: การเลือกชนิดกล้อง */}
                   <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1 flex items-center gap-1.5">
-                      <Cable className="w-3 h-3 text-emerald-400" /> ท่อร้อยสายและกล่องพักสาย
-                    </span>
-                    <p className="text-slate-300">{currentZone.conduitType}</p>
-                    <p className="text-slate-400 text-[11px] mt-1 italic">ข้อแนะนำช่าง: {currentZone.techNote}</p>
+                    <label className="text-[11px] font-bold text-slate-300 block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-sky-400" />
+                        การเลือกชนิดกล้อง (Recommended Camera Model)
+                      </span>
+                      {currentSubmission && (
+                        <span className="text-[10px] text-emerald-400 font-mono">
+                          {currentSubmission.fieldScores.camera}/25 คะแนน
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentDraft.recommendedCamera}
+                      onChange={(e) => handleUpdateDraft('recommendedCamera', e.target.value)}
+                      placeholder="เช่น Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m)"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
+                    />
+                    {/* Suggestions Chips */}
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
+                      {ZONE_SUGGESTIONS[currentZone.id]?.camera.map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySuggestion('recommendedCamera', chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* PDPA Section */}
-                  <div className="bg-indigo-950/40 p-3.5 rounded-xl border border-indigo-800/60">
-                    <span className="text-[10px] font-bold text-indigo-300 uppercase block mb-1.5 flex items-center gap-1.5">
-                      <Shield className="w-3.5 h-3.5 text-indigo-400" /> ข้อกำหนด PDPA ในสถานศึกษา
-                    </span>
-                    <p className="text-slate-200 text-xs mb-1.5">{currentZone.pdpaRequirement}</p>
-                    <p className="text-indigo-200 text-[11px] mb-3">🛡️ {currentZone.pdpaAction}</p>
+                  {/* Field 4: ขนาดเลนส์และระดับ DORI */}
+                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                    <label className="text-[11px] font-bold text-slate-300 block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                        ขนาดเลนส์และระดับ DORI (Lens & DORI Requirement)
+                      </span>
+                      {currentSubmission && (
+                        <span className="text-[10px] text-emerald-400 font-mono">
+                          {currentSubmission.fieldScores.lens}/15 คะแนน
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentDraft.lensSpec}
+                      onChange={(e) => handleUpdateDraft('lensSpec', e.target.value)}
+                      placeholder="เช่น เลนส์ 4.0mm หรือ 6.0mm (มุมมองแคบเพื่อจับป้ายทะเบียนและใบหน้า)"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
+                    />
+                    {/* Suggestions Chips */}
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
+                      {ZONE_SUGGESTIONS[currentZone.id]?.lens.map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySuggestion('lensSpec', chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                    <label className="flex items-center gap-2 cursor-pointer bg-slate-900/80 p-2 rounded-lg border border-indigo-800/40 hover:bg-slate-900 transition">
+                  {/* Field 5: ท่อร้อยสายและอุปกรณ์กันน้ำ */}
+                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                    <label className="text-[11px] font-bold text-slate-300 block mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Cable className="w-3.5 h-3.5 text-emerald-400" />
+                        ท่อร้อยสายและอุปกรณ์กันน้ำ (Conduit & Waterproof Box)
+                      </span>
+                      {currentSubmission && (
+                        <span className="text-[10px] text-emerald-400 font-mono">
+                          {currentSubmission.fieldScores.conduit}/15 คะแนน
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentDraft.conduitType}
+                      onChange={(e) => handleUpdateDraft('conduitType', e.target.value)}
+                      placeholder="เช่น ท่อร้อยสาย uPVC สีขาว 20mm + กล่องพักสายกันน้ำ IP66 พร้อม Cable Gland"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
+                    />
+                    {/* Suggestions Chips */}
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
+                      {ZONE_SUGGESTIONS[currentZone.id]?.conduit.map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySuggestion('conduitType', chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Field 6: ข้อกำหนดและความปลอดภัย PDPA */}
+                  <div className="bg-indigo-950/30 p-3 rounded-xl border border-indigo-900/50 space-y-2">
+                    <label className="text-[11px] font-bold text-indigo-300 block flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-indigo-400" />
+                        ข้อกำหนดและการปฏิบัติตามกฎหมาย PDPA (PDPA Action)
+                      </span>
+                      {currentSubmission && (
+                        <span className="text-[10px] text-emerald-400 font-mono">
+                          {currentSubmission.fieldScores.pdpa}/10 คะแนน
+                        </span>
+                      )}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={currentDraft.pdpaAction}
+                      onChange={(e) => handleUpdateDraft('pdpaAction', e.target.value)}
+                      placeholder="เช่น ติดตั้งป้ายเตือน CCTV in Operation และห้ามส่องข้ามรั้วไปยังบ้านพักชุมชน"
+                      className="w-full bg-slate-900 border border-indigo-800/60 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition resize-none"
+                    />
+                    {/* Suggestions Chips */}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <span className="text-[10px] text-indigo-400/80 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
+                      {ZONE_SUGGESTIONS[currentZone.id]?.pdpa.map((chip, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleApplySuggestion('pdpaAction', chip)}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-800/80 transition cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* PDPA Checkbox */}
+                    <label className="flex items-center gap-2 cursor-pointer bg-slate-900/80 p-2 rounded-lg border border-indigo-800/40 hover:bg-slate-900 transition mt-2">
                       <input
                         type="checkbox"
                         checked={pdpaAgreed[currentZone.id] || false}
@@ -901,36 +1536,58 @@ export function SiteSurveySimulator() {
                         className="rounded border-slate-700 text-sky-600 focus:ring-sky-500 w-4 h-4 cursor-pointer"
                       />
                       <span className="text-[11px] font-medium text-slate-300">
-                        ยืนยันการตรวจสอบหลักเกณฑ์ PDPA และจุดติดตั้งป้ายเตือน
+                        ยืนยันการตรวจสอบหลักเกณฑ์ PDPA และจุดติดตั้งป้ายเตือน CCTV
                       </span>
                     </label>
                   </div>
                 </div>
+
+                {/* Feedback Banner if submitted */}
+                {currentSubmission && (
+                  <div className={`mt-3 p-3 rounded-xl border text-xs ${
+                    currentSubmission.score >= 80
+                      ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-200'
+                      : currentSubmission.score >= 60
+                      ? 'bg-sky-950/60 border-sky-500/80 text-sky-200'
+                      : 'bg-amber-950/60 border-amber-500/80 text-amber-200'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <Award className="w-4 h-4" />
+                        ผลการประเมินวิศวกรรม: เกรด {currentSubmission.grade} ({currentSubmission.score}/100)
+                      </span>
+                      <span className="text-[10px] font-mono opacity-80">
+                        ส่งเมื่อ {currentSubmission.submittedAt} น.
+                      </span>
+                    </div>
+                    <ul className="list-disc list-inside space-y-0.5 text-[11px] opacity-95">
+                      {currentSubmission.feedback.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
-              {/* Action Button */}
-              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
-                <span className="text-xs text-slate-400">
-                  {surveyedZones.includes(currentZone.id) ? (
-                    <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> บันทึกการสำรวจเรียบร้อย
-                    </span>
-                  ) : (
-                    'ยังไม่ได้บันทึกผลการสำรวจ'
-                  )}
-                </span>
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleFillStandardSpec(currentZone)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition cursor-pointer"
+                  title="ใส่ตัวอย่างสเปกมาตรฐานวิทยาลัยเพื่อการเรียนรู้"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>ใส่ข้อความมาตรฐาน</span>
+                </button>
 
                 <button
-                  onClick={() => handleMarkSurveyed(currentZone.id)}
-                  disabled={surveyedZones.includes(currentZone.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    surveyedZones.includes(currentZone.id)
-                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30'
-                  }`}
+                  type="button"
+                  onClick={() => handleSubmitSurvey(currentZone.id)}
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>{surveyedZones.includes(currentZone.id) ? 'สำรวจสำเร็จแล้ว' : 'บันทึกการสำรวจโซนนี้'}</span>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isCurrentZoneSubmitted ? 'อัปเดตคำตอบการสำรวจ' : 'บันทึกและส่งคำตอบการสำรวจ'}</span>
                 </button>
               </div>
             </div>
@@ -1524,80 +2181,184 @@ export function SiteSurveySimulator() {
       </main>
 
       {/* =========================================================
-          MODAL: SITE SURVEY REPORT GENERATOR
+          MODAL: SITE SURVEY REPORT GENERATOR & COMMISSIONING SHEET
          ========================================================= */}
       {showSurveyReport && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-bold text-sky-400 uppercase">
-                  เอกสารประกอบการตรวจรับงานระบบ CCTV
+                <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider">
+                  เอกสารประกอบการตรวจรับงานระบบ CCTV (Site Survey Commissioning Report)
                 </span>
                 <h3 className="text-base font-bold text-white">
-                  ใบบันทึกผลการสำรวจและวางระบบ CCTV (วิทยาลัยเทคนิคอุบลราชธานี)
+                  ใบบันทึกผลการสำรวจและวางระบบ CCTV ภาคสนาม (วิทยาลัยเทคนิคอุบลราชธานี)
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setShowSurveyReport(false)}
-                className="text-slate-400 hover:text-white text-xs px-2.5 py-1 rounded-lg bg-slate-800 cursor-pointer"
+                className="text-slate-400 hover:text-white text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
               >
                 ✕ ปิด
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-                <p className="text-slate-300">
-                  <span className="text-slate-500">สถานที่:</span> วิทยาลัยเทคนิคอุบลราชธานี
-                </p>
-                <p className="text-slate-300">
-                  <span className="text-slate-500">จำนวนโซนที่สำรวจเสร็จสิ้น:</span>{' '}
-                  <span className="text-sky-400 font-bold">{surveyedZones.length} / 5 โซน</span>
-                </p>
-                <p className="text-slate-300">
-                  <span className="text-slate-500">การจัดลำดับ 6 ขั้นตอนติดตั้ง:</span>{' '}
-                  <span className={sequenceValid ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
-                    {sequenceValid ? 'ผ่านเกณฑ์มาตรฐานช่าง' : 'ยังไม่สมบูรณ์'}
+            <div className="space-y-4 text-xs">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-500 uppercase block">สถานที่สำรวจจริง</span>
+                  <span className="text-sm font-bold text-white">วิทยาลัยเทคนิคอุบลราชธานี</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">ผัง 2D ไร้ป้ายตัวหนังสือ 5 โซน</span>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-500 uppercase block">ความคืบหน้าการส่งคำตอบ</span>
+                  <span className="text-sm font-bold text-sky-400">
+                    {Object.keys(submittedSurveys).length} / 5 โซน ({Math.round((Object.keys(submittedSurveys).length / 5) * 100)}%)
                   </span>
-                </p>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">
+                    คะแนนเฉลี่ย:{' '}
+                    <strong className="text-emerald-400">
+                      {Object.values(submittedSurveys).length > 0
+                        ? Math.round(
+                            Object.values(submittedSurveys).reduce((a, b) => a + b.score, 0) /
+                              Object.values(submittedSurveys).length
+                          )
+                        : 0}
+                      %
+                    </strong>
+                  </span>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-500 uppercase block">การจัดลำดับ 6 ขั้นตอน</span>
+                  <span className={`text-sm font-bold ${sequenceValid ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {sequenceValid ? 'ผ่านเกณฑ์มาตรฐานช่าง' : 'ยังไม่จัดลำดับ'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">PPE $\rightarrow$ ท่อ $\rightarrow$ UTP $\rightarrow$ กล้อง $\rightarrow$ Rack $\rightarrow$ ตรวจรับ</span>
+                </div>
               </div>
 
-              {/* Table of Zones */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
+              {/* Comprehensive Table of Zones & Submitted Answers */}
+              <div className="border border-slate-800 rounded-xl overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[680px]">
                   <thead>
                     <tr className="bg-slate-950 text-slate-400 text-[10px] border-b border-slate-800">
-                      <th className="p-2">โซนยุทธศาสตร์</th>
-                      <th className="p-2">ระยะ UTP</th>
-                      <th className="p-2">ชนิดกล้อง</th>
-                      <th className="p-2">PDPA Checklist</th>
+                      <th className="p-2.5">โซนยุทธศาสตร์</th>
+                      <th className="p-2.5">ระยะสาย</th>
+                      <th className="p-2.5">สภาพพื้นที่ที่สำรวจได้</th>
+                      <th className="p-2.5">ชนิดกล้อง & เลนส์</th>
+                      <th className="p-2.5">ท่อร้อยสาย</th>
+                      <th className="p-2.5">PDPA</th>
+                      <th className="p-2.5 text-right">ผลประเมิน</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-[11px]">
-                    {UBON_ZONES.map((z) => (
-                      <tr key={z.id} className="hover:bg-slate-800/40">
-                        <td className="p-2 text-white font-medium">{z.nameTh}</td>
-                        <td className="p-2 font-mono text-sky-400">{z.distanceMeters}m</td>
-                        <td className="p-2 text-slate-300 truncate max-w-[140px]">{z.recommendedCamera}</td>
-                        <td className="p-2">
-                          {pdpaAgreed[z.id] ? (
-                            <span className="text-emerald-400 font-bold">✓ ตรวจแล้ว</span>
-                          ) : (
-                            <span className="text-slate-500">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {UBON_ZONES.map((z) => {
+                      const sub = submittedSurveys[z.id];
+                      return (
+                        <tr key={z.id} className="hover:bg-slate-800/40">
+                          <td className="p-2.5 font-medium text-white">
+                            <div>{z.nameTh}</div>
+                            <div className="text-[10px] text-slate-500 font-mono">{z.nameEn}</div>
+                          </td>
+                          <td className="p-2.5 font-mono text-sky-400 font-bold whitespace-nowrap">
+                            {z.distanceMeters}m
+                          </td>
+                          <td className="p-2.5 text-slate-300 max-w-[160px]">
+                            {sub ? (
+                              <p className="truncate" title={sub.environmentType}>
+                                {sub.environmentType || '-'}
+                              </p>
+                            ) : (
+                              <span className="text-slate-500 italic">ยังไม่ได้ส่งคำตอบ</span>
+                            )}
+                          </td>
+                          <td className="p-2.5 text-slate-300 max-w-[180px]">
+                            {sub ? (
+                              <div>
+                                <p className="font-semibold text-sky-300 truncate" title={sub.recommendedCamera}>
+                                  {sub.recommendedCamera || '-'}
+                                </p>
+                                <p className="text-[10px] text-slate-400 truncate" title={sub.lensSpec}>
+                                  {sub.lensSpec || '-'}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-slate-500 italic">-</span>
+                            )}
+                          </td>
+                          <td className="p-2.5 text-slate-300 max-w-[140px]">
+                            {sub ? (
+                              <p className="truncate" title={sub.conduitType}>
+                                {sub.conduitType || '-'}
+                              </p>
+                            ) : (
+                              <span className="text-slate-500 italic">-</span>
+                            )}
+                          </td>
+                          <td className="p-2.5 whitespace-nowrap">
+                            {pdpaAgreed[z.id] ? (
+                              <span className="text-emerald-400 font-bold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> ผ่านเกณฑ์
+                              </span>
+                            ) : (
+                              <span className="text-slate-500">-</span>
+                            )}
+                          </td>
+                          <td className="p-2.5 text-right whitespace-nowrap">
+                            {sub ? (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                sub.score >= 80
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                  : sub.score >= 60
+                                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              }`}>
+                                {sub.score}% (เกรด {sub.grade})
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 italic">รอส่ง</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
+
+              {/* Completion Certification Seal if all 5 completed */}
+              {Object.keys(submittedSurveys).length === 5 && (
+                <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-sky-950/80 border border-emerald-500/50 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
+                      <Award className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">
+                        🎖️ ผ่านการทดสอบภาคสนามระดับวิทยาลัย (UBTC Certified Field Survey)
+                      </h4>
+                      <p className="text-xs text-emerald-200/80">
+                        นักเรียนได้สำรวจและระบุสเปกทางวิศวกรรมครบทั้ง 5 โซนยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-slate-950 font-mono">
+                    PASS 100%
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex items-center justify-between border-t border-slate-800">
+              <span className="text-[11px] text-slate-500">
+                หลักสูตรประกาศนียบัตรวิชาชีพ (ปวช.) สาขาวิชาช่างอิเล็กทรอนิกส์ / เทคนิคคอมพิวเตอร์
+              </span>
               <button
+                type="button"
                 onClick={() => setShowSurveyReport(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white cursor-pointer"
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition cursor-pointer"
               >
                 รับทราบและปิดเอกสาร
               </button>
