@@ -13,8 +13,8 @@ export const floor1Mission101: MissionDefinition = {
   id: 'F1-M101',
   floor: 1,
   room: 101,
-  title: 'CCTV Components & System Assembly',
-  description: 'ตรวจสอบอุปกรณ์พื้นฐาน ระบุหน้าที่และความสัมพันธ์ แล้วเตรียมชุดสำหรับงาน CCTV อย่างปลอดภัย',
+  title: 'การสำรวจพื้นที่ ตรวจสอบอุปกรณ์ และประกอบระบบ CCTV ณ วิทยาลัยเทคนิคอุบลราชธานี',
+  description: 'สำรวจสภาวะพื้นที่ 5 โซนยุทธศาสตร์ วท.อุบลฯ ตรวจสอบอุปกรณ์พื้นฐาน 5 ชนิด ระบุหน้าที่และความสัมพันธ์ แล้วเตรียมชุดสำหรับงาน CCTV อย่างปลอดภัยตามมาตรฐานวิชาชีพ',
   objectives: [
     ...inspectObjectives,
     { id: 'pickup:ip_camera_4mp', type: 'pickup', label: 'หยิบ IP Camera เข้ากระเป๋าช่าง', required: true, equipmentId: 'ip_camera_4mp' },

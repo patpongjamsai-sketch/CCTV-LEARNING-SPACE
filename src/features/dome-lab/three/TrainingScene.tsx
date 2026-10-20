@@ -41,82 +41,78 @@ export const TrainingScene: React.FC = () => {
   return (
     <group>
       {/* ========================================================
-          1. LIGHTING (Dynamic Day vs Night IR for 18x18m Space)
+          1. LIGHTING (Dynamic Day vs Night IR for 22x22m Space matching Room 101)
          ======================================================== */}
-      <ambientLight intensity={isNight ? 0.08 : 0.65} color={isNight ? '#1e1b4b' : '#ffffff'} />
+      <ambientLight intensity={isNight ? 0.08 : 0.85} color={isNight ? '#1e1b4b' : '#ffffff'} />
       <directionalLight
-        position={isRoom1 ? [-9.5, 9, 6] : [9.5, 10, 6]}
+        position={[6, 14, 6]}
         intensity={isNight ? 0.12 : 1.1}
         castShadow
         shadow-mapSize={[1024, 1024]}
       />
+      <directionalLight position={[-6, 12, -6]} intensity={isNight ? 0.05 : 0.5} color="#e0f2fe" />
 
-      {/* Zone 1 Recessed Troffers Light (Large Office) */}
-      {!isNight && isRoom1 && (
+      {/* Point lights for natural soft fill */}
+      {!isNight && (
         <>
-          <pointLight position={[-9.5, 3.4, 0]} intensity={0.85} distance={16} color="#f8fafc" />
-          <pointLight position={[-15.0, 3.4, -4.0]} intensity={0.65} distance={14} color="#f8fafc" />
-          <pointLight position={[-5.0, 3.4, 4.0]} intensity={0.65} distance={14} color="#f8fafc" />
-        </>
-      )}
-
-      {/* Zone 2 Industrial High-Bay Lamps (Large Factory) */}
-      {!isNight && !isRoom1 && (
-        <>
-          <pointLight position={[9.5, 4.8, 0]} intensity={0.95} distance={18} color="#fef08a" />
-          <pointLight position={[6.0, 4.8, -4.0]} intensity={0.75} distance={15} color="#fef08a" />
-          <pointLight position={[13.0, 4.8, 4.0]} intensity={0.75} distance={15} color="#fef08a" />
+          <pointLight position={[-4, 4.5, 0]} distance={18} intensity={isRoom1 ? 0.9 : 1.1} color={isRoom1 ? '#f8fafc' : '#fef08a'} />
+          <pointLight position={[4, 4.5, 0]} distance={18} intensity={isRoom1 ? 0.9 : 1.1} color={isRoom1 ? '#f8fafc' : '#fef08a'} />
         </>
       )}
 
       {/* ========================================================
-          2. DEDICATED ROOM STUDIO FLOORING & WALLS (18m x 18m)
+          2. DEDICATED ROOM STUDIO FLOORING & WALLS (22m x 22m, Height 5.0m - 5.2m)
          ======================================================== */}
       {isRoom1 ? (
         <>
-          {/* Room 1 (Office): Acoustic Vinyl Carpet (18x18m) */}
-          <mesh position={[-9.5, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[18.0, 18.0]} />
-            <meshStandardMaterial color="#334155" roughness={0.7} />
+          {/* Room 1 (Office): Large Modern Office Floor (22x22m, Centered at [0,0,0]) */}
+          <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[22.0, 22.0]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.7} />
           </mesh>
-          <gridHelper args={[18, 18, '#475569', '#1e293b']} position={[-9.5, 0.005, 0]} />
+          <gridHelper args={[22, 22, '#0ea5e9', '#334155']} position={[0, 0.005, 0]} />
 
-          {/* Enclosing Boundary Walls */}
-          {/* Back Wall */}
-          <mesh position={[-9.5, 1.8, -9.0]}>
-            <boxGeometry args={[18.0, 3.6, 0.1]} />
-            <meshStandardMaterial color="#cbd5e1" roughness={0.6} />
+          {/* Enclosing Boundary Walls (Height 5.0m) */}
+          {/* Back Wall (North at Z = -11.0) */}
+          <mesh position={[0, 2.5, -11.0]}>
+            <boxGeometry args={[22.0, 5.0, 0.2]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.7} />
           </mesh>
-          {/* Left Wall (Mount Point B Wall) */}
-          <mesh position={[-18.5, 1.8, 0]}>
-            <boxGeometry args={[0.1, 3.6, 18.0]} />
-            <meshStandardMaterial color="#cbd5e1" roughness={0.6} />
+          {/* Architectural Cyan Accent Light Bar (like Room 101) */}
+          <mesh position={[0, 4.3, -10.88]}>
+            <boxGeometry args={[22.0, 0.35, 0.05]} />
+            <meshStandardMaterial color="#0284c7" emissive="#0284c7" emissiveIntensity={0.4} />
           </mesh>
-          {/* Right Dividing Wall */}
-          <mesh position={[-0.5, 1.8, 0]}>
-            <boxGeometry args={[0.1, 3.6, 18.0]} />
-            <meshStandardMaterial color="#334155" roughness={0.7} />
+          {/* Left Wall (West at X = -11.0, Mount Point B Wall) */}
+          <mesh position={[-11.0, 2.5, 0]}>
+            <boxGeometry args={[0.2, 5.0, 22.0]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.7} />
           </mesh>
-          {/* Front Wall */}
-          <mesh position={[-9.5, 1.8, 9.0]}>
-            <boxGeometry args={[18.0, 3.6, 0.1]} />
-            <meshStandardMaterial color="#cbd5e1" roughness={0.6} />
+          {/* Right Wall (East at X = 11.0) */}
+          <mesh position={[11.0, 2.5, 0]}>
+            <boxGeometry args={[0.2, 5.0, 22.0]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.7} />
+          </mesh>
+          {/* Front Wall (South at Z = 11.0) */}
+          <mesh position={[0, 2.5, 11.0]}>
+            <boxGeometry args={[22.0, 5.0, 0.2]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.7} />
           </mesh>
 
-          {/* Elevated Gypsum Drop Ceiling (Y = 3.6m) */}
-          <mesh position={[-9.5, 3.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[18.0, 18.0]} />
-            <meshStandardMaterial color="#f8fafc" roughness={0.5} side={THREE.FrontSide} />
+          {/* Ceiling (Y = 4.0m) */}
+          <mesh position={[0, 4.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[22.0, 22.0]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.9} side={THREE.DoubleSide} />
           </mesh>
-          {/* Troffer Lights Grid */}
-          {[-15.0, -12.0, -9.0, -6.0, -3.0].map((tx, idx) =>
-            [-6.0, -2.0, 2.0, 6.0].map((tz, jdx) => (
-              <mesh key={`${idx}-${jdx}`} position={[tx, 3.59, tz]}>
-                <boxGeometry args={[1.2, 0.02, 0.6]} />
+          {/* Troffer Lights 3x3 Grid on Ceiling */}
+          {[-7.0, 0, 7.0].map((tx, idx) =>
+            [-7.0, 0, 7.0].map((tz, jdx) => (
+              <mesh key={`troffer_${idx}_${jdx}`} position={[tx, 3.98, tz]}>
+                <boxGeometry args={[1.6, 0.05, 0.8]} />
                 <meshStandardMaterial
                   color={isNight ? '#334155' : '#ffffff'}
                   emissive={isNight ? '#000000' : '#ffffff'}
-                  emissiveIntensity={isNight ? 0 : 0.6}
+                  emissiveIntensity={isNight ? 0 : 0.8}
                 />
               </mesh>
             ))
@@ -124,61 +120,63 @@ export const TrainingScene: React.FC = () => {
         </>
       ) : (
         <>
-          {/* Room 2 (Factory): Coated Industrial Concrete (18x18m) */}
-          <mesh position={[9.5, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-            <planeGeometry args={[18.0, 18.0]} />
-            <meshStandardMaterial color="#475569" roughness={0.8} />
+          {/* Room 2 (Workshop): Coated Industrial Concrete (22x22m, Centered at [0,0,0]) */}
+          <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[22.0, 22.0]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.8} />
           </mesh>
-          {/* Yellow Safety Walkway through factory corridor */}
-          <mesh position={[6.0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[1.8, 18.0]} />
+          <gridHelper args={[22, 22, '#475569', '#334155']} position={[0, 0.005, 0]} />
+
+          {/* Yellow Safety Walkway down center corridor (Z axis) */}
+          <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[2.4, 22.0]} />
             <meshStandardMaterial color="#334155" roughness={0.5} />
           </mesh>
-          <mesh position={[5.0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[0.12, 18.0]} />
+          <mesh position={[-1.2, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.12, 22.0]} />
             <meshStandardMaterial color="#eab308" roughness={0.4} />
           </mesh>
-          <mesh position={[7.0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[0.12, 18.0]} />
+          <mesh position={[1.2, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.12, 22.0]} />
             <meshStandardMaterial color="#eab308" roughness={0.4} />
           </mesh>
           {/* Crosswalk / Intersection Walkway */}
-          <mesh position={[9.5, 0.007, 1.5]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[18.0, 1.6]} />
+          <mesh position={[0, 0.007, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[22.0, 2.0]} />
             <meshStandardMaterial color="#334155" roughness={0.5} />
           </mesh>
 
-          {/* Enclosing Boundary Walls */}
-          {/* Back Concrete Wall */}
-          <mesh position={[9.5, 2.6, -9.0]}>
-            <boxGeometry args={[18.0, 5.2, 0.1]} />
-            <meshStandardMaterial color="#64748b" roughness={0.9} />
+          {/* Enclosing Boundary Walls (Height 5.2m) */}
+          {/* Back Wall (North at Z = -11.0) */}
+          <mesh position={[0, 2.6, -11.0]}>
+            <boxGeometry args={[22.0, 5.2, 0.2]} />
+            <meshStandardMaterial color="#334155" roughness={0.9} />
           </mesh>
-          {/* Left Dividing Wall */}
-          <mesh position={[0.5, 2.6, 0]}>
-            <boxGeometry args={[0.1, 5.2, 18.0]} />
-            <meshStandardMaterial color="#334155" roughness={0.7} />
+          {/* Left Wall (West at X = -11.0) */}
+          <mesh position={[-11.0, 2.6, 0]}>
+            <boxGeometry args={[0.2, 5.2, 22.0]} />
+            <meshStandardMaterial color="#334155" roughness={0.9} />
           </mesh>
-          {/* Right Wall */}
-          <mesh position={[18.5, 2.6, 0]}>
-            <boxGeometry args={[0.1, 5.2, 18.0]} />
-            <meshStandardMaterial color="#64748b" roughness={0.9} />
+          {/* Right Wall (East at X = 11.0) */}
+          <mesh position={[11.0, 2.6, 0]}>
+            <boxGeometry args={[0.2, 5.2, 22.0]} />
+            <meshStandardMaterial color="#334155" roughness={0.9} />
           </mesh>
-          {/* Front Wall */}
-          <mesh position={[9.5, 2.6, 9.0]}>
-            <boxGeometry args={[18.0, 5.2, 0.1]} />
-            <meshStandardMaterial color="#64748b" roughness={0.9} />
+          {/* Front Wall (South at Z = 11.0) */}
+          <mesh position={[0, 2.6, 11.0]}>
+            <boxGeometry args={[22.0, 5.2, 0.2]} />
+            <meshStandardMaterial color="#334155" roughness={0.9} />
           </mesh>
 
-          {/* Elevated Steel Rafter Roof (Y = 5.2m) */}
-          <mesh position={[9.5, 5.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[18.0, 18.0]} />
-            <meshStandardMaterial color="#94a3b8" roughness={0.7} side={THREE.FrontSide} />
+          {/* Industrial Ceiling (Y = 5.2m) */}
+          <mesh position={[0, 5.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[22.0, 22.0]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.9} side={THREE.DoubleSide} />
           </mesh>
           {/* Steel Truss Overhead Beams */}
-          {[-6.0, -2.0, 2.0, 6.0].map((tz, idx) => (
-            <mesh key={idx} position={[9.5, 5.08, tz]}>
-              <boxGeometry args={[18.0, 0.22, 0.16]} />
+          {[-7.0, -3.5, 0, 3.5, 7.0].map((tz, idx) => (
+            <mesh key={`truss_${idx}`} position={[0, 5.08, tz]}>
+              <boxGeometry args={[22.0, 0.25, 0.2]} />
               <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
             </mesh>
           ))}
@@ -189,10 +187,10 @@ export const TrainingScene: React.FC = () => {
           3. WORKBENCHES: PPE STATION & CAMERA DISPATCH
          ======================================================== */}
       {/* A. PPE Workbench */}
-      <PpeStationTable3D position={isRoom1 ? [-5.5, 0, 4.5] : [3.5, 0, 4.5]} />
+      <PpeStationTable3D position={[-6.0, 0, 4.0]} />
 
       {/* B. Camera Dispatch Table */}
-      <group position={isRoom1 ? [-5.5, 0, -4.5] : [3.5, 0, -4.5]}>
+      <group position={[-6.0, 0, -4.0]}>
         {/* Heavy Duty Tool Bench */}
         <mesh position={[0, 0.38, 0]}>
           <boxGeometry args={[1.2, 0.76, 0.85]} />
@@ -263,13 +261,13 @@ export const TrainingScene: React.FC = () => {
       </group>
 
       {/* ========================================================
-          5. ZONE 1 (LEFT): LARGE ENTERPRISE OFFICE PROPS (18x18m)
+          5. ZONE 1 (LEFT): LARGE ENTERPRISE OFFICE PROPS (22x22m)
          ======================================================== */}
       {isRoom1 && (
         <>
-          {/* Row of 42U Server Racks near Point B (Left Wall at X = -18.5) */}
-          {[-2.0, 0.0, 2.0].map((rz, idx) => (
-            <group key={idx} position={[-17.2, 1.1, rz]}>
+          {/* Row of 42U Server Racks along Left Wall near Point B (X = -10.1) */}
+          {[-3.0, 0.0, 3.0].map((rz, idx) => (
+            <group key={idx} position={[-10.1, 1.1, rz]}>
               <mesh>
                 <boxGeometry args={[0.85, 2.2, 0.95]} />
                 <meshStandardMaterial color="#09090b" roughness={0.2} metalness={0.6} />
@@ -293,9 +291,9 @@ export const TrainingScene: React.FC = () => {
             </group>
           ))}
 
-          {/* Office Desks & Workstation Clusters */}
-          {[-11.5, -7.5].map((dx, idx) =>
-            [-3.5, 2.5].map((dz, jdx) => (
+          {/* Office Desks & Workstation Clusters on East Side */}
+          {[3.5, 7.0].map((dx, idx) =>
+            [-3.5, 3.5].map((dz, jdx) => (
               <group key={`${idx}-${jdx}`} position={[dx, 0, dz]}>
                 <mesh position={[0, 0.38, 0]}>
                   <boxGeometry args={[1.8, 0.76, 0.9]} />
@@ -314,7 +312,7 @@ export const TrainingScene: React.FC = () => {
           )}
 
           {/* Office Glass Sliding Door Partition */}
-          <group position={[-3.0, 1.3, 5.0]}>
+          <group position={[3.0, 1.3, 7.5]}>
             <mesh>
               <boxGeometry args={[0.04, 2.6, 2.4]} />
               <meshPhysicalMaterial
@@ -331,8 +329,8 @@ export const TrainingScene: React.FC = () => {
             </mesh>
           </group>
 
-          {/* Target Pedestrian Mannequin in Office Main Walkway (Face at 1.60m) */}
-          <group position={[-6.0, 0, 1.5]}>
+          {/* Target Pedestrian Mannequin in Office Main Walkway (Centered at [0, 0, 0]) */}
+          <group position={[0, 0, 0]}>
             {/* Target Floor Bullseye Decals */}
             <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[0.9, 1.05, 32]} />
@@ -394,23 +392,23 @@ export const TrainingScene: React.FC = () => {
       )}
 
       {/* ========================================================
-          6. ZONE 2 (RIGHT): LARGE FACTORY PROPS (18x18m, Height 5.2m)
+          6. ZONE 2 (RIGHT): LARGE FACTORY PROPS (22x22m, Height 5.2m)
          ======================================================== */}
       {!isRoom1 && (
         <>
-          {/* Structural Beam / Soffit over Point C ([6.0, 4.12, -4.5]) */}
-          <mesh position={[6.0, 4.25, -4.5]}>
-            <boxGeometry args={[3.2, 0.16, 2.4]} />
+          {/* Structural Beam / Soffit over Point C ([0, 4.28, -3.5]) */}
+          <mesh position={[0, 4.28, -3.5]}>
+            <boxGeometry args={[4.0, 0.16, 2.6]} />
             <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.3} />
           </mesh>
 
           {/* Grid of Structural Steel H-Beam Columns (5.2m High) */}
           {([
-            [6.0, -6.0],
-            [6.0, 6.0],
-            [11.5, 1.5], // Column holding Point D
-            [11.5, -6.0],
-            [11.5, 6.0],
+            [-4.0, -6.0],
+            [-4.0, 6.0],
+            [4.0, 0], // Column holding Point D ([3.6, 3.2, 0])
+            [4.0, -6.0],
+            [4.0, 6.0],
           ] as const).map(([cx, cz], idx) => (
             <group key={idx} position={[cx, 2.6, cz]}>
               <mesh>
@@ -431,10 +429,10 @@ export const TrainingScene: React.FC = () => {
 
           {/* High-Bay Industrial Pendant Lamps (Hanging at Y = 4.8m) */}
           {([
-            [6.0, -3.0],
-            [6.0, 3.0],
-            [12.0, -3.0],
-            [12.0, 3.0],
+            [-4.0, -3.0],
+            [-4.0, 3.0],
+            [4.0, -3.0],
+            [4.0, 3.0],
           ] as const).map(([hx, hz], idx) => (
             <group key={idx} position={[hx, 4.8, hz]}>
               {/* Hanging Cord */}
@@ -459,9 +457,9 @@ export const TrainingScene: React.FC = () => {
             </group>
           ))}
 
-          {/* Heavy Duty Pallet Racking with Stored Goods along X = 16.5 */}
+          {/* Heavy Duty Pallet Racking with Stored Goods along X = 9.5 */}
           {[-5.0, 0.0, 5.0].map((rz, idx) => (
-            <group key={idx} position={[16.5, 0, rz]}>
+            <group key={idx} position={[9.5, 0, rz]}>
               {/* Upright Frames */}
               <mesh position={[-0.45, 2.0, 0]}>
                 <boxGeometry args={[0.08, 4.0, 1.8]} />
@@ -497,7 +495,7 @@ export const TrainingScene: React.FC = () => {
           ))}
 
           {/* Workshop Step Ladder */}
-          <group position={[13.5, 0.9, -2.0]}>
+          <group position={[7.0, 0.9, -2.0]}>
             <mesh rotation={[0, 0, 0.15]} position={[-0.15, 0, 0]}>
               <boxGeometry args={[0.06, 1.9, 0.45]} />
               <meshStandardMaterial color="#f97316" metalness={0.4} roughness={0.4} />
@@ -508,8 +506,8 @@ export const TrainingScene: React.FC = () => {
             </mesh>
           </group>
 
-          {/* Target Pedestrian Mannequin in Workshop Walkway (Face at 1.60m) */}
-          <group position={[6.0, 0, 1.5]}>
+          {/* Target Pedestrian Mannequin in Workshop Walkway (Centered at [0, 0, 0]) */}
+          <group position={[0, 0, 0]}>
             {/* Target Floor Bullseye Decals on Walkway */}
             <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[0.9, 1.05, 32]} />

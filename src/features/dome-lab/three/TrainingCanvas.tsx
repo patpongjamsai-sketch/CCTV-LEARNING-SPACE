@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { TrainingScene } from './TrainingScene';
 import { useDomeLabStore } from '../store/useDomeLabStore';
 import { DOME_MOUNT_POINTS_DATA } from '../data/domeLabData';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, Package, Crosshair } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Eye, Package, Crosshair, User } from 'lucide-react';
 
 interface MissionCameraControllerProps {
   controlsRef: React.RefObject<OrbitControlsImpl | null>;
@@ -24,13 +24,16 @@ const MissionCameraController: React.FC<MissionCameraControllerProps> = ({ contr
   const mountedPointId = useDomeLabStore((s) => s.mountedPointId);
   const pan = useDomeLabStore((s) => s.pan);
   const tilt = useDomeLabStore((s) => s.tilt);
+  const playerPosition = useDomeLabStore((s) => s.playerPosition);
   const { camera } = useThree();
 
   const isRoom1 = activeRoom === 'room1_indoor';
-  const targetLookAt = useRef(new THREE.Vector3(isRoom1 ? -3.8 : 3.8, 1.4, 0));
-  const targetCamPos = useRef(new THREE.Vector3(isRoom1 ? -3.8 : 3.8, 3.8, 5.2));
+  const targetLookAt = useRef(new THREE.Vector3(0, 1.2, 3.0));
+  const targetCamPos = useRef(new THREE.Vector3(0, 2.6, 7.2));
   const isTransitioning = useRef(false);
   const prevMountedRef = useRef(isCameraMounted);
+  const playerPosRef = useRef(playerPosition);
+  playerPosRef.current = playerPosition;
 
   useEffect(() => {
     // CRITICAL: When camera is mounted, DO NOT ZOOM IN!
@@ -42,7 +45,16 @@ const MissionCameraController: React.FC<MissionCameraControllerProps> = ({ contr
     }
     prevMountedRef.current = isCameraMounted;
 
-    // 1. CCTV Lens POV Mode
+    // 1. Third-Person Player Follow Preset (Roblox style)
+    if (activeDirectorView === 'player') {
+      const [px, py, pz] = playerPosRef.current;
+      targetLookAt.current.set(px, py + 1.2, pz);
+      targetCamPos.current.set(px, py + 2.5, pz + 4.2);
+      isTransitioning.current = true;
+      return;
+    }
+
+    // 2. CCTV Lens POV Mode
     if (cameraViewMode === 'pov') {
       const activePtId = mountedPointId || selectedMountPointId;
       const pt = DOME_MOUNT_POINTS_DATA[activePtId];
@@ -59,7 +71,7 @@ const MissionCameraController: React.FC<MissionCameraControllerProps> = ({ contr
       return;
     }
 
-    // 2. Camera Close-up ONLY if user explicitly clicks 'target' director view
+    // 3. Camera Close-up ONLY if user explicitly clicks 'target' director view
     if (activeDirectorView === 'target') {
       const activePtId = mountedPointId || selectedMountPointId;
       const pt = DOME_MOUNT_POINTS_DATA[activePtId];
@@ -70,24 +82,14 @@ const MissionCameraController: React.FC<MissionCameraControllerProps> = ({ contr
       return;
     }
 
-    // 3. Director Preset Views per Dedicated Room Section
+    // 4. Director Preset Views per Dedicated Room Section
     if (activeDirectorView === 'overview' || activeDirectorView === 'office' || activeDirectorView === 'workshop') {
-      if (isRoom1) {
-        targetLookAt.current.set(-3.8, 1.4, 0);
-        targetCamPos.current.set(-3.8, 3.8, 5.2);
-      } else {
-        targetLookAt.current.set(3.8, 1.4, 0);
-        targetCamPos.current.set(3.8, 3.8, 5.2);
-      }
+      targetLookAt.current.set(0, 1.2, 0);
+      targetCamPos.current.set(0, 3.8, 6.2);
       isTransitioning.current = true;
     } else if (activeDirectorView === 'depot') {
-      if (isRoom1) {
-        targetLookAt.current.set(-2.2, 1.0, -2.5);
-        targetCamPos.current.set(-2.2, 2.2, -0.4);
-      } else {
-        targetLookAt.current.set(2.2, 1.0, -2.5);
-        targetCamPos.current.set(2.2, 2.2, -0.4);
-      }
+      targetLookAt.current.set(-5.5, 1.0, 0);
+      targetCamPos.current.set(-5.5, 2.8, 3.8);
       isTransitioning.current = true;
     }
   }, [
@@ -139,11 +141,30 @@ const MissionCameraController: React.FC<MissionCameraControllerProps> = ({ contr
         controlsRef.current.update();
 
         if (
-          camera.position.distanceTo(targetCamPos.current) < 0.04 &&
-          controlsRef.current.target.distanceTo(targetLookAt.current) < 0.04
+          camera.position.distanceTo(targetCamPos.current) < 0.05 &&
+          controlsRef.current.target.distanceTo(targetLookAt.current) < 0.05
         ) {
           isTransitioning.current = false;
         }
+      } else if (activeDirectorView === 'player') {
+        // Continuous Third-Person Player Follow Chase (Roblox style)
+        const [px, py, pz] = playerPosition;
+        const desiredTarget = new THREE.Vector3(px, py + 1.2, pz);
+        const targetDelta = desiredTarget.sub(controlsRef.current.target);
+
+        // Move target and camera in unison with smooth damping
+        const followSpeed = Math.min(1, delta * 10.0);
+        const moveStep = targetDelta.multiplyScalar(followSpeed);
+
+        controlsRef.current.target.add(moveStep);
+        camera.position.add(moveStep);
+
+        // Camera room boundary clamping (22m x 22m space)
+        camera.position.x = THREE.MathUtils.clamp(camera.position.x, -10.5, 10.5);
+        camera.position.z = THREE.MathUtils.clamp(camera.position.z, -10.5, 10.5);
+        camera.position.y = THREE.MathUtils.clamp(camera.position.y, 0.6, 4.8);
+
+        controlsRef.current.update();
       }
     }
   });
@@ -171,7 +192,7 @@ export const TrainingCanvas: React.FC = () => {
   };
 
   const handleResetCamera = () => {
-    setActiveDirectorView('overview');
+    setActiveDirectorView('player');
   };
 
   return (
@@ -187,17 +208,19 @@ export const TrainingCanvas: React.FC = () => {
       >
         <PerspectiveCamera
           makeDefault
-          position={activeRoom === 'room1_indoor' ? [-3.8, 3.8, 5.2] : [3.8, 3.8, 5.2]}
-          fov={56}
+          position={[0, 2.6, 7.2]}
+          fov={60}
         />
         <OrbitControls
           ref={controlsRef}
           enableDamping
           dampingFactor={0.06}
+          target={[0, 1.2, 3.0]}
           minDistance={1.2}
           maxDistance={28}
           maxPolarAngle={Math.PI / 2 + 0.04}
           enableZoom={cameraViewMode !== 'pov'}
+          enablePan={activeDirectorView !== 'player'}
           zoomSpeed={0.9}
         />
 
@@ -211,6 +234,18 @@ export const TrainingCanvas: React.FC = () => {
           <span className="text-[10px] font-bold text-slate-400 px-2 uppercase tracking-wider hidden sm:inline">
             มุมมอง:
           </span>
+          <button
+            onClick={() => setActiveDirectorView('player')}
+            className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeDirectorView === 'player'
+                ? 'bg-cyan-600 text-white shadow-md ring-2 ring-cyan-400/50'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+            }`}
+            title="มุมมองบุคคลที่สามติดตามตัวละครช่าง (Third-Person Follow)"
+          >
+            <User className="w-3.5 h-3.5 text-cyan-300" />
+            <span>ติดตามช่าง</span>
+          </button>
           <button
             onClick={() => setActiveDirectorView('overview')}
             className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -266,7 +301,7 @@ export const TrainingCanvas: React.FC = () => {
             </button>
             <button
               onClick={handleResetCamera}
-              title="รีเซ็ตมุมมองกล้อง 3D"
+              title="รีเซ็ตมุมมองกล้อง 3D ติดตามช่าง"
               className="p-1.5 text-slate-300 hover:text-cyan-400 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1 text-[11px] cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -277,3 +312,4 @@ export const TrainingCanvas: React.FC = () => {
     </div>
   );
 };
+

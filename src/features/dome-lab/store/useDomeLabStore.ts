@@ -42,7 +42,7 @@ interface DomeLabState {
   isNearCameraTable: boolean;
   distanceToCameraTable: number;
   nearMountPointId: DomeMountPointId | null;
-  activeDirectorView: 'office' | 'depot' | 'workshop' | 'overview' | 'target';
+  activeDirectorView: 'office' | 'depot' | 'workshop' | 'overview' | 'target' | 'player';
 
   // Mission 1: PPE
   ppeEquipped: Record<PPEItemId, boolean>;
@@ -91,7 +91,7 @@ interface DomeLabState {
   setIsNearCameraTable: (near: boolean) => void;
   setDistanceToCameraTable: (dist: number) => void;
   setNearMountPointId: (id: DomeMountPointId | null) => void;
-  setActiveDirectorView: (view: 'office' | 'depot' | 'workshop' | 'overview' | 'target') => void;
+  setActiveDirectorView: (view: 'office' | 'depot' | 'workshop' | 'overview' | 'target' | 'player') => void;
 
   togglePPE: (item: PPEItemId) => void;
   setPpeEquipped: (ppe: Record<PPEItemId, boolean>) => void;
@@ -189,7 +189,7 @@ export const useDomeLabStore = create<DomeLabState>((set, get) => ({
   roomCameras: initialRoomCameras,
 
   // Roblox Player Position (starts in active room center)
-  playerPosition: [-9.5, 0, 2.0],
+  playerPosition: [0, 0, 3.0],
   isNearPpeTable: false,
   distanceToPpeTable: 4.5,
   isPpeModalOpen: false,
@@ -200,7 +200,7 @@ export const useDomeLabStore = create<DomeLabState>((set, get) => ({
   isNearCameraTable: false,
   distanceToCameraTable: 5.0,
   nearMountPointId: null,
-  activeDirectorView: 'overview',
+  activeDirectorView: 'player',
 
   // Mission 1: PPE
   ppeEquipped: initialPpeState,
@@ -464,7 +464,7 @@ export const useDomeLabStore = create<DomeLabState>((set, get) => ({
       hasPickedUpCamera: false,
       isCameraMounted: false,
       mountedPointId: null,
-      activeDirectorView: 'overview',
+      activeDirectorView: 'player',
       selectedMountPoint: 'A',
       previewingMountPoint: null,
       pan: 0,

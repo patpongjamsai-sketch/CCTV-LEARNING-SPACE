@@ -31,6 +31,8 @@ export const RobloxPlayerController: React.FC = () => {
   const setDistanceToCameraTable = useDomeLabStore((s) => s.setDistanceToCameraTable);
   const setNearMountPointId = useDomeLabStore((s) => s.setNearMountPointId);
   const activeRoom = useDomeLabStore((s) => s.activeRoom);
+  const activeDirectorView = useDomeLabStore((s) => s.activeDirectorView);
+  const setActiveDirectorView = useDomeLabStore((s) => s.setActiveDirectorView);
 
   const [isMoving, setIsMoving] = useState(false);
   const [isSprinting, setIsSprinting] = useState(false);
@@ -47,24 +49,19 @@ export const RobloxPlayerController: React.FC = () => {
     sprint: false,
   });
 
-  // Tables position per active room
-  const isRoom1 = activeRoom === 'room1_indoor';
+  // Tables position per active room (centered at -6.0 on left side like Room 101)
   const PPE_TABLE_POS = useMemo(
-    () => (isRoom1 ? new THREE.Vector3(-5.5, 0, 4.5) : new THREE.Vector3(3.5, 0, 4.5)),
-    [isRoom1]
+    () => new THREE.Vector3(-6.0, 0, 4.0),
+    []
   );
   const CAMERA_TABLE_POS = useMemo(
-    () => (isRoom1 ? new THREE.Vector3(-5.5, 0, -4.5) : new THREE.Vector3(3.5, 0, -4.5)),
-    [isRoom1]
+    () => new THREE.Vector3(-6.0, 0, -4.0),
+    []
   );
 
-  // Sync player position when activeRoom changes via URL/tab
+  // Sync player position when activeRoom changes via URL/tab (starts centered facing -Z)
   useEffect(() => {
-    if (activeRoom === 'room1_indoor') {
-      posRef.current.set(-9.5, 0, 2.0);
-    } else {
-      posRef.current.set(9.5, 0, 2.0);
-    }
+    posRef.current.set(0, 0, 3.0);
     rotationYRef.current = 0;
     targetRotationYRef.current = 0;
     setPlayerPosition([posRef.current.x, posRef.current.y, posRef.current.z]);
@@ -157,6 +154,10 @@ export const RobloxPlayerController: React.FC = () => {
     }
 
     if (moving) {
+      if (activeDirectorView !== 'player') {
+        setActiveDirectorView('player');
+      }
+
       const moveDir = new THREE.Vector3(moveX, 0, moveZ).normalize();
       targetRotationYRef.current = Math.atan2(moveDir.x, moveDir.z);
 
@@ -164,13 +165,9 @@ export const RobloxPlayerController: React.FC = () => {
       posRef.current.x += moveDir.x * moveSpeed;
       posRef.current.z += moveDir.z * moveSpeed;
 
-      // Bound checking per expanded room section (18m x 18m)
-      if (isRoom1) {
-        posRef.current.x = THREE.MathUtils.clamp(posRef.current.x, -17.5, -1.2);
-      } else {
-        posRef.current.x = THREE.MathUtils.clamp(posRef.current.x, 1.2, 17.5);
-      }
-      posRef.current.z = THREE.MathUtils.clamp(posRef.current.z, -8.0, 8.0);
+      // Bound checking per expanded room section (22m x 22m, centered at [0,0,0])
+      posRef.current.x = THREE.MathUtils.clamp(posRef.current.x, -10.2, 10.2);
+      posRef.current.z = THREE.MathUtils.clamp(posRef.current.z, -10.2, 10.2);
 
       // Smooth turn rotation
       const diff = targetRotationYRef.current - rotationYRef.current;

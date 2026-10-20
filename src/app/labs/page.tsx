@@ -36,12 +36,42 @@ const roomSummaries: RoomSummary[] = [
   {
     room: 101,
     slug: 'room-101',
-    title: 'Smart Mart · CCTV Foundations & Components',
+    title: 'วิทยาลัยเทคนิคอุบลราชธานี · CCTV Foundations, Site Survey & Components',
     unitId: 'U01',
-    focus: 'การตรวจสอบอุปกรณ์ 5 ชนิด, การเดินสัญญาณภาพ และการต่อระบบ IP CCTV เบื้องต้นในร้านสะดวกซื้อ',
+    focus: 'การสำรวจพื้นที่ 5 โซนยุทธศาสตร์ วท.อุบลฯ, 6 ขั้นตอนติดตั้งมาตรฐานช่าง, องค์ประกอบ 5 ส่วน และ 4 ขั้นตอน Commissioning',
     duration: '180 นาที',
-    badge: '3D Simulation',
+    badge: '2D Pre-Lab + 3D',
     badgeColor: 'sky',
+    subLabs: [
+      {
+        id: 'site-survey-sim',
+        badge: '2D PRE-LAB · SITE SURVEY',
+        badgeColor: 'sky',
+        title: '🗺️ แผนผังจำลองการสำรวจพื้นที่และวางระบบ CCTV (วิทยาลัยเทคนิคอุบลราชธานี)',
+        desc: 'สำรวจ 5 โซนยุทธศาสตร์ (ป้อมยาม, เสาธง, โรงช่าง, อาคารเรียน, Server Room), ตรวจสอบ PDPA, จัดลำดับ 6 ขั้นตอนติดตั้ง, ประกอบ 5 องค์ประกอบ และทดสอบ Commissioning',
+        actions: [
+          {
+            label: '🗺️ เข้าฝึก 2D Site Survey Pre-Lab →',
+            href: '/labs/site-survey',
+            variant: 'primary',
+          },
+        ],
+      },
+      {
+        id: 'room-101-3d',
+        badge: '3D LAB · ASSEMBLY',
+        badgeColor: 'indigo',
+        title: '🏢 ห้องปฏิบัติการ 3D Room 101 (CCTV Assembly & Commissioning)',
+        desc: 'เข้าสู่ห้องฝึกปฏิบัติการเสมือนจริง 3D เพื่อตรวจสอบอุปกรณ์ 5 ส่วนหลัก, ประกอบระบบ IP CCTV และแก้ปัญหาอุปกรณ์หน้างาน',
+        actions: [
+          {
+            label: '🏢 เข้าสู่ห้อง 3D Room 101 →',
+            href: '/labs/3d/room-101',
+            variant: 'secondary',
+          },
+        ],
+      },
+    ],
   },
   {
     room: 102,
