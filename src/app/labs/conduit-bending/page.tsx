@@ -40,7 +40,7 @@ export default function ConduitBendingLabPage() {
               UNIT 03 · ROOM 103 COMPANION
             </span>
             <span className="text-xs md:text-sm font-bold text-white hidden md:inline-block">
-              คู่มือ 3D Interactive การดัดท่อร้อยสาย uPVC สีขาว (20mm)
+              คู่มือ 3D Interactive การดัดท่อ uPVC: ดัดสามเข่า 90° & ดัด 45° หลบคาน
             </span>
           </div>
         </div>

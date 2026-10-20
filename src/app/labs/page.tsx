@@ -216,13 +216,13 @@ export default function LabsDirectoryPage() {
                                 </span>
                             </div>
                             <h2 className="text-xl font-bold text-white">
-                                คู่มือ 3D Interactive การดัดท่อร้อยสาย uPVC (20mm)
+                                คู่มือ 3D Interactive การดัดท่อ uPVC (ดัดสามเข่า 90° & หลบคาน 45°)
                             </h2>
                             <p className="text-xs leading-relaxed text-slate-200">
-                                ฝึก 6 ขั้นตอนเชิงช่างมาตรฐาน วสท. / TIA-569: วัดระยะ, ตัดท่อด้วยกรรไกร Ratchet, สอดสปริงดัดท่อ, ดัด 90° ด้วยเทคนิค Overbend, บิดคลายสปริง, และติดตั้งกล่องพักสาย IP66 พร้อมกล้อง IP
+                                ฝึก 2 ทักษะสำคัญ: เทคนิคการวัดมาร์ค 25-30-35 ซม. ดัดสามเข่ารอบข้อต่อ 90° ท่อมนสวยงามไร้รอยคอด และสูตรตัวคูณ 1.414 ดัด 45° สองจังหวะหลบคานคอนกรีตอย่างนุ่มนวล
                             </p>
                             <p className="text-xs text-sky-200/70">
-                                ห้องปฏิบัติการ 3D เสริมสมรรถนะ · Room 103 Companion
+                                2 โหมดการเรียนรู้ 3D · Room 103 Companion
                             </p>
                         </div>
                         <a

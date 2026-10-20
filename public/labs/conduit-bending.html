@@ -15,12 +15,14 @@
   <style>
     :root {
       --bg-dark: #070d18;
-      --card-bg: rgba(13, 23, 42, 0.85);
+      --card-bg: rgba(13, 23, 42, 0.88);
       --card-border: rgba(56, 189, 248, 0.25);
       --accent-cyan: #06b6d4;
       --accent-sky: #38bdf8;
       --accent-orange: #f97316;
+      --accent-amber: #f59e0b;
       --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
     }
@@ -66,7 +68,7 @@
       pointer-events: auto;
     }
 
-    /* Header Bar */
+    /* Top Bar */
     .header-bar {
       display: flex;
       align-items: center;
@@ -78,6 +80,7 @@
       border-radius: 18px;
       padding: 10px 18px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      gap: 12px;
     }
 
     .header-left {
@@ -97,6 +100,7 @@
       padding: 4px 10px;
       border-radius: 8px;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     .title-box h1 {
@@ -111,6 +115,45 @@
     .title-box p {
       font-size: 11px;
       color: var(--text-muted);
+    }
+
+    /* Mode Selector in Header */
+    .mode-switcher {
+      display: flex;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 12px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .btn-mode {
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      padding: 6px 14px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Kanit', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-mode:hover {
+      color: #fff;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .btn-mode.active {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-sky));
+      color: #04101f;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(6, 182, 212, 0.4);
     }
 
     .header-actions {
@@ -132,6 +175,7 @@
       align-items: center;
       gap: 6px;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
 
     .btn-action:hover {
@@ -143,7 +187,7 @@
 
     /* Main Info Card (Bottom-Left) */
     .content-panel {
-      max-width: 440px;
+      max-width: 480px;
       background: var(--card-bg);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -175,24 +219,37 @@
       font-weight: 600;
       color: #fff;
       line-height: 1.35;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .step-desc {
       font-size: 12.5px;
       color: #cbd5e1;
-      line-height: 1.55;
+      line-height: 1.6;
       margin-bottom: 14px;
+    }
+
+    .formula-tag {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-bottom: 8px;
     }
 
     .spec-box {
       background: rgba(15, 23, 42, 0.7);
       border-left: 3px solid var(--accent-cyan);
       border-radius: 0 10px 10px 0;
-      padding: 9px 12px;
+      padding: 10px 12px;
       font-size: 11.5px;
       color: #94a3b8;
-      line-height: 1.45;
+      line-height: 1.5;
       margin-bottom: 14px;
     }
 
@@ -301,10 +358,10 @@
       color: var(--accent-emerald);
     }
 
-    /* Floating View Helper */
+    /* Floating View Tips */
     .view-tips {
       position: absolute;
-      top: 76px;
+      top: 86px;
       right: 18px;
       background: rgba(15, 23, 42, 0.7);
       backdrop-filter: blur(10px);
@@ -323,12 +380,12 @@
       gap: 5px;
     }
 
-    /* Modal / Engineering Standards Info */
+    /* Standards Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(3, 7, 18, 0.8);
-      backdrop-filter: blur(6px);
+      background: rgba(3, 7, 18, 0.82);
+      backdrop-filter: blur(8px);
       z-index: 100;
       display: none;
       align-items: center;
@@ -343,7 +400,7 @@
       background: #0f172a;
       border: 1px solid var(--accent-cyan);
       border-radius: 20px;
-      max-width: 520px;
+      max-width: 560px;
       width: 100%;
       padding: 24px;
       box-shadow: 0 20px 50px rgba(0,0,0,0.6);
@@ -365,14 +422,26 @@
       font-size: 12px;
       color: #cbd5e1;
       line-height: 1.6;
-      space-y: 10px;
     }
     .modal-body ul {
       margin-left: 20px;
       margin-top: 8px;
     }
     .modal-body li {
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .header-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .mode-switcher {
+        justify-content: center;
+      }
+      .view-tips {
+        top: 130px;
+      }
     }
 
     @media (max-width: 640px) {
@@ -382,12 +451,6 @@
       }
       .view-tips {
         display: none;
-      }
-      .header-bar {
-        padding: 8px 12px;
-      }
-      .title-box h1 {
-        font-size: 13px;
       }
     }
   </style>
@@ -403,13 +466,24 @@
       <div class="header-left">
         <span class="badge-unit">UNIT 03 · 3D LAB</span>
         <div class="title-box">
-          <h1>⚡ การดัดท่อร้อยสาย uPVC สีขาว (20mm)</h1>
-          <p>มาตรฐานงานติดตั้งกล้องวงจรปิด IP CCTV (TIA-569 / มาตรฐาน วสท.)</p>
+          <h1 id="header-title">⚡ การดัดท่อร้อยสาย uPVC สีขาว (20mm)</h1>
+          <p id="header-subtitle">เทคนิคช่างมาตรฐาน วสท. & TIA-569 สำหรับระบบกล้องวงจรปิด IP CCTV</p>
         </div>
       </div>
+
+      <!-- Mode Switcher -->
+      <div class="mode-switcher">
+        <button class="btn-mode active" id="mode-btn-90">
+          <span>📐 โหมด 1: ดัดฉาก 90° (เทคนิคสามเข่า)</span>
+        </button>
+        <button class="btn-mode" id="mode-btn-45">
+          <span>🏢 โหมด 2: ดัด 45° หลบคาน (สูตร 1.414)</span>
+        </button>
+      </div>
+
       <div class="header-actions">
         <button class="btn-action" id="btn-standards">
-          <span>📖 เกณฑ์มาตรฐานช่าง</span>
+          <span>📖 สูตร & เกณฑ์ช่าง</span>
         </button>
         <button class="btn-action" id="btn-reset-cam">
           <span>🎯 รีเซ็ตมุมมอง</span>
@@ -436,13 +510,14 @@
 
     <!-- Content Panel (Bottom) -->
     <div class="content-panel interactive-element">
-      <div class="step-badge" id="step-badge">STEP 1 / 6</div>
-      <h2 class="step-title" id="step-title">การสำรวจ วัดระยะ และมาร์คจุดกึ่งกลางดัด</h2>
+      <div class="step-badge" id="step-badge">MODE 1 · STEP 1 / 6</div>
+      <div id="step-formula-box"></div>
+      <h2 class="step-title" id="step-title">การวัดระยะและมาร์ค 3 จุด (เทคนิคสามเข่า 25 - 30 - 35 cm)</h2>
       <p class="step-desc" id="step-desc">
-        วัดระยะจากกล่องพักสาย uPVC ไปยังแนวกำแพง กำหนดตำแหน่งความสูง มาร์คจุดกึ่งกลางความโค้ง (Center of Bend) และเผื่อระยะสวมข้อต่อท่อ 15–20 มม.
+        หากต้องการดัดที่ตำแหน่ง 30 ซม. ให้มาร์คจุดกึ่งกลาง (Center Mark) สีแดงที่ 30 ซม. แล้วมาร์คจุดขนาบข้างที่ 25 ซม. (จุดเริ่มดัด) และ 35 ซม. (จุดสิ้นสุดดัด) เพื่อสร้างโซนกระจายแรง 10 ซม. ป้องกันท่อหักพับ
       </p>
       <div class="spec-box" id="step-spec">
-        <strong>💡 ทิปส์ช่าง:</strong> ท่อ uPVC ขาว ขนาด 20 มม. (3/4") ต้องรักษารัศมีดัด (Bend Radius) ไม่น้อยกว่า 6 เท่าของเส้นผ่านศูนย์กลางภายนอกท่อ (R ≥ 120 มม.) เพื่อให้สาย UTP ไม่หักงอ
+        <strong>💡 ทิปส์ช่าง:</strong> การดัดจุดเดียวจะทำให้ท่อบี้แบน การกระจายแรง 3 จุด (25 - 30 - 35 ซม.) รอบเข่าจะช่วยให้ท่อ uPVC โค้งนวลเนียน รูในท่อกลมสม่ำเสมอตลอดแนว
       </div>
       <div class="nav-controls">
         <button class="btn-step btn-prev" id="btn-prev" disabled>
@@ -459,16 +534,20 @@
   <div class="modal-backdrop" id="modal-standards">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>มาตรฐานการเดินท่อ uPVC สำหรับระบบ CCTV (วสท. / TIA-569)</h2>
+        <h2>คู่มือและสูตรการดัดท่อ uPVC ระบบกล้องวงจรปิด (วสท. / TIA-569)</h2>
         <button class="btn-action" id="btn-close-modal">✕ ปิด</button>
       </div>
       <div class="modal-body">
         <ul>
-          <li><b>ท่อร้อยสาย uPVC สีขาว:</b> เป็นท่อฉนวนไฟฟ้า ไม่ลามไฟ ทนทานต่อรังสียูวี เหมาะกับงานกล้อง IP ทั้งภายในและภายนอกอาคาร</li>
-          <li><b>ข้อห้ามการใช้ความร้อน:</b> การดัดท่อ uPVC ขาวขนาด 20 มม. แนะนำให้ใช้ <b>สปริงดัดท่อ (Cold Bending)</b> เสมอ หลีกเลี่ยงการใช้ไฟลน เพราะจะทำให้ท่อเสียคุณสมบัติไม่ลามไฟ และผิวด้านในเสียรูป</li>
-          <li><b>การชดเชยคืนตัว (Spring-back):</b> พลาสติก uPVC มีความยืดหยุ่น จึงต้องดัดเกินมุมฉากไปที่ประมาณ <b>95°–100° (Overbend)</b> เมื่อคลายแรง ท่อจะคืนตัวกลับมาได้ฉาก 90° พอดี</li>
-          <li><b>การติดตั้งกิ๊บก้ามปู:</b> กิ๊บจับท่อตัวแรกต้องห่างจากกล่องพักสาย uPVC ไม่เกิน <b>30 ซม.</b> และระยะห่างระหว่างกิ๊บแต่ละตัวไม่เกิน <b>1.0 เมตร</b> เพื่อความมั่นคงแข็งแรง</li>
-          <li><b>กล่องพักสายกันน้ำ (IP66):</b> ต้องติดตั้งซีลยางและเจาะรูระบายน้ำทิ้งด้านล่างกล่องเสมอ เพื่อป้องกันน้ำขังสะสมจากความชื้น</li>
+          <li><b>เทคนิคการดัดสามเข่า (3-Point Knee Bending):</b> สำหรับท่อ uPVC 20 มม. เมื่อต้องการดัด 90° ที่ตำแหน่ง $X$ (เช่น 30 ซม.) ให้ทำสัญลักษณ์มาร์คขนาบข้าง $X - 5$ ซม. (25 ซม.) และ $X + 5$ ซม. (35 ซม.) แล้วกดดัด 3 จังหวะไล่ระดับ ป้องกันการเกิดรอยคอดหรือท่อบี้แบน</li>
+          <li><b>สูตรคำนวณการดัด 45° หลบคาน (45° Double Offset):</b>
+            <br>
+            $$\text{ระยะห่างระหว่างจุดดัดทั้งสอง} = \text{ความลึกคาน (Offset)} \times 1.414$$
+            เช่น คานลึก 10 ซม. $\rightarrow$ ระยะห่างระหว่างมาร์ค $= 10 \times 1.414 = 14.1$ ซม.
+          </li>
+          <li><b>เทคนิคชดเชยการคืนตัว (Overbend):</b> ท่อ uPVC มีความยืดหยุ่นสูง (Spring-back) เมื่อดัด 90° ต้องดัดเกินไปที่ประมาณ 95°–100° และเมื่อดัด 45° ต้องดัดเกินไปที่ประมาณ 50° เพื่อให้ดีดตัวกลับมาได้มุมที่ต้องการพอดี</li>
+          <li><b>การตรวจสอบแนวระนาบ (No Dogleg):</b> ในการดัด 45° สองจังหวะ ต้องยกท่อส่องระดับสายตาก่อนดัดจังหวะที่สอง เพื่อให้มุมดัดทั้งสองอยู่ในระนาบเดียวกัน ท่อจะไม่บิดเบี้ยว</li>
+          <li><b>การยึดกิ๊บก้ามปู (Snap Clip):</b> กิ๊บตัวแรกต้องห่างจากกล่องพักสายหรือขอบคานไม่เกิน <b>30 ซม.</b> และระยะห่างแต่ละตัวไม่เกิน <b>1.0 ม.</b></li>
         </ul>
       </div>
     </div>
@@ -481,7 +560,7 @@
     const container = document.getElementById('webgl-container');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x070d18);
-    scene.fog = new THREE.FogExp2(0x070d18, 0.05);
+    scene.fog = new THREE.FogExp2(0x070d18, 0.04);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(2.4, 1.8, 3.2);
@@ -499,8 +578,8 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.maxPolarAngle = Math.PI / 2 + 0.05;
-    controls.minDistance = 1.0;
-    controls.maxDistance = 8.0;
+    controls.minDistance = 0.8;
+    controls.maxDistance = 8.5;
     controls.target.set(0, 0.5, 0);
 
     /* =====================================================================
@@ -510,17 +589,17 @@
     scene.add(ambientLight);
 
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.3);
-    mainLight.position.set(4, 6, 4);
+    mainLight.position.set(4, 7, 4);
     mainLight.castShadow = true;
     mainLight.shadow.mapSize.width = 2048;
     mainLight.shadow.mapSize.height = 2048;
     mainLight.shadow.camera.near = 0.5;
-    mainLight.shadow.camera.far = 15;
+    mainLight.shadow.camera.far = 16;
     mainLight.shadow.bias = -0.0005;
     scene.add(mainLight);
 
-    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.5);
-    fillLight.position.set(-4, 3, -3);
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.55);
+    fillLight.position.set(-4, 3, -2);
     scene.add(fillLight);
 
     const rimLight = new THREE.DirectionalLight(0x06b6d4, 0.8);
@@ -530,7 +609,6 @@
     /* =====================================================================
        MATERIALS CATALOG
     ===================================================================== */
-    // White uPVC Conduit Material
     const upvcMaterial = new THREE.MeshStandardMaterial({
       color: 0xf8fafc,
       roughness: 0.25,
@@ -545,21 +623,18 @@
       opacity: 0.45,
     });
 
-    // Spring Steel Material
     const springSteelMaterial = new THREE.MeshStandardMaterial({
       color: 0x94a3b8,
       roughness: 0.3,
       metalness: 0.85,
     });
 
-    // Orange Pull Cord
     const cordMaterial = new THREE.MeshStandardMaterial({
       color: 0xf97316,
       roughness: 0.6,
       metalness: 0.1,
     });
 
-    // Ratchet Cutter Orange/Red Body
     const cutterBodyMaterial = new THREE.MeshStandardMaterial({
       color: 0xe11d48,
       roughness: 0.35,
@@ -572,479 +647,776 @@
       metalness: 0.95,
     });
 
-    // Junction Box Material
     const boxMaterial = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       roughness: 0.3,
       metalness: 0.05,
     });
 
-    // Concrete Wall Material
     const wallMaterial = new THREE.MeshStandardMaterial({
       color: 0x1e293b,
-      roughness: 0.8,
+      roughness: 0.85,
       metalness: 0.1,
     });
 
-    // Benchmark Floor Grid
+    // Concrete Beam Material
+    const beamMaterial = new THREE.MeshStandardMaterial({
+      color: 0x334155,
+      roughness: 0.9,
+      metalness: 0.15,
+    });
+
+    // Knee Indicator / Cushion Material
+    const kneeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.4,
+      metalness: 0.2,
+      transparent: true,
+      opacity: 0.85,
+    });
+
+    // Marker Band Materials
+    const markRed = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const markOrange = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+    const markYellow = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+    // Grid Floor
     const gridHelper = new THREE.GridHelper(10, 20, 0x0284c7, 0x1e293b);
     gridHelper.position.y = -0.5;
     scene.add(gridHelper);
 
-    /* =====================================================================
-       ENVIRONMENT (CONCRETE WALL & BENCH)
-    ===================================================================== */
-    const wallGeo = new THREE.BoxGeometry(4.5, 3.2, 0.15);
+    // Wall & Workbench
+    const wallGeo = new THREE.BoxGeometry(4.8, 3.2, 0.15);
     const wall = new THREE.Mesh(wallGeo, wallMaterial);
     wall.position.set(0, 0.9, -1.0);
     wall.receiveShadow = true;
     scene.add(wall);
 
-    // Workbench Table
-    const tableGeo = new THREE.BoxGeometry(3.2, 0.08, 1.4);
+    const tableGeo = new THREE.BoxGeometry(3.6, 0.08, 1.4);
     const tableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.4 });
     const table = new THREE.Mesh(tableGeo, tableMat);
     table.position.set(0, -0.46, 0.1);
     table.receiveShadow = true;
     scene.add(table);
 
+    // Concrete Beam (Displayed in Mode B)
+    const beamGeo = new THREE.BoxGeometry(4.8, 0.5, 0.35);
+    const concreteBeam = new THREE.Mesh(beamGeo, beamMaterial);
+    concreteBeam.position.set(0, 1.4, -0.8);
+    concreteBeam.castShadow = true;
+    concreteBeam.receiveShadow = true;
+    concreteBeam.visible = false;
+    scene.add(concreteBeam);
+
     /* =====================================================================
-       3D ASSETS HIERARCHY
+       3D STAGES DATA & ASSETS BUILDER
     ===================================================================== */
-    const stageGroups = [];
-    for (let i = 1; i <= 6; i++) {
-      const g = new THREE.Group();
-      scene.add(g);
-      stageGroups.push(g);
+    let currentMode = '90'; // '90' or '45'
+    let currentStep = 1;
+
+    // Groups for Mode 90 (6 stages) and Mode 45 (6 stages)
+    const mode90Groups = [];
+    const mode45Groups = [];
+
+    for (let i = 0; i < 6; i++) {
+      const g90 = new THREE.Group();
+      scene.add(g90);
+      mode90Groups.push(g90);
+
+      const g45 = new THREE.Group();
+      scene.add(g45);
+      mode45Groups.push(g45);
     }
 
     /* ---------------------------------------------------------------------
-       STAGE 1: Survey, Measure & Mark Center
+       HELPER: Spring Model Generator
     --------------------------------------------------------------------- */
-    (function buildStage1() {
-      const group = stageGroups[0];
+    function createSpringCoils(coils = 36, length = 0.6) {
+      const group = new THREE.Group();
+      const step = length / coils;
+      for (let i = 0; i < coils; i++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.0035, 8, 20), springSteelMaterial);
+        ring.rotation.y = Math.PI / 2;
+        ring.position.x = (i - coils / 2) * step;
+        group.add(ring);
+      }
+      return group;
+    }
 
-      // Straight Straight uPVC Pipe (1.8m)
-      const pipeGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.8, 32);
-      const pipe = new THREE.Mesh(pipeGeo, upvcMaterial);
+    /* ---------------------------------------------------------------------
+       HELPER: Marker Band Generator
+    --------------------------------------------------------------------- */
+    function createMarkerBand(xPos, yPos, zPos, mat, labelText = "") {
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0408, 0.0408, 0.014, 32), mat);
+      band.rotation.z = Math.PI / 2;
+      band.position.set(xPos, yPos, zPos);
+      return band;
+    }
+
+    /* ---------------------------------------------------------------------
+       HELPER: Simulated Knee Cushion
+    --------------------------------------------------------------------- */
+    function createKneeIndicator(x, y, z) {
+      const kneeGroup = new THREE.Group();
+      const kneeMesh = new THREE.Mesh(new THREE.SphereGeometry(0.09, 24, 24), kneeMaterial);
+      kneeMesh.scale.set(1.1, 0.9, 0.9);
+      kneeGroup.add(kneeMesh);
+      kneeGroup.position.set(x, y, z);
+      return kneeGroup;
+    }
+
+    /* ---------------------------------------------------------------------
+       BUILD MODE 90° (3-POINT KNEE BENDING)
+    --------------------------------------------------------------------- */
+
+    // Stage 1: Measuring & 3-Point Mark (25 - 30 - 35 cm)
+    (function build90_Stage1() {
+      const group = mode90Groups[0];
+
+      // Straight pipe
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 32), upvcMaterial);
       pipe.rotation.z = Math.PI / 2;
       pipe.position.set(0, 0.2, 0);
       pipe.castShadow = true;
       group.add(pipe);
 
-      // Marker line at center
-      const markGeo = new THREE.CylinderGeometry(0.0405, 0.0405, 0.015, 32);
-      const markMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-      const mark = new THREE.Mesh(markGeo, markMat);
-      mark.rotation.z = Math.PI / 2;
-      mark.position.set(0, 0.2, 0);
-      group.add(mark);
+      // 3 Marker Bands: 25cm (Orange), 30cm (Red/Center), 35cm (Orange)
+      // Center at x = 0 (30 cm), Start at x = -0.15 (25 cm), End at x = 0.15 (35 cm)
+      const band25 = createMarkerBand(-0.15, 0.2, 0, markOrange);
+      const band30 = createMarkerBand(0, 0.2, 0, markRed);
+      const band35 = createMarkerBand(0.15, 0.2, 0, markOrange);
+      group.add(band25, band30, band35);
 
-      // Measurement Tape Body
-      const tapeBodyGeo = new THREE.BoxGeometry(0.12, 0.12, 0.08);
-      const tapeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
-      const tape = new THREE.Mesh(tapeBodyGeo, tapeMat);
+      // Measurement Tape
+      const tape = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }));
       tape.position.set(-0.85, 0.2, 0.06);
       tape.castShadow = true;
       group.add(tape);
 
-      // Extended yellow measuring ribbon
-      const ribbonGeo = new THREE.PlaneGeometry(1.4, 0.025);
-      const ribbonMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6, side: THREE.DoubleSide });
-      const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat);
+      // Yellow Ribbon with cm ticks
+      const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.025), new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6, side: THREE.DoubleSide }));
       ribbon.rotation.x = -Math.PI / 2;
       ribbon.position.set(-0.15, 0.245, 0);
       group.add(ribbon);
 
-      // Marker Pen
-      const penGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.18, 16);
-      const penMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
-      const pen = new THREE.Mesh(penGeo, penMat);
+      // Pen
+      const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.18, 16), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
       pen.rotation.x = Math.PI / 3;
       pen.rotation.z = Math.PI / 6;
       pen.position.set(0.02, 0.32, 0.06);
-      pen.castShadow = true;
       group.add(pen);
     })();
 
-    /* ---------------------------------------------------------------------
-       STAGE 2: Square Cutting with Ratchet Pipe Cutter
-    --------------------------------------------------------------------- */
-    (function buildStage2() {
-      const group = stageGroups[1];
+    // Stage 2: Cutting & Spring Insertion
+    (function build90_Stage2() {
+      const group = mode90Groups[1];
 
-      // Pipe to be cut
-      const pipeGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 32);
-      const pipe = new THREE.Mesh(pipeGeo, upvcMaterial);
-      pipe.rotation.z = Math.PI / 2;
-      pipe.position.set(-0.1, 0.2, 0);
-      pipe.castShadow = true;
-      group.add(pipe);
-
-      // Cutter Model Assembly
-      const cutterGroup = new THREE.Group();
-      cutterGroup.position.set(0.2, 0.2, 0);
-
-      // Lower Jaw (Curve)
-      const jawGeo = new THREE.TorusGeometry(0.09, 0.025, 16, 32, Math.PI);
-      const jaw = new THREE.Mesh(jawGeo, cutterBodyMaterial);
-      jaw.rotation.x = Math.PI / 2;
-      jaw.rotation.z = -Math.PI / 2;
-      cutterGroup.add(jaw);
-
-      // Handles
-      const handle1Geo = new THREE.CylinderGeometry(0.02, 0.022, 0.35, 16);
-      const handle1 = new THREE.Mesh(handle1Geo, cutterBodyMaterial);
-      handle1.position.set(0.12, -0.15, 0.08);
-      handle1.rotation.z = -0.3;
-      cutterGroup.add(handle1);
-
-      const handle2 = handle1.clone();
-      handle2.position.set(0.12, 0.15, 0.08);
-      handle2.rotation.z = 0.3;
-      cutterGroup.add(handle2);
-
-      // Stainless Blade
-      const bladeGeo = new THREE.BoxGeometry(0.005, 0.1, 0.08);
-      const blade = new THREE.Mesh(bladeGeo, cutterBladeMaterial);
-      blade.position.set(0, 0.02, 0);
-      cutterGroup.add(blade);
-
-      group.add(cutterGroup);
-      group.cutterAssembly = cutterGroup;
-    })();
-
-    /* ---------------------------------------------------------------------
-       STAGE 3: Inserting Bending Spring & Pull Cord
-    --------------------------------------------------------------------- */
-    (function buildStage3() {
-      const group = stageGroups[2];
-
-      // Translucent pipe showing spring inside
-      const pipeGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.6, 32);
-      const pipe = new THREE.Mesh(pipeGeo, upvcTranslucentMaterial);
+      // Translucent pipe showing spring inside across 25-35cm zone
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 32), upvcTranslucentMaterial);
       pipe.rotation.z = Math.PI / 2;
       pipe.position.set(0, 0.2, 0);
       group.add(pipe);
 
-      // Steel Spring Coil Assembly
-      const springGroup = new THREE.Group();
-      const coilCount = 42;
-      for (let i = 0; i < coilCount; i++) {
-        const ringGeo = new THREE.TorusGeometry(0.032, 0.004, 10, 24);
-        const ring = new THREE.Mesh(ringGeo, springSteelMaterial);
-        ring.rotation.y = Math.PI / 2;
-        ring.position.x = (i - coilCount / 2) * 0.016;
-        springGroup.add(ring);
-      }
-      springGroup.position.set(0, 0.2, 0);
-      group.add(springGroup);
+      // Markers
+      group.add(createMarkerBand(-0.15, 0.2, 0, markOrange));
+      group.add(createMarkerBand(0, 0.2, 0, markRed));
+      group.add(createMarkerBand(0.15, 0.2, 0, markOrange));
 
-      // Orange Pull Cord attached to loop
-      const cordGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.9, 12);
-      const cord = new THREE.Mesh(cordGeo, cordMaterial);
+      // Spring inside pipe centered over the 3 marks
+      const spring = createSpringCoils(40, 0.7);
+      spring.position.set(0, 0.2, 0);
+      group.add(spring);
+
+      // Orange Pull Cord
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.9, 12), cordMaterial);
       cord.rotation.z = Math.PI / 2;
       cord.position.set(0.85, 0.2, 0);
       group.add(cord);
     })();
 
-    /* ---------------------------------------------------------------------
-       STAGE 4: 90° Bending with Overbend Technique
-    --------------------------------------------------------------------- */
-    (function buildStage4() {
-      const group = stageGroups[3];
+    // Stage 3: Knee Stroke 1 (Pressing at 25cm mark ~25-30°)
+    (function build90_Stage3() {
+      const group = mode90Groups[2];
 
-      // Bent uPVC Pipe Geometry (Toroidal 90° arc + 2 straight ends)
-      const bentPipeGroup = new THREE.Group();
-
-      // Horizontal Leg
-      const leg1Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
-      const leg1 = new THREE.Mesh(leg1Geo, upvcMaterial);
+      const pipeG = new THREE.Group();
+      // Slight curve at x = -0.15
+      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
       leg1.rotation.z = Math.PI / 2;
-      leg1.position.set(-0.55, 0, 0);
-      bentPipeGroup.add(leg1);
+      leg1.position.set(-0.5, 0.2, 0);
+      pipeG.add(leg1);
 
-      // Curved Elbow 90° (Quarter Torus)
-      const bendRadius = 0.25;
-      const elbowGeo = new THREE.TorusGeometry(bendRadius, 0.04, 16, 32, Math.PI / 2);
-      const elbow = new THREE.Mesh(elbowGeo, upvcMaterial);
-      elbow.position.set(-0.2, 0.25, 0);
+      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.04, 16, 32, Math.PI / 7), upvcMaterial);
+      elbow.position.set(-0.15, 0.55, 0);
       elbow.rotation.z = -Math.PI / 2;
-      bentPipeGroup.add(elbow);
+      pipeG.add(elbow);
 
-      // Vertical Leg (Stub-up)
-      const leg2Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
-      const leg2 = new THREE.Mesh(leg2Geo, upvcMaterial);
-      leg2.position.set(0.05, 0.6, 0);
-      bentPipeGroup.add(leg2);
+      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      leg2.position.set(0.18, 0.32, 0);
+      leg2.rotation.z = -0.45;
+      pipeG.add(leg2);
 
-      bentPipeGroup.position.set(0, 0.1, 0);
-      group.add(bentPipeGroup);
-      group.bentPipeAssembly = bentPipeGroup;
+      group.add(pipeG);
 
-      // 90-Degree Angle Helper Ring
-      const angleRingGeo = new THREE.RingGeometry(0.12, 0.14, 32, 1, 0, Math.PI / 2);
-      const angleRingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
-      const angleRing = new THREE.Mesh(angleRingGeo, angleRingMat);
-      angleRing.position.set(-0.05, 0.35, 0.05);
+      // Simulated Knee at 25cm
+      const knee = createKneeIndicator(-0.15, 0.12, 0);
+      group.add(knee);
+
+      // Marker on knee
+      group.add(createMarkerBand(-0.15, 0.22, 0.02, markOrange));
+    })();
+
+    // Stage 4: Knee Stroke 2 (Sliding to 30cm mark ~60°)
+    (function build90_Stage4() {
+      const group = mode90Groups[3];
+
+      const pipeG = new THREE.Group();
+      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.65, 32), upvcMaterial);
+      leg1.rotation.z = Math.PI / 2;
+      leg1.position.set(-0.52, 0.2, 0);
+      pipeG.add(leg1);
+
+      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 16, 32, Math.PI / 3), upvcMaterial);
+      elbow.position.set(-0.2, 0.48, 0);
+      elbow.rotation.z = -Math.PI / 2;
+      pipeG.add(elbow);
+
+      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.65, 32), upvcMaterial);
+      leg2.position.set(0.15, 0.5, 0);
+      leg2.rotation.z = -1.05;
+      pipeG.add(leg2);
+
+      group.add(pipeG);
+
+      // Knee at 30cm center mark
+      const knee = createKneeIndicator(0, 0.16, 0);
+      group.add(knee);
+      group.add(createMarkerBand(0, 0.23, 0.02, markRed));
+    })();
+
+    // Stage 5: Knee Stroke 3 (Pressing at 35cm mark, Overbend ~95°-100° to 90° Final)
+    (function build90_Stage5() {
+      const group = mode90Groups[4];
+
+      const pipeG = new THREE.Group();
+      const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      leg1.rotation.z = Math.PI / 2;
+      leg1.position.set(-0.55, 0.1, 0);
+      pipeG.add(leg1);
+
+      // Perfect 90-degree curved elbow
+      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 2), upvcMaterial);
+      elbow.position.set(-0.2, 0.35, 0);
+      elbow.rotation.z = -Math.PI / 2;
+      pipeG.add(elbow);
+
+      const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      leg2.position.set(0.05, 0.7, 0);
+      pipeG.add(leg2);
+
+      group.add(pipeG);
+
+      // Knee indicator at 35cm finish point
+      const knee = createKneeIndicator(0.05, 0.25, 0);
+      group.add(knee);
+
+      // Square 90° Verification Angle
+      const angleRing = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.14, 32, 1, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide }));
+      angleRing.position.set(-0.05, 0.45, 0.05);
       group.add(angleRing);
 
-      // Level / Square indicator
-      const levelGeo = new THREE.BoxGeometry(0.05, 0.3, 0.03);
-      const levelMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
-      const level = new THREE.Mesh(levelGeo, levelMat);
-      level.position.set(0.11, 0.6, 0);
+      // Level
+      const level = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.03), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 }));
+      level.position.set(0.11, 0.7, 0);
       group.add(level);
     })();
 
-    /* ---------------------------------------------------------------------
-       STAGE 5: Twisting & Spring Extraction
-    --------------------------------------------------------------------- */
-    (function buildStage5() {
-      const group = stageGroups[4];
+    // Stage 6: Spring Extracted & IP Bullet Camera Mounted
+    (function build90_Stage6() {
+      const group = mode90Groups[5];
 
-      // Bent Pipe
-      const bentPipeGroup = new THREE.Group();
-      const leg1Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
-      const leg1 = new THREE.Mesh(leg1Geo, upvcMaterial);
-      leg1.rotation.z = Math.PI / 2;
-      leg1.position.set(-0.55, 0, 0);
-      bentPipeGroup.add(leg1);
-
-      const elbowGeo = new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 2);
-      const elbow = new THREE.Mesh(elbowGeo, upvcMaterial);
-      elbow.position.set(-0.2, 0.25, 0);
-      elbow.rotation.z = -Math.PI / 2;
-      bentPipeGroup.add(elbow);
-
-      const leg2Geo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32);
-      const leg2 = new THREE.Mesh(leg2Geo, upvcMaterial);
-      leg2.position.set(0.05, 0.6, 0);
-      bentPipeGroup.add(leg2);
-
-      bentPipeGroup.position.set(0, 0.1, 0);
-      group.add(bentPipeGroup);
-
-      // Extracted Spring halfway out of horizontal end
-      const springGroup = new THREE.Group();
-      const coilCount = 28;
-      for (let i = 0; i < coilCount; i++) {
-        const ringGeo = new THREE.TorusGeometry(0.031, 0.0035, 10, 20);
-        const ring = new THREE.Mesh(ringGeo, springSteelMaterial);
-        ring.rotation.y = Math.PI / 2;
-        ring.position.x = (i - coilCount / 2) * 0.015;
-        springGroup.add(ring);
-      }
-      springGroup.position.set(-0.85, 0.1, 0);
-      group.add(springGroup);
-
-      // Cord pulled taut
-      const cordGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.6, 12);
-      const cord = new THREE.Mesh(cordGeo, cordMaterial);
-      cord.rotation.z = Math.PI / 2;
-      cord.position.set(-1.3, 0.1, 0);
-      group.add(cord);
-    })();
-
-    /* ---------------------------------------------------------------------
-       STAGE 6: Complete Installation (Box, Clamps, Cat6, Bullet Camera)
-    --------------------------------------------------------------------- */
-    (function buildStage6() {
-      const group = stageGroups[5];
-
-      // Final installed uPVC conduit run on wall
       const runGroup = new THREE.Group();
       runGroup.position.set(0, 0.5, -0.9);
 
-      // Horizontal pipe run
-      const hPipeGeo = new THREE.CylinderGeometry(0.035, 0.035, 1.2, 32);
-      const hPipe = new THREE.Mesh(hPipeGeo, upvcMaterial);
+      // Horizontal run
+      const hPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.2, 32), upvcMaterial);
       hPipe.rotation.z = Math.PI / 2;
       hPipe.position.set(-0.6, 0, 0.06);
       runGroup.add(hPipe);
 
-      // 90-deg Elbow
-      const elbowGeo = new THREE.TorusGeometry(0.2, 0.035, 16, 32, Math.PI / 2);
-      const elbow = new THREE.Mesh(elbowGeo, upvcMaterial);
+      // 90 Elbow
+      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.035, 16, 32, Math.PI / 2), upvcMaterial);
       elbow.position.set(0.0, 0.2, 0.06);
       elbow.rotation.z = -Math.PI / 2;
       runGroup.add(elbow);
 
-      // Vertical pipe going up into junction box
-      const vPipeGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.5, 32);
-      const vPipe = new THREE.Mesh(vPipeGeo, upvcMaterial);
+      // Vertical run into box
+      const vPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 32), upvcMaterial);
       vPipe.position.set(0.2, 0.45, 0.06);
       runGroup.add(vPipe);
 
-      // uPVC Snap Clips (กิ๊บก้ามปูขาว 3 จุด)
+      // Snap clips
       const clipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-      const createClip = (x, y) => {
-        const clipG = new THREE.Group();
-        const base = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), clipMat);
-        base.position.set(x, y, 0.03);
-        clipG.add(base);
-        return clipG;
+      const addClip = (x, y) => {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), clipMat);
+        b.position.set(x, y, 0.03);
+        runGroup.add(b);
       };
-      runGroup.add(createClip(-1.0, 0));
-      runGroup.add(createClip(-0.35, 0));
-      runGroup.add(createClip(0.2, 0.35));
+      addClip(-1.0, 0);
+      addClip(-0.35, 0);
+      addClip(0.2, 0.35);
 
-      // 4x4 Waterproof uPVC Junction Box
-      const boxGeo = new THREE.BoxGeometry(0.3, 0.3, 0.16);
-      const box = new THREE.Mesh(boxGeo, boxMaterial);
+      // Junction Box 4x4
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.16), boxMaterial);
       box.position.set(0.2, 0.85, 0.08);
       box.castShadow = true;
       runGroup.add(box);
 
-      // Box Cover Screw details
-      const screwMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
-      [[-0.12, 0.12], [0.12, 0.12], [-0.12, -0.12], [0.12, -0.12]].forEach(([sx, sy]) => {
-        const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.01, 8), screwMat);
-        screw.rotation.x = Math.PI / 2;
-        screw.position.set(0.2 + sx, 0.85 + sy, 0.165);
-        runGroup.add(screw);
-      });
-
-      // IP Bullet Camera mounted on Box Lid
+      // IP Bullet Cam
       const camGroup = new THREE.Group();
       camGroup.position.set(0.2, 0.85, 0.16);
 
-      // Bracket Arm
-      const armGeo = new THREE.CylinderGeometry(0.02, 0.025, 0.12, 16);
-      const arm = new THREE.Mesh(armGeo, boxMaterial);
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.12, 16), boxMaterial);
       arm.rotation.x = Math.PI / 2;
       arm.position.set(0, 0, 0.06);
       camGroup.add(arm);
 
-      // Bullet Body Cylinder
-      const bodyGeo = new THREE.CylinderGeometry(0.05, 0.045, 0.24, 24);
-      const camBody = new THREE.Mesh(bodyGeo, boxMaterial);
+      const camBody = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.24, 24), boxMaterial);
       camBody.rotation.x = Math.PI / 2 - 0.25;
       camBody.position.set(0, -0.03, 0.2);
       camBody.castShadow = true;
       camGroup.add(camBody);
 
-      // Sunshield Visor
-      const shieldGeo = new THREE.CylinderGeometry(0.055, 0.052, 0.16, 24, 1, false, 0, Math.PI);
-      const shield = new THREE.Mesh(shieldGeo, new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 }));
+      const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.052, 0.16, 24, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 }));
       shield.rotation.x = Math.PI / 2 - 0.25;
       shield.rotation.z = Math.PI;
       shield.position.set(0, -0.02, 0.22);
       camGroup.add(shield);
 
-      // Front Lens Ring
-      const lensGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.015, 24);
-      const lensMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.1, metalness: 0.9 });
-      const lens = new THREE.Mesh(lensGeo, lensMat);
-      lens.rotation.x = Math.PI / 2 - 0.25;
-      lens.position.set(0, -0.06, 0.32);
-      camGroup.add(lens);
-
       runGroup.add(camGroup);
       group.add(runGroup);
     })();
 
+
+    /* ---------------------------------------------------------------------
+       BUILD MODE 45° (BEAM CROSSOVER / DOUBLE 45° OFFSET)
+    --------------------------------------------------------------------- */
+
+    // Stage 1: Beam Measurement & 1.414 Calculation
+    (function build45_Stage1() {
+      const group = mode45Groups[0];
+
+      // Straight pipe
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 32), upvcMaterial);
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set(0, 0.2, 0);
+      pipe.castShadow = true;
+      group.add(pipe);
+
+      // Two marks separated by 14.1 cm (represented by scaled 0.25 units)
+      const mark1 = createMarkerBand(-0.14, 0.2, 0, markOrange);
+      const mark2 = createMarkerBand(0.14, 0.2, 0, markOrange);
+      group.add(mark1, mark2);
+
+      // Measurement ribbon
+      const ribbon = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.025), new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6, side: THREE.DoubleSide }));
+      ribbon.rotation.x = -Math.PI / 2;
+      ribbon.position.set(0, 0.245, 0);
+      group.add(ribbon);
+
+      // Tape Measure
+      const tape = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.08), new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }));
+      tape.position.set(-0.6, 0.2, 0.06);
+      group.add(tape);
+    })();
+
+    // Stage 2: First Bend 45° (Bend Upward)
+    (function build45_Stage2() {
+      const group = mode45Groups[1];
+
+      const pipeG = new THREE.Group();
+      // Straight section 1
+      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      p1.rotation.z = Math.PI / 2;
+      p1.position.set(-0.5, 0.2, 0);
+      pipeG.add(p1);
+
+      // 45° Elbow
+      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
+      elbow.position.set(-0.15, 0.48, 0);
+      elbow.rotation.z = -Math.PI / 2;
+      pipeG.add(elbow);
+
+      // Slanted section at 45°
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      p2.position.set(0.18, 0.45, 0);
+      p2.rotation.z = -0.785; // -45 deg
+      pipeG.add(p2);
+
+      group.add(pipeG);
+
+      // Knee at mark 1
+      const knee = createKneeIndicator(-0.15, 0.14, 0);
+      group.add(knee);
+    })();
+
+    // Stage 3: No Dogleg Alignment (Sight-down-the-pipe)
+    (function build45_Stage3() {
+      const group = mode45Groups[2];
+
+      const pipeG = new THREE.Group();
+      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      p1.rotation.z = Math.PI / 2;
+      p1.position.set(-0.5, 0.2, 0);
+      pipeG.add(p1);
+
+      const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
+      elbow.position.set(-0.15, 0.48, 0);
+      elbow.rotation.z = -Math.PI / 2;
+      pipeG.add(elbow);
+
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 32), upvcMaterial);
+      p2.position.set(0.18, 0.45, 0);
+      p2.rotation.z = -0.785;
+      pipeG.add(p2);
+
+      group.add(pipeG);
+
+      // Laser / Alignment Guideline
+      const lineGeo = new THREE.CylinderGeometry(0.003, 0.003, 1.8, 8);
+      const lineMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      const line = new THREE.Mesh(lineGeo, lineMat);
+      line.rotation.z = Math.PI / 2;
+      line.position.set(0, 0.2, 0.08);
+      group.add(line);
+    })();
+
+    // Stage 4: Second Bend 45° (Bend Downward parallel to wall)
+    (function build45_Stage4() {
+      const group = mode45Groups[3];
+
+      // Complete Double 45° Offset Geometry
+      const pipeG = new THREE.Group();
+
+      // Lower horizontal leg
+      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 32), upvcMaterial);
+      p1.rotation.z = Math.PI / 2;
+      p1.position.set(-0.6, 0.15, 0);
+      pipeG.add(p1);
+
+      // Elbow 1 (up 45)
+      const e1 = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
+      e1.position.set(-0.3, 0.4, 0);
+      e1.rotation.z = -Math.PI / 2;
+      pipeG.add(e1);
+
+      // Slant leg
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.35, 32), upvcMaterial);
+      p2.position.set(-0.05, 0.42, 0);
+      p2.rotation.z = -0.785;
+      pipeG.add(p2);
+
+      // Elbow 2 (down 45 back to horizontal)
+      const e2 = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.04, 16, 32, Math.PI / 4), upvcMaterial);
+      e2.position.set(0.2, 0.45, 0);
+      e2.rotation.z = Math.PI / 4;
+      pipeG.add(e2);
+
+      // Upper horizontal leg
+      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 32), upvcMaterial);
+      p3.rotation.z = Math.PI / 2;
+      p3.position.set(0.65, 0.63, 0);
+      pipeG.add(p3);
+
+      group.add(pipeG);
+
+      // Knee indicator at second bend
+      const knee = createKneeIndicator(0.12, 0.45, 0);
+      group.add(knee);
+    })();
+
+    // Stage 5: Fitting Contour Around Concrete Beam
+    (function build45_Stage5() {
+      const group = mode45Groups[4];
+
+      // Recreate Double 45 offset running over/contouring the beam
+      const runG = new THREE.Group();
+      runG.position.set(0, 0.6, -0.6);
+
+      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
+      p1.rotation.z = Math.PI / 2;
+      p1.position.set(-0.8, 0, 0);
+      runG.add(p1);
+
+      const e1 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
+      e1.position.set(-0.4, 0.22, 0);
+      e1.rotation.z = -Math.PI / 2;
+      runG.add(e1);
+
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.38, 32), upvcMaterial);
+      p2.position.set(-0.16, 0.27, 0);
+      p2.rotation.z = -0.785;
+      runG.add(p2);
+
+      const e2 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
+      e2.position.set(0.1, 0.32, 0);
+      e2.rotation.z = Math.PI / 4;
+      runG.add(e2);
+
+      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
+      p3.rotation.z = Math.PI / 2;
+      p3.position.set(0.65, 0.48, 0);
+      runG.add(p3);
+
+      group.add(runG);
+    })();
+
+    // Stage 6: Final Mounting with Clips & Cat6 Cable Pulled Through
+    (function build45_Stage6() {
+      const group = mode45Groups[5];
+
+      const runG = new THREE.Group();
+      runG.position.set(0, 0.6, -0.6);
+
+      // Complete Offset Pipe
+      const p1 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
+      p1.rotation.z = Math.PI / 2;
+      p1.position.set(-0.8, 0, 0);
+      runG.add(p1);
+
+      const e1 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
+      e1.position.set(-0.4, 0.22, 0);
+      e1.rotation.z = -Math.PI / 2;
+      runG.add(e1);
+
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.38, 32), upvcMaterial);
+      p2.position.set(-0.16, 0.27, 0);
+      p2.rotation.z = -0.785;
+      runG.add(p2);
+
+      const e2 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 16, 32, Math.PI / 4), upvcMaterial);
+      e2.position.set(0.1, 0.32, 0);
+      e2.rotation.z = Math.PI / 4;
+      runG.add(e2);
+
+      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.8, 32), upvcMaterial);
+      p3.rotation.z = Math.PI / 2;
+      p3.position.set(0.65, 0.48, 0);
+      runG.add(p3);
+
+      // Snap clips on both sides of beam
+      const clipMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+      const addClip = (x, y) => {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), clipMat);
+        b.position.set(x, y, -0.02);
+        runG.add(b);
+      };
+      addClip(-1.1, 0);
+      addClip(-0.55, 0);
+      addClip(0.3, 0.48);
+      addClip(0.9, 0.48);
+
+      // Blue Cat6 UTP Cable emerging from end
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.4, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 }));
+      cable.rotation.z = Math.PI / 2;
+      cable.position.set(1.15, 0.48, 0);
+      runG.add(cable);
+
+      group.add(runG);
+    })();
+
+
     /* =====================================================================
-       STAGE DATA & STEP CONTROLLER
+       STAGE DATA DEFINITIONS (MODES 90 & 45)
     ===================================================================== */
-    const stagesData = [
+    const stagesData_90 = [
       {
         step: 1,
-        badge: "STEP 1 / 6 · SURVEY & MARK",
-        title: "การสำรวจ วัดระยะ และมาร์คจุดกึ่งกลางดัด",
-        desc: "วัดระยะจากกล่องพักสาย uPVC ไปยังแนวกำแพง กำหนดตำแหน่งความสูง มาร์คจุดกึ่งกลางความโค้ง (Center of Bend) และเผื่อระยะสวมข้อต่อท่อ 15–20 มม.",
-        spec: "💡 <strong>ทิปส์ช่าง:</strong> ท่อ uPVC ขาว ขนาด 20 มม. (3/4\") ต้องรักษารัศมีดัด (Bend Radius) ไม่น้อยกว่า 6 เท่าของเส้นผ่านศูนย์กลางภายนอกท่อ (R ≥ 120 มม.) เพื่อให้สาย UTP Cat6 ร้อยผ่านได้สะดวก ไม่หักพับ",
-        camPos: { x: 0.2, y: 1.2, z: 2.4 },
+        badge: "โหมด 1 (90°) · STEP 1 / 6",
+        formula: "📐 โซนดัดกระจายแรง: 25 - 30 - 35 cm (กว้าง 10 cm)",
+        title: "การวัดระยะและมาร์ค 3 จุด (เทคนิคสามเข่า 25 - 30 - 35 cm)",
+        desc: "หากต้องการดัดเข้าฉากที่ตำแหน่ง 30 ซม. ให้มาร์คจุดกึ่งกลาง (Center Mark) สีแดงที่ 30 ซม. และมาร์คขนาบข้างที่ 25 ซม. (จุดเริ่มดัด) และ 35 ซม. (จุดสิ้นสุดดัด) เพื่อกำหนดโซนกระจายแรง 10 ซม. ป้องกันท่อหักคอด",
+        spec: "💡 <strong>ทิปส์ช่าง:</strong> ช่างมืออาชีพจะไม่ดัดกดท่อที่จุดเดียว เพราะจะทำให้ท่อ uPVC บี้แบน การกำหนด 3 จุดจะช่วยให้ดัดรอบเข่าได้อย่างราบรื่นและรัศมีความโค้งมนสวยงาม",
+        camPos: { x: 0.2, y: 1.1, z: 2.3 },
         target: { x: 0, y: 0.2, z: 0 }
       },
       {
         step: 2,
-        badge: "STEP 2 / 6 · RATCHET PIPE CUTTER",
-        title: "การตัดท่อ uPVC ด้วยกรรไกรตัดท่อ PVC",
-        desc: "ใช้กรรไกรตัดท่อ PVC กลไกเฟืองผ่อนแรง (Ratchet Pipe Cutter) ตัดท่อให้ได้ฉาก 90° ขอบคมเรียบ ไร้เศษขุยขี้เลื่อย ไม่ทำให้ท่อแตกหักและไม่ต้องใช้ตะไบลบคม",
-        spec: "⚠️ <strong>ข้อควรระวัง:</strong> หลีกเลี่ยงการใช้เลื่อยตัดเหล็กเพราะจะทำให้เกิดเศษผงพลาสติกตกค้างในท่อ ซึ่งอาจสร้างความเสียหายต่อเปลือกสายสัญญาณระหว่างร้อยสาย",
-        camPos: { x: 0.5, y: 0.8, z: 1.6 },
-        target: { x: 0.1, y: 0.2, z: 0 }
-      },
-      {
-        step: 3,
-        badge: "STEP 3 / 6 · BENDING SPRING INSERTION",
-        title: "การสอดสปริงดัดท่อ uPVC พร้อมเชือกดึง",
-        desc: "สอดสปริงดัดท่อเหล็กชุบซิงค์ขนาด 20 มม. เข้าไปในท่อ โดยผูกเชือกไนลอนเข้ากับห่วงสปริง ให้ตำแหน่งกึ่งกลางสปริงตรงกับรอยมาร์คดัดพอดีเพื่อป้องกันท่อบี้แบน",
-        spec: "💡 <strong>ทิปส์ช่าง:</strong> หากแนวสอดสปริงลึกมาก ให้ทาสารหล่อลื่นชนิดแห้งหรือผงแป้งเบาๆ และต้องผูกปลายเชือกไว้ภายนอกท่อเสมอ ป้องกันสปริงติดค้าง",
-        camPos: { x: 0.3, y: 0.9, z: 2.1 },
+        badge: "โหมด 1 (90°) · STEP 2 / 6",
+        formula: "✂️ ตัดได้ฉาก + สอดสปริงคลุมแนว 25–35 cm",
+        title: "การตัดท่อ uPVC & สอดสปริงดัดท่อ",
+        desc: "ใช้กรรไกรตัดท่อ Ratchet ให้ได้ฉาก 90° ขอบคมเรียบ จากนั้นสอดสปริงดัดท่อเหล็กชุบซิงค์ 20 มม. พร้อมผูกเชือกไนลอน โดยจัดตำแหน่งให้แกนกลางสปริงคลุมแนว 25–35 ซม. พอดี",
+        spec: "⚠️ <strong>ข้อควรระวัง:</strong> ต้องผูกเชือกดึงไว้กับห่วงปลายสปริงและจับปลายเชือกไว้นอกท่อเสมอ เพื่อให้สามารถดึงสปริงกลับออกมาได้ง่าย",
+        camPos: { x: 0.4, y: 0.9, z: 2.1 },
         target: { x: 0, y: 0.2, z: 0 }
       },
       {
+        step: 3,
+        badge: "โหมด 1 (90°) · STEP 3 / 6",
+        formula: "🦵 เข่ากดจุดที่ 1 (25 cm) · มุมเริ่มต้น ~25°-30°",
+        title: "การกดดัดจังหวะที่ 1 (จุด 25 cm)",
+        desc: "นำท่อทาบเข่าที่ตำแหน่งมาร์คแรก 25 ซม. ใช้สองมือจับปลายท่อขนาบข้างแล้วค่อยๆ โน้มแรงเบาๆ ให้ท่อเริ่มโค้งประมาณ 25°–30° เพื่อขึ้นรูปทรงโค้งแรก",
+        spec: "💡 <strong>หัวใจสำคัญ:</strong> ออกแรงนุ่มนวลอย่างสม่ำเสมอ อย่ากระตุกแรง เพราะสปริงด้านในกำลังเริ่มรองรับผนังท่อเพื่อรักษารูในท่อให้กลม",
+        camPos: { x: 0.1, y: 0.9, z: 2.2 },
+        target: { x: 0, y: 0.25, z: 0 }
+      },
+      {
         step: 4,
-        badge: "STEP 4 / 6 · 90° OVERBEND TECHNIQUE",
-        title: "การดัดท่อ 90° ด้วยเทคนิค Overbend",
-        desc: "ใช้เข่าหรือแขนค่อยๆ ออกแรงดัดท่ออย่างสม่ำเสมอ โดยดัดให้เลยมุมฉากเล็กน้อย (~95°–100°) เพื่อชดเชยแรงคืนตัว (Spring-back) ของวัสดุ uPVC ให้คืนรูปที่ 90° ได้ฉากสมบูรณ์",
-        spec: "📏 <strong>การตรวจสอบ:</strong> ใช้ระดับน้ำหรือฉากเหล็กทาบตรวจสอบ หากยังไม่ได้ 90° พอดี สามารถดัดแต่งซ้ำเบาๆ ได้ในขณะที่สปริงยังอยู่ด้านใน",
-        camPos: { x: 0.1, y: 0.8, z: 2.0 },
-        target: { x: -0.1, y: 0.3, z: 0 }
+        badge: "โหมด 1 (90°) · STEP 4 / 6",
+        formula: "🦵 เข่าเลื่อนกดจุดที่ 2 (30 cm) · มุมโค้งเพิ่มเป็น ~60°",
+        title: "การกดดัดจังหวะที่ 2 (จุดกึ่งกลาง 30 cm)",
+        desc: "เลื่อนท่อมาทาบเข่าที่มาร์คกลาง 30 ซม. ออกแรงโน้มดัดต่อเนื่องให้ความโค้งเพิ่มขึ้นเป็นประมาณ 60° รัศมีส่วนโค้งจะเริ่มแผ่ตัวสม่ำเสมอระหว่างจุด 25 ถึง 35 ซม.",
+        spec: "🔍 <strong>สังเกตผิวท่อ:</strong> ผิวท่อ uPVC จะตึงตัวสวยงามโดยไม่มีรอยพับหรือรอยย่นสีขาว (Stress Whitening) ให้เห็น",
+        camPos: { x: 0.2, y: 0.8, z: 2.0 },
+        target: { x: 0, y: 0.3, z: 0 }
       },
       {
         step: 5,
-        badge: "STEP 5 / 6 · TWIST & EXTRACT SPRING",
-        title: "การบิดคลายและดึงสปริงดัดท่อออก",
-        desc: "หมุนบิดท่อทวนทิศทางเกลียวของสปริงเล็กน้อยเพื่อให้เส้นผ่านศูนย์กลางสปริงยุบตัวคลายแรงเสียดทาน จากนั้นดึงเชือกไนลอนนำสปริงออกจากท่ออย่างนุ่มนวล",
-        spec: "🔍 <strong>ตรวจรับงาน:</strong> ส่องไฟดูช่องด้านในท่อ รอยโค้งต้องกลม เรียบเนียน ไร้รอยคอดหรือรอยพับแตกร้าวที่ผิวท่อ",
-        camPos: { x: -0.4, y: 0.8, z: 2.2 },
-        target: { x: -0.3, y: 0.2, z: 0 }
+        badge: "โหมด 1 (90°) · STEP 5 / 6",
+        formula: "🔄 Overbend ~95°-100° ➔ คลายตัวได้ 90° สมบูรณ์",
+        title: "การกดดัดจังหวะที่ 3 (จุด 35 cm & Overbend)",
+        desc: "เลื่อนท่อมาที่มาร์ค 35 ซม. ออกแรงดัดจังหวะสุดท้ายให้ได้มุม Overbend ประมาณ 95°–100° จากนั้นคลายแรงมือ ท่อ uPVC จะคืนตัว (Spring-back) กลับมาได้ฉาก 90° พอดี",
+        spec: "📏 <strong>การตรวจฉาก:</strong> ใช้ฉากเหล็กหรือระดับน้ำทาบตรวจ ทั้งสองขาของท่อต้องทำมุม 90 องศาได้ฉากแนบสนิท",
+        camPos: { x: -0.1, y: 0.9, z: 2.2 },
+        target: { x: 0, y: 0.35, z: 0 }
       },
       {
         step: 6,
-        badge: "STEP 6 / 6 · MOUNTING & BULLET CAMERA",
-        title: "การติดตั้งกล่องพักสาย กิ๊บก้ามปู และกล้อง IP",
-        desc: "สวมข้อต่อท่อ uPVC เข้ากล่องกันน้ำ IP66, กดล็อกท่อเข้ากับกิ๊บก้ามปู (Snap Clip), ร้อยสาย Cat6 ด้วย Fish Tape และติดตั้งกล้อง IP Bullet พร้อมซีลกันน้ำ PoE",
-        spec: "✅ <strong>มาตรฐาน วสท. / TIA-569:</strong> กิ๊บก้ามปูตัวแรกต้องห่างจากกล่องไม่เกิน 30 ซม. และตัวถัดไปห่างกันไม่เกิน 1.0 ม. พร้อมซีลซิลิโคนรอบจุดเจาะผนัง",
-        camPos: { x: 0.6, y: 1.4, z: 2.6 },
+        badge: "โหมด 1 (90°) · STEP 6 / 6",
+        formula: "✨ สำเร็จ: บิดคลายสปริง + ยึดกิ๊บก้ามปู + ติดตั้งกล้อง IP",
+        title: "การดึงสปริงออก ยึดกิ๊บก้ามปู และติดตั้งกล้อง",
+        desc: "บิดหมุนทวนเกลียวสปริงให้คลายตัว แล้วดึงเชือกนำสปริงออก จากนั้นสวมท่อเข้ากล่องกันน้ำ IP66 ยึดกิ๊บก้ามปู (ตัวแรกห่างกล่อง ≤ 30 ซม.) และยึดกล้อง IP Bullet",
+        spec: "✅ <strong>ตรวจรับงาน:</strong> โค้งดัดสามเข่าจะมีความมนสวยงาม รูในท่อกลม ช่วยให้การร้อยสาย Cat6 ด้วย Fish Tape ลื่นไหล ไม่ติดขัด",
+        camPos: { x: 0.5, y: 1.3, z: 2.6 },
         target: { x: 0.1, y: 0.8, z: -0.8 }
       }
     ];
 
-    let currentStep = 1;
+    const stagesData_45 = [
+      {
+        step: 1,
+        badge: "โหมด 2 (45°) · STEP 1 / 6",
+        formula: "📏 สูตรตัวคูณ 45°: ระยะจุดดัด = ความลึกคาน × 1.414",
+        title: "วัดความลึกคาน & คำนวณระยะด้วยตัวคูณ 1.414",
+        desc: "วัดความลึกของคานคอนกรีตอาคาร (เช่น คานลึก 10 ซม.) นำมาคูณตัวคูณคงที่ของมุม 45 องศา: 10 × 1.414 = 14.1 ซม. จากนั้นมาร์คจุดดัดที่ 1 และจุดดัดที่ 2 ห่างกัน 14.1 ซม. บนท่อ",
+        spec: "💡 <strong>สูตรช่างท่อ:</strong> ค่า 1.414 มาจาก csc 45° ทำให้ท่อที่ดัด 45 องศา สองจังหวะสามารถคร่อมหลบคานได้อย่างพอดี ไม่สั้นหรือยาวเกินไป",
+        camPos: { x: 0.1, y: 1.1, z: 2.3 },
+        target: { x: 0, y: 0.2, z: 0 }
+      },
+      {
+        step: 2,
+        badge: "โหมด 2 (45°) · STEP 2 / 6",
+        formula: "📐 ดัดขึ้น 45° (Overbend 50° คืนตัวที่ 45°)",
+        title: "สอดสปริง & ดัดจังหวะที่ 1 (ดัดขึ้น 45°)",
+        desc: "สอดสปริงดัดท่อให้ตรงกับมาร์คจุดที่ 1 นำท่อทาบเข่าแล้วค่อยๆ ออกแรงดัดขึ้นให้ได้มุม Overbend ประมาณ 50° เมื่อคลายแรง ท่อจะดีดตัวกลับมาที่มุม 45° พอดีเพื่อเริ่มไต่ขึ้นคาน",
+        spec: "💡 <strong>เทคนิคช่าง:</strong> สปริงดัดท่อ uPVC ต้องอยู่ในตำแหน่งกึ่งกลางรอยมาร์คเสมอ เพื่อรักษาแนวโค้งให้เนียนนุ่ม ไม่หักพับ",
+        camPos: { x: 0.2, y: 0.9, z: 2.2 },
+        target: { x: 0, y: 0.3, z: 0 }
+      },
+      {
+        step: 3,
+        badge: "โหมด 2 (45°) · STEP 3 / 6",
+        formula: "👁️ เล็งระนาบสายตา: ห้ามท่อบิด (No Dogleg)",
+        title: "การเล็งแนวระนาบก่อนดัดจังหวะสอง (No Dogleg)",
+        desc: "ยกท่อขึ้นส่องในระดับสายตาตามแนวยาว ตรวจสอบให้มุมดัด 45° แรกอยู่ในระนาบตรงดิ่งกับแนวมาร์คที่สอง ป้องกันไม่ให้ท่อบิดเบี้ยวเอียงออกจากผนัง (ขาหมา / Dogleg)",
+        spec: "⚠️ <strong>ข้อควรระวังสำคัญ:</strong> หากระนาบเอียงแม้เพียงเล็กน้อย เมื่อดัดจังหวะสองแล้วท่อจะไม่แนบขนานกับระนาบคานและผนัง",
+        camPos: { x: 0.0, y: 0.6, z: 2.0 },
+        target: { x: 0, y: 0.35, z: 0 }
+      },
+      {
+        step: 4,
+        badge: "โหมด 2 (45°) · STEP 4 / 6",
+        formula: "📐 ดัดลง 45° สวนทาง ➔ กลับมาขนานแนวผนัง",
+        title: "สอดสปริง & ดัดจังหวะที่ 2 (ดัดลง 45°)",
+        desc: "เลื่อนสปริงดัดท่อไปยังมาร์คจุดที่ 2 ดัดท่อสวนทิศทางลง 45° ให้แนวท่อปลายทางกลับมาขนานกับแนวท่อเดิมอีกครั้ง เกิดเป็นรูปทรง Double 45° Offset ที่สมบูรณ์",
+        spec: "📏 <strong>การตรวจสอบ:</strong> วางท่อลงบนพื้นราบ ท่อทั้งสองฝั่งต้องวางแนบระนาบพื้นได้สนิทโดยไม่มีการกระดก",
+        camPos: { x: -0.1, y: 0.9, z: 2.3 },
+        target: { x: 0, y: 0.4, z: 0 }
+      },
+      {
+        step: 5,
+        badge: "โหมด 2 (45°) · STEP 5 / 6",
+        formula: "🏢 ทาบแนบคานคอนกรีตอาคาร (Contour Fitting)",
+        title: "นำท่อทาบคร่อมแนบคานคอนกรีตอาคาร",
+        desc: "ยกท่อขึ้นทาบกับคานคอนกรีตอาคารจริง ท่อจะหักหลบและไต่ข้ามคานได้อย่างแนบเนียน รัศมีโค้งมนนุ่มนวล สวยงาม และไม่กีดขวางพื้นที่ใช้สอย",
+        spec: "💡 <strong>ความปลอดภัยสายเคเบิล:</strong> มุม 45° สองจังหวะทำให้รัศมีดัดกว้างกว่ามุมฉาก 90° สาย UTP จึงรับแรงดึงน้อยมากระหว่างร้อยสาย",
+        camPos: { x: 0.3, y: 1.1, z: 2.4 },
+        target: { x: 0, y: 0.7, z: -0.6 }
+      },
+      {
+        step: 6,
+        badge: "โหมด 2 (45°) · STEP 6 / 6",
+        formula: "✨ ยึดกิ๊บก้ามปูสองฝั่งคาน + ร้อยสาย Cat6 ลื่นไหล",
+        title: "ยึดกิ๊บก้ามปูหัว-ท้ายคาน และร้อยสาย Cat6",
+        desc: "ติดตั้งกิ๊บก้ามปู uPVC ล็อกท่อทั้งฝั่งก่อนขึ้นคานและหลังข้ามคาน (ห่างจากขอบคาน ≤ 30 ซม.) แล้วร้อยสาย UTP Cat6 ผ่านท่อหลบคานได้อย่างลื่นไหลไร้แรงต้าน",
+        spec: "✅ <strong>สรุปผลงาน:</strong> ท่อ uPVC ยึดแน่นหนา ขนานแนวอาคาร และพร้อมเชื่อมต่อไปยังกล้องวงจรปิด IP CCTV อย่างมั่นคงปลอดภัย",
+        camPos: { x: 0.5, y: 1.2, z: 2.5 },
+        target: { x: 0, y: 0.7, z: -0.6 }
+      }
+    ];
 
-    function applyStageVisibility(stepNumber) {
-      stageGroups.forEach((g, idx) => {
-        const isCurrent = (idx + 1) === stepNumber;
-        g.visible = isCurrent;
+    /* =====================================================================
+       STAGE VISIBILITY & UI UPDATE CONTROLLER
+    ===================================================================== */
+    function applyCurrentState() {
+      const is90 = (currentMode === '90');
+      const stagesData = is90 ? stagesData_90 : stagesData_45;
+      const activeGroups = is90 ? mode90Groups : mode45Groups;
+      const inactiveGroups = is90 ? mode45Groups : mode90Groups;
+
+      // Concrete Beam visible only in Mode 45 and stages 5 & 6
+      concreteBeam.visible = (!is90 && currentStep >= 4);
+
+      // Hide all inactive groups
+      inactiveGroups.forEach(g => g.visible = false);
+
+      // Show only active step group
+      activeGroups.forEach((g, idx) => {
+        g.visible = ((idx + 1) === currentStep);
       });
 
       // Update UI texts
-      const data = stagesData[stepNumber - 1];
+      const data = stagesData[currentStep - 1];
       document.getElementById('step-badge').innerText = data.badge;
+      document.getElementById('step-formula-box').innerHTML = `<span class="formula-tag">${data.formula}</span>`;
       document.getElementById('step-title').innerText = data.title;
       document.getElementById('step-desc').innerText = data.desc;
       document.getElementById('step-spec').innerHTML = data.spec;
+
+      // Update Header Subtitle
+      if (is90) {
+        document.getElementById('header-title').innerText = "⚡ การดัดฉาก 90° uPVC ด้วยเทคนิคสามเข่า (3-Point Knee Bend)";
+        document.getElementById('header-subtitle').innerText = "เทคนิควัดมาร์ค 25-30-35 ซม. กระจายแรงรอบเข่า 3 จังหวะ ท่อมนสวยงาม ไร้รอยพับ";
+      } else {
+        document.getElementById('header-title').innerText = "⚡ การดัดท่อ 45° สองจังหวะหลบคาน (Double 45° Beam Offset)";
+        document.getElementById('header-subtitle').innerText = "สูตรคำนวณตัวคูณ 1.414 · ดัดขึ้น-ลง 45° ข้ามสิ่งกีดขวางอย่างนุ่มนวลและตรงแนวระนาบ";
+      }
 
       // Update Stepper Dots
       document.querySelectorAll('.step-dot').forEach((dot) => {
         const s = parseInt(dot.getAttribute('data-step'));
         dot.classList.remove('active', 'completed');
-        if (s === stepNumber) {
+        if (s === currentStep) {
           dot.classList.add('active');
-        } else if (s < stepNumber) {
+        } else if (s < currentStep) {
           dot.classList.add('completed');
         }
       });
 
-      // Update Buttons
-      document.getElementById('btn-prev').disabled = (stepNumber === 1);
+      // Update Nav Buttons
+      document.getElementById('btn-prev').disabled = (currentStep === 1);
       const nextBtn = document.getElementById('btn-next');
-      if (stepNumber === 6) {
+      if (currentStep === 6) {
         nextBtn.innerHTML = "<span>✨ ปฏิบัติการสำเร็จ</span>";
       } else {
         nextBtn.innerHTML = "<span>ขั้นตอนถัดไป →</span>";
       }
 
-      // Smooth Camera Transition via GSAP
+      // Smooth Camera Animation via GSAP
       gsap.to(camera.position, {
         x: data.camPos.x,
         y: data.camPos.y,
         z: data.camPos.z,
-        duration: 1.2,
+        duration: 1.1,
         ease: "power2.out"
       });
 
@@ -1052,35 +1424,59 @@
         x: data.target.x,
         y: data.target.y,
         z: data.target.z,
-        duration: 1.2,
+        duration: 1.1,
         ease: "power2.out"
       });
     }
+
+    // Mode Switcher Buttons
+    const btnMode90 = document.getElementById('mode-btn-90');
+    const btnMode45 = document.getElementById('mode-btn-45');
+
+    btnMode90.addEventListener('click', () => {
+      if (currentMode !== '90') {
+        currentMode = '90';
+        currentStep = 1;
+        btnMode90.classList.add('active');
+        btnMode45.classList.remove('active');
+        applyCurrentState();
+      }
+    });
+
+    btnMode45.addEventListener('click', () => {
+      if (currentMode !== '45') {
+        currentMode = '45';
+        currentStep = 1;
+        btnMode45.classList.add('active');
+        btnMode90.classList.remove('active');
+        applyCurrentState();
+      }
+    });
 
     // Step change listeners
     document.getElementById('btn-next').addEventListener('click', () => {
       if (currentStep < 6) {
         currentStep++;
-        applyStageVisibility(currentStep);
+        applyCurrentState();
       }
     });
 
     document.getElementById('btn-prev').addEventListener('click', () => {
       if (currentStep > 1) {
         currentStep--;
-        applyStageVisibility(currentStep);
+        applyCurrentState();
       }
     });
 
     document.querySelectorAll('.step-dot').forEach((dot) => {
       dot.addEventListener('click', () => {
         currentStep = parseInt(dot.getAttribute('data-step'));
-        applyStageVisibility(currentStep);
+        applyCurrentState();
       });
     });
 
     document.getElementById('btn-reset-cam').addEventListener('click', () => {
-      applyStageVisibility(currentStep);
+      applyCurrentState();
     });
 
     // Standards Modal toggle
@@ -1095,8 +1491,8 @@
       if (e.target === modal) modal.classList.remove('show');
     });
 
-    // Initialize with Stage 1
-    applyStageVisibility(1);
+    // Initialize State
+    applyCurrentState();
 
     /* =====================================================================
        ANIMATION LOOP & RENDER
@@ -1105,13 +1501,6 @@
 
     function animate() {
       requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
-
-      // Subtle breathing motion for Cutter at Stage 2
-      if (currentStep === 2 && stageGroups[1].cutterAssembly) {
-        stageGroups[1].cutterAssembly.rotation.x = Math.sin(elapsedTime * 2.5) * 0.05;
-      }
-
       controls.update();
       renderer.render(scene, camera);
     }
