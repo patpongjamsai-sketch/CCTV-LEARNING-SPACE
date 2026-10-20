@@ -431,6 +431,60 @@ export const Room101SmartMartScene: React.FC<Room101SmartMartSceneProps> = ({
           <meshStandardMaterial color="#334155" roughness={0.5} />
         </mesh>
 
+        {/* 3D Surveillance Quad-View Monitor Wall on Table */}
+        <group position={[0, 1.1, -0.2]}>
+          {/* Monitor Frame */}
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[1.5, 0.9, 0.08]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.8} />
+          </mesh>
+          {/* Screen Display */}
+          <mesh position={[0, 0, 0.045]}>
+            <planeGeometry args={[1.42, 0.82]} />
+            <meshStandardMaterial color="#020617" roughness={0.2} emissive="#0369a1" emissiveIntensity={0.2} />
+          </mesh>
+          {/* Monitor Stand */}
+          <mesh position={[0, -0.35, -0.05]} castShadow>
+            <cylinderGeometry args={[0.04, 0.04, 0.3]} />
+            <meshStandardMaterial color="#334155" metalness={0.9} />
+          </mesh>
+          <mesh position={[0, -0.5, 0]} receiveShadow>
+            <boxGeometry args={[0.4, 0.04, 0.3]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.7} />
+          </mesh>
+
+          {/* Interactive HTML Quad Screen */}
+          <Html position={[0, 0, 0.06]} center transform distanceFactor={3.5} style={{ pointerEvents: 'auto' }}>
+            <div className="w-[320px] bg-slate-950/95 border border-sky-500/40 rounded-xl p-2 shadow-2xl select-none text-[9px] font-mono">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1 text-slate-300">
+                <span className="flex items-center gap-1 font-bold text-sky-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  NVR 4K QUAD-VIEW MONITOR
+                </span>
+                <span className="text-[8px] text-slate-400">LIVE · 25 FPS</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1 text-[8px]">
+                <div className="bg-slate-900 border border-slate-800 rounded p-1 h-14 flex flex-col justify-between">
+                  <span className="text-sky-300 font-bold">CAM 01: GATE</span>
+                  <span className="text-[7px] text-slate-400">True WDR 120dB</span>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded p-1 h-14 flex flex-col justify-between">
+                  <span className="text-emerald-300 font-bold">CAM 02: PLAZA</span>
+                  <span className="text-[7px] text-slate-400">2.8mm Wide FOV</span>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded p-1 h-14 flex flex-col justify-between">
+                  <span className="text-amber-300 font-bold">CAM 03: SHOP</span>
+                  <span className="text-[7px] text-slate-400">Smart IR Active</span>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded p-1 h-14 flex flex-col justify-between">
+                  <span className="text-purple-300 font-bold">CAM 04: SERVER</span>
+                  <span className="text-[7px] text-slate-400">H.265+ 2.5Mbps</span>
+                </div>
+              </div>
+            </div>
+          </Html>
+        </group>
+
         {/* Waypoint Beacon Beam for Station 3 */}
         {activeTargetStation === 3 && !missions.M3.isCompleted && (
           <mesh position={[0, 2.0, 0]}>

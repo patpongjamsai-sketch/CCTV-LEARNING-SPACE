@@ -30,6 +30,9 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
   const [isTestingFlow, setIsTestingFlow] = useState<boolean>(false);
   // Randomized shuffled card order
   const [shuffledCards] = useState(() => [...INITIAL_CARDS].sort(() => Math.random() - 0.5));
+  const [showPoeWidget, setShowPoeWidget] = useState<boolean>(false);
+  const [simCamCount, setSimCamCount] = useState<number>(4);
+  const [simSwitchWatts, setSimSwitchWatts] = useState<number>(120);
 
   const handleSlotClick = (index: number) => {
     if (!selectedCardId) {
@@ -123,6 +126,64 @@ export const Room101Mission2Modal: React.FC<Room101Mission2ModalProps> = ({
             <p>
               ข้อมูลภาพวิดีโอจากกล้อง IP จะไหลตามลำดับ: เริ่มจาก <strong>IP Camera</strong> แปลงภาพเป็น RTSP Stream ➡️ ส่งต่อผ่านสาย Cat6 เข้าสู่ <strong>PoE Switch</strong> เพื่อสวิตชิ่งแพ็กเก็ต ➡️ เข้าสู่เครื่องบันทึก <strong>NVR</strong> เพื่อเขียนลงฮาร์ดดิสก์ ➡️ และส่งสัญญาณภาพผ่านพอร์ต HDMI ไปยัง <strong>Client PC / Monitor</strong> เพื่อแสดงผลภาพสด (Live View)
             </p>
+          </div>
+
+          {/* PoE Budget Calculator Accordion / Toggle */}
+          <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+                <span>⚡</span>
+                <span>วิศวกรรมสวิตช์ PoE: คำนวณงบประมาณกำลังไฟ (PoE Power Budget Tool)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPoeWidget(!showPoeWidget)}
+                className="text-[11px] font-bold text-sky-400 hover:text-white px-2.5 py-1 rounded-lg bg-slate-800 transition-colors cursor-pointer"
+              >
+                {showPoeWidget ? '▲ ซ่อนตัวคำนวณ' : '▼ แสดงตัวคำนวณสด'}
+              </button>
+            </div>
+
+            {showPoeWidget && (
+              <div className="pt-2 border-t border-slate-800 space-y-3 text-xs animate-in fade-in duration-150">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">สวิตช์ PoE (กำลังไฟรวม):</label>
+                    <select
+                      value={simSwitchWatts}
+                      onChange={(e) => setSimSwitchWatts(parseInt(e.target.value, 10))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white"
+                    >
+                      <option value={65}>สวิตช์ 8-Port (65 Watts)</option>
+                      <option value={120}>สวิตช์ 8-Port PoE+ (120 Watts)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">จำนวนกล้อง IP ที่ต่อ (12W/ตัว เมื่อเปิด IR):</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="8"
+                      value={simCamCount}
+                      onChange={(e) => setSimCamCount(parseInt(e.target.value, 10))}
+                      className="w-full accent-emerald-400 cursor-pointer"
+                    />
+                    <div className="text-[11px] text-slate-300 font-mono text-right">{simCamCount} ตัว</div>
+                  </div>
+                </div>
+
+                <div
+                  className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
+                    simCamCount * 12 > simSwitchWatts
+                      ? 'bg-rose-950/70 border-rose-500 text-rose-300 font-bold'
+                      : 'bg-slate-900 border-emerald-500/40 text-emerald-300'
+                  }`}
+                >
+                  <span>โหลดกำลังไฟ: {simCamCount * 12}W / {simSwitchWatts}W</span>
+                  <span>{simCamCount * 12 > simSwitchWatts ? '⚠️ เกินพิกัดสวิตช์! กล้องจะดับ' : '✓ โหลดปลอดภัย'}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 3D Isometric Interactive Lab Area */}

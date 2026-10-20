@@ -58,6 +58,20 @@ const roomSummaries: RoomSummary[] = [
         ],
       },
       {
+        id: 'cctv-components-lab',
+        badge: 'ENGINEERING SIM · 5 COMPONENTS',
+        badgeColor: 'emerald',
+        title: '🧩 ห้องปฏิบัติการเจาะลึก 5 องค์ประกอบระบบ CCTV (CCTV Components Mastery)',
+        desc: 'กิจกรรมแบบจำลองวิศวกรรม: เจาะลึกสเปกฮาร์ดแวร์จริง 5 ส่วนหลัก, ทดลองเลนส์ DORI & True WDR, ประกอบวงจรสดพร้อมคำนวณ PoE / Bandwidth และภารกิจแก้ปัญหาหน้างาน 5 สถานการณ์',
+        actions: [
+          {
+            label: '🧩 เข้าสู่กิจกรรม 5 องค์ประกอบ CCTV →',
+            href: '/labs/cctv-components',
+            variant: 'primary',
+          },
+        ],
+      },
+      {
         id: 'room-101-3d',
         badge: '3D LAB · ASSEMBLY',
         badgeColor: 'indigo',

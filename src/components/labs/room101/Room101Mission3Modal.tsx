@@ -103,6 +103,18 @@ export const Room101Mission3Modal: React.FC<Room101Mission3ModalProps> = ({
             </p>
           </div>
 
+          {/* Surveillance HDD vs Desktop HDD Quick Note */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/50 to-slate-950 border border-purple-500/30 text-xs space-y-1">
+            <div className="font-bold text-purple-300 flex items-center gap-2">
+              <span>💾</span>
+              <span>ข้อควรรู้สำหรับ NVR: ทำไมต้องใช้ Surveillance HDD (WD Purple / SkyHawk 24/7)?</span>
+            </div>
+            <p className="text-slate-300 leading-relaxed text-[11px]">
+              ฮาร์ดดิสก์ CCTV ทำงานแบบ <strong>เขียน 90% / อ่าน 10% ต่อเนื่อง 24 ชม. 365 วัน (Workload 180TB/ปี)</strong> มีเฟิร์มแวร์ AllFrame ป้องกันเฟรมภาพตกหล่น 
+              ห้ามนำ Desktop PC HDD ธรรมดามาใส่เด็ดขาด เพราะออกแบบมาทำงานแค่วันละ 8 ชม. จะเกิด Bad Sector พังเสียหายภายใน 3-6 เดือน
+            </p>
+          </div>
+
           {/* 3D Isometric Workbench Area */}
           <div>
             <div className="flex items-center justify-between mb-2">

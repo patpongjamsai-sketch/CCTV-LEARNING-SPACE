@@ -38,6 +38,12 @@ export default function SiteSurveyLabPage() {
             ห้องปฏิบัติการ 8 Units
           </Link>
           <Link
+            href="/labs/cctv-components"
+            className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+          >
+            <span>🧩 กิจกรรม 5 องค์ประกอบ</span>
+          </Link>
+          <Link
             href="/labs/3d/room-101"
             className="flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 px-3.5 py-1.5 rounded-xl shadow-md shadow-sky-500/20 transition-all cursor-pointer"
           >
