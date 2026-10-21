@@ -5,7 +5,7 @@ import { SiteSurveySimulator } from '../../../components/labs/room101/SiteSurvey
 
 export const metadata: Metadata = {
   title: 'CCTV Site Survey & Installation Workstation | U01 2D Pre-Lab (วท.อุบลราชธานี)',
-  description: 'ระบบจำลองการสำรวจพื้นที่ 5 โซนยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี, 6 ขั้นตอนติดตั้งมาตรฐานช่าง, องค์ประกอบ 5 ส่วน และระบบส่งมอบงาน Commissioning',
+  description: 'ระบบจำลองการสำรวจพื้นที่ 6 จุดสำรวจยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี, 6 ขั้นตอนติดตั้งมาตรฐานช่าง, องค์ประกอบ 5 ส่วน และระบบส่งมอบงาน Commissioning',
 };
 
 export default function SiteSurveyLabPage() {

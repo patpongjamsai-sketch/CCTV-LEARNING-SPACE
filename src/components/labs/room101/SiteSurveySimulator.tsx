@@ -111,87 +111,103 @@ export interface ComponentDetail {
   proTip: string;
 }
 
-// 5 Strategic Zones of Ubon Ratchathani Technical College
+// 6 Strategic Zones of Ubon Ratchathani Technical College
 export const UBON_ZONES: StrategicZone[] = [
   {
     id: 'gate',
-    nameTh: '1. ซุ้มประตูทางเข้าหลัก & ป้อมยาม',
-    nameEn: 'Main Entrance Gate & Security Guardhouse',
-    distanceMeters: 85,
-    environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ',
-    lightingCond: 'ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน',
-    recommendedCamera: 'Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m)',
-    lensSpec: 'เลนส์ 4.0mm หรือ 6.0mm (มุมมองแคบเพื่อจับป้ายทะเบียนและใบหน้าผู้เข้า-ออก)',
-    mountingHeight: '3.5 เมตร บนเสาเหล็กกลมหรือผนังป้อมยาม',
+    nameTh: '1. หน้าป้อมยามติดถนนเข้าออกวิทยาลัย',
+    nameEn: 'Main Guardhouse on East Entrance Road (Chawalanok Rd.)',
+    distanceMeters: 90,
+    environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะและสภาพแวดล้อมริมถนนสาธารณะ',
+    lightingCond: 'ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน (Headlight Glare)',
+    recommendedCamera: 'Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m กันน้ำ IP67)',
+    lensSpec: 'เลนส์ 4.0mm หรือ 6.0mm (มุมแคบเพื่อจับป้ายทะเบียนรถและใบหน้าผู้เข้า-ออก)',
+    mountingHeight: '3.0 - 3.5 เมตร บนเสาเหล็กกลมหน้าป้อมยาม',
     conduitType: 'ท่อร้อยสาย uPVC สีขาว 20mm + กล่องพักสายกันน้ำ IP66 พร้อม Cable Gland',
-    pdpaRequirement: 'ติดตั้งป้ายเตือน "พื้นที่นี้อยู่ภายใต้การบันทึกภาพด้วยกล้องวงจรปิด (CCTV in Operation)" ขนาดไม่น้อยกว่า A4 ที่ซุ้มประตู',
-    pdpaAction: 'ห้ามหันมุมกล้องมองข้ามแนวรั้ววิทยาลัยไปยังบ้านพักอาศัยของชุมชนโดยรอบ',
-    techNote: 'ระยะ 85m ยังอยู่ในเกณฑ์สาย UTP ไม่เกิน 100m แต่ควรใช้สายทองแดงแท้ (Pure Copper CAT6) ไม่ใช้สาย CCA เพื่อป้องกันไฟตก',
-    svgPos: { x: 180, y: 390 },
-  },
-  {
-    id: 'flagpole',
-    nameTh: '2. ลานหน้าเสาธง & ลานกิจกรรมกลางแจ้ง',
-    nameEn: 'Flagpole Plaza & Open Activity Field',
-    distanceMeters: 60,
-    environmentType: 'กลางแจ้งสมบูรณ์ (Full Outdoor) / แดด ฝน ลมแรง',
-    lightingCond: 'แดดจัดช่วงเช้าและเที่ยง / มืดสนิทช่วงกลางคืน',
-    recommendedCamera: 'Speed Dome PTZ หรือ Bullet มุมกว้าง กันน้ำมาตรฐาน IP67',
-    lensSpec: 'เลนส์ 2.8mm (มุมมองกว้าง 103°) หรือ PTZ ซูมเลนส์ 25x Optical Zoom',
-    mountingHeight: '5.0 - 6.0 เมตร บนเสาไฟลานกิจกรรม',
-    conduitType: 'ท่อร้อยสาย uPVC สีขาว/PE กันแดด UV + กล่องพักสาย IP67 พร้อมสายดินกราวด์',
-    pdpaRequirement: 'ครอบคลุมพื้นที่สาธารณะของสถานศึกษาเพื่อความปลอดภัยในกิจกรรมรวมของนักศึกษา',
-    pdpaAction: 'กำหนดสิทธิ์การดูภาพสดและการหมุน PTZ เฉพาะเจ้าหน้าที่ รปภ. และผู้บริหารเท่านั้น',
-    techNote: 'พื้นที่เปิดโล่งมีความเสี่ยงต่อฟ้าผ่า ควรติดตั้ง Surge Protection Device (SPD) สำหรับสาย LAN',
-    svgPos: { x: 380, y: 340 },
-  },
-  {
-    id: 'workshop',
-    nameTh: '3. โรงฝึกงานแผนกช่างอุตสาหกรรม',
-    nameEn: 'Engineering Workshops (Machining & Welding)',
-    distanceMeters: 95,
-    environmentType: 'ในอาคารโรงงานสูง มีฝุ่นละออง ประกายไฟ ละอองน้ำมัน และการสั่นสะเทือน',
-    lightingCond: 'แสงไฟโคม High-bay และแสงวาบจากการเชื่อมอาร์กไฟฟ้า',
-    recommendedCamera: 'Vandal-Proof Bullet หรือ Dome โครงสร้างโลหะ มาตรฐาน IK10 & IP67',
-    lensSpec: 'เลนส์ 4.0mm หรือ 2.8mm เลนส์มุมกว้างเพื่อครอบคลุมแนวยาวของแถวเครื่องจักร',
-    mountingHeight: '4.0 - 4.5 เมตร ใต้โครงสร้างหลังคาเหล็กโรงช่าง',
-    conduitType: 'ท่อร้อยสาย uPVC สีขาว หรือท่อเหล็ก EMT ในจุดที่เสี่ยงต่อการกระแทกเชิงกล',
-    pdpaRequirement: 'ใช้เพื่อกำกับความปลอดภัยในการปฏิบัติงานและป้องกันอุบัติเหตุในโรงฝึกงาน',
-    pdpaAction: 'หลีกเลี่ยงการส่องมุมกล้องเข้าไปในพื้นที่แต่งตัวหรือล็อกเกอร์เก็บของส่วนบุคคล',
-    techNote: 'ระยะ 95 เมตร ใกล้ขีดจำกัดกฎ 100 เมตรของ UTP CAT6 มาก ต้องวัดความต้านทานสายและไม่ให้มีรอยต่อสายกลางทางเด็ดขาด',
-    svgPos: { x: 570, y: 380 },
-  },
-  {
-    id: 'academic',
-    nameTh: '4. อาคารเรียน & อาคารวิทยบริการ',
-    nameEn: 'Academic Classrooms & Library Building',
-    distanceMeters: 45,
-    environmentType: 'ในร่ม (Indoor) โถงทางเดิน ฝ้าเพดาน T-Bar หรือคอนกรีต',
-    lightingCond: 'แสงสว่างสม่ำเสมอจากหลอด LED ตลอดช่วงเวลาทำการ',
-    recommendedCamera: 'Dome IP Camera 4MP เลนส์กว้าง ดีไซน์เรียบร้อยกลมกลืนกับสถาปัตยกรรม',
-    lensSpec: 'เลนส์ 2.8mm (มุมมองกว้าง 100°+ เพื่อครอบคลุมทั้งแนวทางเดิน)',
-    mountingHeight: '2.8 - 3.2 เมตร ใต้ฝ้าเพดาน',
-    conduitType: 'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้าเพดาน หรือรางเก็บสายไฟพลาสติก',
-    pdpaRequirement: 'ปกป้องสิทธิส่วนบุคคลของนักเรียน ครู และบุคลากรทางการศึกษาอย่างเคร่งครัด',
-    pdpaAction: 'ต้องตั้งค่า Privacy Masking (หน้ากากแถบดำ) ปิดบังบริเวณประตูห้องน้ำและโต๊ะลงทะเบียนเอกสารสำคัญ',
-    techNote: 'การเจาะฝ้า T-Bar ต้องใช้แผ่นรองไม้อัดหลังฝ้าเพื่อกระจายน้ำหนัก ไม่ให้ฝ้าหย่อนแอ่นตัว',
-    svgPos: { x: 340, y: 190 },
+    pdpaRequirement: 'ติดตั้งป้ายเตือน "พื้นที่นี้อยู่ภายใต้การบันทึกภาพด้วยกล้องวงจรปิด (CCTV in Operation)" ขนาดไม่น้อยกว่า A4',
+    pdpaAction: 'ห้ามหันมุมกล้องมองข้ามแนวรั้วไปยังบ้านพักอาศัยของชุมชนโดยรอบถนนชวาลานอก',
+    techNote: 'ระยะ 90m ใกล้ขีดจำกัด 100m ต้องใช้สาย Pure Copper CAT6 แท้ และทดสอบค่าความต้านทานสาย',
+    svgPos: { x: 845, y: 360 },
   },
   {
     id: 'server',
-    nameTh: '5. ศูนย์ควบคุมส่วนกลาง & Server Room',
-    nameEn: 'Central Network Control & CCTV Server Room',
+    nameTh: '2. ห้องควบคุมระบบกล้องวงจรปิด',
+    nameEn: 'CCTV Central Control & Server Room (NVR Hub)',
     distanceMeters: 0,
-    environmentType: 'ห้องควบคุมระบบปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
-    lightingCond: 'แสงสว่างหลอดไฟห้องคอมพิวเตอร์',
-    recommendedCamera: 'Dome Camera 2MP ตรวจจับการเข้า-ออกของเจ้าหน้าที่ในห้องเซิร์ฟเวอร์',
-    lensSpec: 'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack และประตูทางเข้าหลัก',
-    mountingHeight: '2.6 เมตร บนเพดานห้อง',
-    conduitType: 'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้ว',
+    environmentType: 'ในร่ม (Indoor) ห้องควบคุมปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
+    lightingCond: 'แสงสว่างสม่ำเสมอจากหลอดไฟห้องควบคุมระบบตลอดเวลา',
+    recommendedCamera: 'Dome IP Camera 2MP ตรวจจับการเข้า-ออกของเจ้าหน้าที่และสังเกตหน้าตู้ Rack',
+    lensSpec: 'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack 19 นิ้วและประตูทางเข้าหลัก',
+    mountingHeight: '2.6 - 2.8 เมตร ใต้เพดานห้องควบคุม',
+    conduitType: 'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้ว จัดสายด้วย Patch Panel',
     pdpaRequirement: 'เป็นพื้นที่ความลับสูงสุดตามมาตรฐาน PDPA (Zone Data Processor)',
     pdpaAction: 'บันทึก Log การเข้าถึงห้องและ Log การสืบค้นภาพจากเครื่อง NVR ทุกครั้งตามกฎหมาย',
     techNote: 'ศูนย์รวมตู้ Rack 19", NVR 32-CH, PoE Switch 24-Port และระบบสำรองไฟ UPS 2000VA',
-    svgPos: { x: 510, y: 150 },
+    svgPos: { x: 535, y: 205 },
+  },
+  {
+    id: 'admin',
+    nameTh: '3. อาคารอำนวยการ',
+    nameEn: 'Administrative & Director Building',
+    distanceMeters: 40,
+    environmentType: 'ในร่ม (Indoor) โถงต้อนรับและทางเดินอาคารอำนวยการ ฝ้าเพดานเรียบ สภาพแวดล้อมสะอาด',
+    lightingCond: 'แสงไฟสว่างจากหลอด LED ตลอดช่วงเวลาทำการราชการ',
+    recommendedCamera: 'Dome IP Camera 4MP ดีไซน์สวยงาม กลมกลืนกับสถาปัตยกรรมภายใน',
+    lensSpec: 'เลนส์ 2.8mm (มุมมองกว้าง 100°+ เพื่อครอบคลุมโถงต้อนรับและทางเดิน)',
+    mountingHeight: '2.8 - 3.0 เมตร ใต้ฝ้าเพดาน',
+    conduitType: 'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้าเพดาน หรือรางเก็บสายไฟพลาสติกเข้ารูป',
+    pdpaRequirement: 'คุ้มครองสิทธิส่วนบุคคลของผู้มาติดต่อราชการ ครู และบุคลากรทางการศึกษา',
+    pdpaAction: 'ตั้งค่า Privacy Masking (หน้ากากแถบดำ) ปิดบังบริเวณโต๊ะเอกสารสำคัญการเงินและไม่ส่องประตูห้องน้ำ',
+    techNote: 'จุดศูนย์กลางประสานงาน เดินสาย UTP ระยะสั้น 40m ผ่านท่อ uPVC เหนือฝ้าเพดาน',
+    svgPos: { x: 585, y: 340 },
+  },
+  {
+    id: 'parking_dome',
+    nameTh: '4. โดมใหญ่จอดรถ',
+    nameEn: 'Large Covered Parking Dome & Vehicle Canopy',
+    distanceMeters: 75,
+    environmentType: 'กึ่งกลางแจ้งใต้ร่มเงาหลังคาโดมโค้ง (Semi-Outdoor) ลมพัดผ่าน ฝุ่นควันและไอเสียรถยนต์',
+    lightingCond: 'ใต้โดมมีเงาร่มครึ้ม แสงภายนอกสว่างจ้า (ความต่างแสงสูง) และเวลากลางคืนมืดสลัว',
+    recommendedCamera: 'Bullet IP Camera 4MP โครงสร้างโลหะกันน้ำ IP67 พร้อม DarkFighter และ Smart IR 50m',
+    lensSpec: 'เลนส์ 2.8mm - 4.0mm เพื่อครอบคลุมแนวกว้างของแถวจอดรถยนต์และจักรยานยนต์',
+    mountingHeight: '4.0 - 5.0 เมตร บนเสาโครงสร้างเหล็กของโดม',
+    conduitType: 'ท่อร้อยสาย uPVC สีขาว/ท่อเหล็ก EMT ยึดโครงสร้างเหล็ก + กล่องพักสาย IP66 และ Surge SPD',
+    pdpaRequirement: 'เพื่อดูแลความปลอดภัยในทรัพย์สินและยานพาหนะของครู บุคลากร และนักศึกษา',
+    pdpaAction: 'กำหนดสิทธิ์การดูภาพสดเฉพาะเจ้าหน้าที่ รปภ. และผู้ดูแลระบบเท่านั้น',
+    techNote: 'โครงสร้างโลหะขนาดใหญ่ในพื้นที่เปิดโล่ง ควรติดตั้ง Surge Protection Device (SPD) ป้องกันไฟกระชาก',
+    svgPos: { x: 705, y: 565 },
+  },
+  {
+    id: 'com_tech',
+    nameTh: '5. อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์',
+    nameEn: 'Computer Technology Department Building',
+    distanceMeters: 65,
+    environmentType: 'ในอาคารเรียน (Indoor) ระเบียงทางเดินหน้าห้องปฏิบัติการคอมพิวเตอร์ ฝ้าเพดาน T-Bar',
+    lightingCond: 'แสงไฟสว่างจากหลอด LED ตามทางเดินและแสงสะท้อนจากกระจกห้องแล็บ',
+    recommendedCamera: 'Vandal-Proof Dome IP Camera 4MP โครงสร้างทนแรงกระแทก IK10 & IP66',
+    lensSpec: 'เลนส์ 2.8mm (มุมกว้าง 103°) ครอบคลุมแนวยาวตลอดระเบียงทางเดินหน้าห้องเรียน',
+    mountingHeight: '2.8 - 3.2 เมตร ใต้ฝ้าเพดาน T-Bar',
+    conduitType: 'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้า T-Bar พร้อมแผ่นไม้อัดรองรับน้ำหนัก',
+    pdpaRequirement: 'คุ้มครองสิทธิความเป็นส่วนตัวของนักศึกษาและอาจารย์ผู้สอน',
+    pdpaAction: 'ไม่หันมุมกล้องมองเข้าไปในพื้นที่ส่วนตัวหรือบริเวณห้องน้ำของอาคารเรียน',
+    techNote: 'จุดเชื่อมต่ออุปกรณ์แล็บเครือข่าย สามารถเดินสาย Trunk ไปยังตู้ Rack ประจำชั้นของแผนกคอมฯ',
+    svgPos: { x: 415, y: 525 },
+  },
+  {
+    id: 'canteen',
+    nameTh: '6. โรงอาหาร',
+    nameEn: 'College Canteen & Cafeteria Hall',
+    distanceMeters: 55,
+    environmentType: 'กึ่งกลางแจ้งโถงสูง (Semi-Outdoor High Ceiling) ไอน้ำมัน ไอร้อน ควัน ฝุ่น ละอองอาหาร และคนพลุกพล่าน',
+    lightingCond: 'แสงแดดธรรมชาติส่องผ่านช่องลมด้านข้างผสมกับแสงโคมไฟโรงอาหาร',
+    recommendedCamera: 'Dome IP Camera 4MP โครงสร้างโลหะกันน้ำ/ไอน้ำมัน IP66/IP67 และกันกระแทก IK10',
+    lensSpec: 'เลนส์ 2.8mm มุมกว้าง เพื่อครอบคลุมลานที่นั่งรับประทานอาหารและจุดร้านค้า',
+    mountingHeight: '3.5 - 4.0 เมตร บนเสาโครงสร้างอาคารโรงอาหาร',
+    conduitType: 'ท่อร้อยสาย uPVC สีขาว ซีลข้อต่อกันความชื้นและไอไขมันแน่นหนา',
+    pdpaRequirement: 'รักษาความปลอดภัยและสุขอนามัยในพื้นที่รับประทานอาหารของวิทยาลัย',
+    pdpaAction: 'ติดป้ายเตือน CCTV in Operation และสิทธิ์การเข้าถึงภาพเพื่อความปลอดภัยในทรัพย์สิน',
+    techNote: 'หลีกเลี่ยงการติดตั้งใกล้เตาแก๊สหรือพัดลมดูดควันโดยตรงเพื่อป้องกันคราบเขม่าจับหน้าเลนส์',
+    svgPos: { x: 380, y: 375 },
   },
 ];
 
@@ -430,22 +446,22 @@ export const ZONE_SUGGESTIONS: Record<string, {
 }> = {
   gate: {
     environment: [
-      'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ',
+      'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะและสภาพแวดล้อมริมถนนสาธารณะ',
       'กลางแจ้งสมบูรณ์ (Full Outdoor) แดดจัด',
       'ในร่ม (Indoor) ปราศจากฝุ่น',
     ],
     lighting: [
-      'ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน',
+      'ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน (Headlight Glare)',
       'แสงสว่างสม่ำเสมอจากหลอด LED',
       'แสงสลัวตลอดทั้งวัน',
     ],
     camera: [
-      'Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m)',
+      'Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m กันน้ำ IP67)',
       'Speed Dome PTZ 25x Zoom IP67',
       'Dome IP Camera 2MP ทรงโดมพลาสติก',
     ],
     lens: [
-      'เลนส์ 4.0mm หรือ 6.0mm (มุมมองแคบเพื่อจับป้ายทะเบียนและใบหน้า)',
+      'เลนส์ 4.0mm หรือ 6.0mm (มุมแคบเพื่อจับป้ายทะเบียนรถและใบหน้าผู้เข้า-ออก)',
       'เลนส์ 2.8mm (มุมมองกว้าง 103°)',
       'เลนส์ฟิชอาย 360°',
     ],
@@ -460,117 +476,145 @@ export const ZONE_SUGGESTIONS: Record<string, {
       'เปิดสตรีมภาพสาธารณะให้ทุกคนดูได้',
     ],
   },
-  flagpole: {
+  server: {
     environment: [
-      'กลางแจ้งสมบูรณ์ (Full Outdoor) / แดด ฝน ลมแรง',
-      'กึ่งกลางแจ้ง (Semi-Outdoor) มีหลังคาคลุม',
-      'ในร่ม (Indoor) ควบคุมอุณหภูมิ',
+      'ในร่ม (Indoor) ห้องควบคุมปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
+      'กึ่งกลางแจ้ง มีฝุ่นควัน',
+      'พื้นที่ชื้นแฉะตลอดเวลา',
     ],
     lighting: [
-      'แดดจัดช่วงเช้าและเที่ยง / มืดสนิทช่วงกลางคืน',
-      'แสงสว่างสม่ำเสมอ',
-      'แสงวาบจากการเชื่อมอาร์ก',
+      'แสงสว่างสม่ำเสมอจากหลอดไฟห้องควบคุมระบบตลอดเวลา',
+      'มืดสนิท 24 ชั่วโมง',
+      'แสงไฟกระพริบ',
     ],
     camera: [
-      'Speed Dome PTZ หรือ Bullet มุมกว้าง กันน้ำมาตรฐาน IP67',
-      'Dome IP Camera ภายในอาคาร',
-      'กล้องเว็บแคม USB',
-    ],
-    lens: [
-      'เลนส์ 2.8mm (มุมกว้าง 103°) หรือ PTZ ซูมเลนส์ 25x Optical Zoom',
-      'เลนส์ 6.0mm มุมแคบ',
-      'เลนส์มาโคร',
-    ],
-    conduit: [
-      'ท่อร้อยสาย uPVC สีขาว/PE กันแดด UV + กล่องพักสาย IP67 พร้อมสายดินกราวด์ & SPD',
-      'เดินสายเปลือยรัดกับกิ่งไม้',
-      'รางกระดูกงูพลาสติก',
-    ],
-    pdpa: [
-      'ครอบคลุมพื้นที่สาธารณะของวิทยาลัย กำหนดสิทธิ์ดูภาพเฉพาะ รปภ. และผู้บริหาร',
-      'ติดกล้องส่องเข้าไปในห้องเรียนข้างเคียง',
-    ],
-  },
-  workshop: {
-    environment: [
-      'ในอาคารโรงงานสูง มีฝุ่นละออง ประกายไฟ ละอองน้ำมัน และการสั่นสะเทือน',
-      'ห้องปลอดเชื้อควบคุมฝุ่น',
-      'กลางแจ้งสมบูรณ์ มีน้ำท่วมขัง',
-    ],
-    lighting: [
-      'แสงไฟโคม High-bay และแสงวาบจากการเชื่อมอาร์กไฟฟ้า',
-      'แสงธรรมชาติรำไร',
-      'มืดสนิทตลอดเวลา',
-    ],
-    camera: [
-      'Vandal-Proof Bullet หรือ Dome โครงสร้างโลหะ มาตรฐาน IK10 & IP67',
-      'กล้องโดมพลาสติกขนาดเล็ก',
+      'Dome IP Camera 2MP ตรวจจับการเข้า-ออกของเจ้าหน้าที่และสังเกตหน้าตู้ Rack',
+      'Speed Dome PTZ ขนาดใหญ่',
       'กล้องโซล่าเซลล์ไร้สาย',
     ],
     lens: [
-      'เลนส์ 4.0mm หรือ 2.8mm มุมกว้างครอบคลุมแนวยาวแถวเครื่องจักร',
-      'เลนส์เทเล 12.0mm',
-    ],
-    conduit: [
-      'ท่อร้อยสาย uPVC สีขาว หรือท่อเหล็ก EMT ในจุดเสี่ยงต่อการกระแทกเชิงกล',
-      'ตีกิ๊บสายเปลือยกับโครงสร้างเหล็ก',
-    ],
-    pdpa: [
-      'ใช้เพื่อกำกับความปลอดภัย หลีกเลี่ยงมุมกล้องส่องจุดแต่งตัวหรือล็อกเกอร์ส่วนบุคคล',
-      'ติดกล้องส่องโต๊ะพักผ่อนส่วนบุคคลแบบจับผิด',
-    ],
-  },
-  academic: {
-    environment: [
-      'ในร่ม (Indoor) โถงทางเดิน ฝ้าเพดาน T-Bar หรือคอนกรีต',
-      'กลางแจ้งแดดจัด',
-      'พื้นที่เปียกชื้นตลอดเวลา',
-    ],
-    lighting: [
-      'แสงสว่างสม่ำเสมอจากหลอด LED ตลอดช่วงเวลาทำการ',
-      'ย้อนแสงจากไฟสปอตไลต์',
-    ],
-    camera: [
-      'Dome IP Camera 4MP เลนส์กว้าง ดีไซน์เรียบร้อยกลมกลืนกับสถาปัตยกรรม',
-      'กล้องทรงกระบอกเหล็กขนาดใหญ่',
-    ],
-    lens: [
-      'เลนส์ 2.8mm (มุมมองกว้าง 100°+ เพื่อครอบคลุมทั้งแนวทางเดิน)',
-      'เลนส์ 8.0mm มุมแคบ',
-    ],
-    conduit: [
-      'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้าเพดาน หรือรางเก็บสายพลาสติก',
-      'ท่อเหล็กหนาพิเศษฝังพื้นคอนกรีต',
-    ],
-    pdpa: [
-      'ตั้งค่า Privacy Masking (หน้ากากดำ) ปิดบังประตูห้องน้ำและโต๊ะลงทะเบียนเอกสาร',
-      'ถ่ายทอดสดโถงทางเดินและประตูห้องน้ำลงอินเทอร์เน็ต',
-    ],
-  },
-  server: {
-    environment: [
-      'ห้องควบคุมระบบปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
-      'กึ่งกลางแจ้ง มีฝุ่นควัน',
-    ],
-    lighting: [
-      'แสงสว่างหลอดไฟห้องคอมพิวเตอร์ตลอดเวลา',
-      'มืดสนิท 24 ชั่วโมง',
-    ],
-    camera: [
-      'Dome Camera 2MP ตรวจจับการเข้า-ออกของเจ้าหน้าที่ในห้องเซิร์ฟเวอร์',
-      'Speed Dome PTZ ขนาดใหญ่',
-    ],
-    lens: [
-      'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack และประตูทางเข้าหลัก',
+      'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack 19 นิ้วและประตูทางเข้าหลัก',
       'เลนส์ซูมไกล 50 เมตร',
+      'เลนส์มาโคร',
     ],
     conduit: [
-      'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้วอย่างเป็นระเบียบ',
+      'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้ว จัดสายด้วย Patch Panel',
       'ปล่อยสายกองบนพื้นห้องเซิร์ฟเวอร์',
+      'ตีกิ๊บสายกับผนัง',
     ],
     pdpa: [
       'พื้นที่ความลับสูงสุด (Zone Data Processor) บันทึก Log การเข้าถึงและสืบค้นตามกฎหมาย',
       'อนุญาตให้บุคคลภายนอกเข้าดู NVR ได้อิสระ',
+    ],
+  },
+  admin: {
+    environment: [
+      'ในร่ม (Indoor) โถงต้อนรับและทางเดินอาคารอำนวยการ ฝ้าเพดานเรียบ สภาพแวดล้อมสะอาด',
+      'กลางแจ้งแดดจัด มีฝนสาด',
+      'โรงช่างมีฝุ่นละออง',
+    ],
+    lighting: [
+      'แสงไฟสว่างจากหลอด LED ตลอดช่วงเวลาทำการราชการ',
+      'ย้อนแสงจัดจากไฟหน้ารถยนต์',
+      'มืดสนิทตลอดวัน',
+    ],
+    camera: [
+      'Dome IP Camera 4MP ดีไซน์สวยงาม กลมกลืนกับสถาปัตยกรรมภายใน',
+      'กล้องทรงกระบอกเหล็กขนาดใหญ่',
+      'กล้องเว็บแคม',
+    ],
+    lens: [
+      'เลนส์ 2.8mm (มุมมองกว้าง 100°+ เพื่อครอบคลุมโถงต้อนรับและทางเดิน)',
+      'เลนส์ 8.0mm มุมแคบเจาะจง',
+      'เลนส์เทเลโฟโต้',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้าเพดาน หรือรางเก็บสายไฟพลาสติกเข้ารูป',
+      'เดินสายเปลือยห้อยลงมา',
+      'ท่อเหล็กหนาพิเศษฝังดิน',
+    ],
+    pdpa: [
+      'ตั้งค่า Privacy Masking (หน้ากากแถบดำ) ปิดบังบริเวณโต๊ะเอกสารสำคัญการเงินและไม่ส่องประตูห้องน้ำ',
+      'ถ่ายทอดสดโถงต้อนรับลงโซเชียลมีเดีย',
+    ],
+  },
+  parking_dome: {
+    environment: [
+      'กึ่งกลางแจ้งใต้ร่มเงาหลังคาโดมโค้ง (Semi-Outdoor) ลมพัดผ่าน ฝุ่นควันและไอเสียรถยนต์',
+      'ห้องแอร์ควบคุมความเย็น',
+      'ห้องใต้ดิน',
+    ],
+    lighting: [
+      'ใต้โดมมีเงาร่มครึ้ม แสงภายนอกสว่างจ้า (ความต่างแสงสูง) และเวลากลางคืนมืดสลัว',
+      'แสงสม่ำเสมอตลอด 24 ชม.',
+    ],
+    camera: [
+      'Bullet IP Camera 4MP โครงสร้างโลหะกันน้ำ IP67 พร้อม DarkFighter และ Smart IR 50m',
+      'กล้องพลาสติกสำหรับใช้ภายในห้องนอน',
+    ],
+    lens: [
+      'เลนส์ 2.8mm - 4.0mm เพื่อครอบคลุมแนวกว้างของแถวจอดรถยนต์และจักรยานยนต์',
+      'เลนส์มาโครระยะใกล้ 10 ซม.',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว/ท่อเหล็ก EMT ยึดโครงสร้างเหล็ก + กล่องพักสาย IP66 และ Surge SPD',
+      'มัดสาย LAN กับลวดหนาม',
+    ],
+    pdpa: [
+      'เพื่อดูแลความปลอดภัยในทรัพย์สินและยานพาหนะของครู บุคลากร และนักศึกษา กำหนดสิทธิ์ดูภาพเฉพาะ รปภ.',
+      'ส่องกล้องเข้าไปในกระจกรถยนต์ส่วนบุคคล',
+    ],
+  },
+  com_tech: {
+    environment: [
+      'ในอาคารเรียน (Indoor) ระเบียงทางเดินหน้าห้องปฏิบัติการคอมพิวเตอร์ ฝ้าเพดาน T-Bar',
+      'กลางแจ้งสมบูรณ์ ตากแดดตากฝน',
+    ],
+    lighting: [
+      'แสงไฟสว่างจากหลอด LED ตามทางเดินและแสงสะท้อนจากกระจกห้องแล็บ',
+      'มืดสนิทตลอดเวลา',
+    ],
+    camera: [
+      'Vandal-Proof Dome IP Camera 4MP โครงสร้างทนแรงกระแทก IK10 & IP66',
+      'กล้องเว็บแคมพลาสติก',
+    ],
+    lens: [
+      'เลนส์ 2.8mm (มุมกว้าง 103°) ครอบคลุมแนวยาวตลอดระเบียงทางเดินหน้าห้องเรียน',
+      'เลนส์ 16mm ซูมเฉพาะจุด',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว ซ่อนสายเหนือฝ้า T-Bar พร้อมแผ่นไม้อัดรองรับน้ำหนัก',
+      'ปล่อยสายห้อยโตงเตงหน้าประตูห้องเรียน',
+    ],
+    pdpa: [
+      'คุ้มครองสิทธิส่วนบุคคลของนักศึกษาและอาจารย์ ไม่หันมุมกล้องมองเข้าห้องน้ำหรือพื้นที่ส่วนตัว',
+      'ติดกล้องถ่ายทอดสดในห้องน้ำ',
+    ],
+  },
+  canteen: {
+    environment: [
+      'กึ่งกลางแจ้งโถงสูง (Semi-Outdoor High Ceiling) ไอน้ำมัน ไอร้อน ควัน ฝุ่น ละอองอาหาร และคนพลุกพล่าน',
+      'ห้องเซิร์ฟเวอร์ปลอดเชื้อ',
+    ],
+    lighting: [
+      'แสงแดดธรรมชาติส่องผ่านช่องลมด้านข้างผสมกับแสงโคมไฟโรงอาหาร',
+      'มืดสนิทตลอดวัน',
+    ],
+    camera: [
+      'Dome IP Camera 4MP โครงสร้างโลหะกันน้ำ/ไอน้ำมัน IP66/IP67 และกันกระแทก IK10',
+      'กล้องกล่องกระดาษจำลอง',
+    ],
+    lens: [
+      'เลนส์ 2.8mm มุมกว้าง เพื่อครอบคลุมลานที่นั่งรับประทานอาหารและจุดร้านค้า',
+      'เลนส์ 12mm มุมแคบ',
+    ],
+    conduit: [
+      'ท่อร้อยสาย uPVC สีขาว ซีลข้อต่อกันความชื้นและไอไขมันแน่นหนา',
+      'เดินสายเปลือยผ่านเตาแก๊ส',
+    ],
+    pdpa: [
+      'ติดป้ายเตือน CCTV in Operation และสิทธิ์การเข้าถึงภาพเพื่อความปลอดภัยในทรัพย์สินและสุขอนามัย',
+      'ส่องกล้องซูมจานอาหารของนักเรียนทุกคน',
     ],
   },
 };
@@ -595,7 +639,7 @@ export function evaluateStudentSurvey(zoneId: string, input: StudentSurveyInput)
   switch (zoneId) {
     case 'gate':
       // Environment (20)
-      if (envLower.includes('กึ่งกลางแจ้ง') || envLower.includes('semi') || envLower.includes('ฝุ่น') || envLower.includes('ยานพาหนะ') || envLower.includes('ถนน')) {
+      if (envLower.includes('กึ่งกลางแจ้ง') || envLower.includes('semi') || envLower.includes('ฝุ่น') || envLower.includes('ยานพาหนะ') || envLower.includes('ถนน') || envLower.includes('ป้อมยาม')) {
         envScore = 20;
       } else if (envLower.trim().length > 3) {
         envScore = 10;
@@ -603,7 +647,7 @@ export function evaluateStudentSurvey(zoneId: string, input: StudentSurveyInput)
       }
 
       // Lighting (15)
-      if (lightLower.includes('ย้อนแสง') || lightLower.includes('wdr') || lightLower.includes('ไฟหน้า') || lightLower.includes('แดด') || lightLower.includes('กลางคืน')) {
+      if (lightLower.includes('ย้อนแสง') || lightLower.includes('wdr') || lightLower.includes('ไฟหน้า') || lightLower.includes('แดด') || lightLower.includes('กลางคืน') || lightLower.includes('glare')) {
         lightScore = 15;
       } else if (lightLower.trim().length > 3) {
         lightScore = 8;
@@ -627,7 +671,7 @@ export function evaluateStudentSurvey(zoneId: string, input: StudentSurveyInput)
       }
 
       // Conduit (15)
-      if (condLower.includes('upvc') || condLower.includes('ip66') || condLower.includes('กันน้ำ') || condLower.includes('gland') || condLower.includes('20')) {
+      if (condLower.includes('upvc') || condLower.includes('ip66') || condLower.includes('กันน้ำ') || condLower.includes('gland') || condLower.includes('20') || condLower.includes('emt')) {
         conduitScore = 15;
       } else if (condLower.trim().length > 3) {
         conduitScore = 8;
@@ -643,145 +687,17 @@ export function evaluateStudentSurvey(zoneId: string, input: StudentSurveyInput)
       }
       break;
 
-    case 'flagpole':
-      // Environment (20)
-      if (envLower.includes('กลางแจ้ง') || envLower.includes('outdoor') || envLower.includes('แดด') || envLower.includes('ฝน') || envLower.includes('ลาน') || envLower.includes('สนาม')) {
-        envScore = 20;
-      } else if (envLower.trim().length > 3) {
-        envScore = 10;
-      }
-
-      // Lighting (15)
-      if (lightLower.includes('แดด') || lightLower.includes('มืด') || lightLower.includes('กลางคืน') || lightLower.includes('สว่าง') || lightLower.includes('เที่ยง')) {
-        lightScore = 15;
-      } else if (lightLower.trim().length > 3) {
-        lightScore = 8;
-      }
-
-      // Camera (25)
-      if (camLower.includes('ptz') || camLower.includes('speed dome') || camLower.includes('ip67') || camLower.includes('bullet') || camLower.includes('มุมกว้าง') || camLower.includes('หมุน')) {
-        camScore = 25;
-      } else if (camLower.trim().length > 3) {
-        camScore = 12;
-      }
-
-      // Lens (15)
-      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('103') || lensLower.includes('zoom') || lensLower.includes('ซูม') || lensLower.includes('25x')) {
-        lensScore = 15;
-      } else if (lensLower.trim().length > 2) {
-        lensScore = 8;
-      }
-
-      // Conduit (15)
-      if (condLower.includes('upvc') || condLower.includes('pe') || condLower.includes('ip67') || condLower.includes('กราวด์') || condLower.includes('spd') || condLower.includes('surge') || condLower.includes('ท่อ')) {
-        conduitScore = 15;
-      } else if (condLower.trim().length > 3) {
-        conduitScore = 8;
-      }
-
-      // PDPA (10)
-      if (input.pdpaAgreed) pdpaScore += 5;
-      if (pdpaLower.includes('สาธารณะ') || pdpaLower.includes('รปภ') || pdpaLower.includes('ผู้บริหาร') || pdpaLower.includes('สิทธิ์') || pdpaLower.includes('ปลอดภัย') || pdpaLower.includes('กิจกรรม')) {
-        pdpaScore += 5;
-      }
-      break;
-
-    case 'workshop':
-      // Environment (20)
-      if (envLower.includes('โรงช่าง') || envLower.includes('ฝึกงาน') || envLower.includes('ฝุ่น') || envLower.includes('ประกายไฟ') || envLower.includes('น้ำมัน') || envLower.includes('เครื่องจักร') || envLower.includes('สั่นสะเทือน') || envLower.includes('อาคาร')) {
-        envScore = 20;
-      } else if (envLower.trim().length > 3) {
-        envScore = 10;
-      }
-
-      // Lighting (15)
-      if (lightLower.includes('high-bay') || lightLower.includes('อาร์ก') || lightLower.includes('เชื่อม') || lightLower.includes('วาบ') || lightLower.includes('โคม') || lightLower.includes('ไฟ')) {
-        lightScore = 15;
-      } else if (lightLower.trim().length > 3) {
-        lightScore = 8;
-      }
-
-      // Camera (25)
-      if (camLower.includes('vandal') || camLower.includes('ik10') || camLower.includes('โลหะ') || camLower.includes('bullet') || camLower.includes('dome') || camLower.includes('ip67')) {
-        camScore = 25;
-      } else if (camLower.trim().length > 3) {
-        camScore = 12;
-      }
-
-      // Lens (15)
-      if (lensLower.includes('4') || lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('แถว') || lensLower.includes('เครื่องจักร')) {
-        lensScore = 15;
-      } else if (lensLower.trim().length > 2) {
-        lensScore = 8;
-      }
-
-      // Conduit (15)
-      if (condLower.includes('emt') || condLower.includes('เหล็ก') || condLower.includes('upvc') || condLower.includes('กระแทก') || condLower.includes('ท่อ')) {
-        conduitScore = 15;
-      } else if (condLower.trim().length > 3) {
-        conduitScore = 8;
-      }
-
-      // PDPA (10)
-      if (input.pdpaAgreed) pdpaScore += 5;
-      if (pdpaLower.includes('ความปลอดภัย') || pdpaLower.includes('อุบัติเหตุ') || pdpaLower.includes('แต่งตัว') || pdpaLower.includes('ล็อกเกอร์') || pdpaLower.includes('ส่วนบุคคล')) {
-        pdpaScore += 5;
-      }
-      break;
-
-    case 'academic':
-      // Environment (20)
-      if (envLower.includes('ในร่ม') || envLower.includes('indoor') || envLower.includes('ทางเดิน') || envLower.includes('ฝ้า') || envLower.includes('t-bar') || envLower.includes('ห้องสมุด') || envLower.includes('อาคารเรียน')) {
-        envScore = 20;
-      } else if (envLower.trim().length > 3) {
-        envScore = 10;
-      }
-
-      // Lighting (15)
-      if (lightLower.includes('led') || lightLower.includes('สม่ำเสมอ') || lightLower.includes('หลอดไฟ') || lightLower.includes('สว่าง')) {
-        lightScore = 15;
-      } else if (lightLower.trim().length > 3) {
-        lightScore = 8;
-      }
-
-      // Camera (25)
-      if (camLower.includes('dome') || camLower.includes('โดม') || camLower.includes('4mp') || camLower.includes('ip') || camLower.includes('เรียบร้อย') || camLower.includes('กลมกลืน')) {
-        camScore = 25;
-      } else if (camLower.trim().length > 3) {
-        camScore = 12;
-      }
-
-      // Lens (15)
-      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('100') || lensLower.includes('103') || lensLower.includes('ทางเดิน')) {
-        lensScore = 15;
-      } else if (lensLower.trim().length > 2) {
-        lensScore = 8;
-      }
-
-      // Conduit (15)
-      if (condLower.includes('upvc') || condLower.includes('ฝ้า') || condLower.includes('ราง') || condLower.includes('ซ่อน') || condLower.includes('พลาสติก')) {
-        conduitScore = 15;
-      } else if (condLower.trim().length > 3) {
-        conduitScore = 8;
-      }
-
-      // PDPA (10)
-      if (input.pdpaAgreed) pdpaScore += 5;
-      if (pdpaLower.includes('mask') || pdpaLower.includes('หน้ากาก') || pdpaLower.includes('ห้องน้ำ') || pdpaLower.includes('เอกสาร') || pdpaLower.includes('ส่วนบุคคล') || pdpaLower.includes('privacy')) {
-        pdpaScore += 5;
-      }
-      break;
-
     case 'server':
       // Environment (20)
-      if (envLower.includes('ปรับอากาศ') || envLower.includes('แอร์') || envLower.includes('คีย์การ์ด') || envLower.includes('ควบคุม') || envLower.includes('24') || envLower.includes('server') || envLower.includes('ตู้')) {
+      if (envLower.includes('ปรับอากาศ') || envLower.includes('แอร์') || envLower.includes('คีย์การ์ด') || envLower.includes('ควบคุม') || envLower.includes('24') || envLower.includes('server') || envLower.includes('ตู้') || envLower.includes('ในร่ม') || envLower.includes('indoor')) {
         envScore = 20;
       } else if (envLower.trim().length > 3) {
         envScore = 10;
+        feedback.push('ควรระบุสภาพห้องควบคุมปรับอากาศ 24 ชม. และมีระบบคีย์การ์ด');
       }
 
       // Lighting (15)
-      if (lightLower.includes('หลอดไฟ') || lightLower.includes('คอมพิวเตอร์') || lightLower.includes('สว่าง') || lightLower.includes('led')) {
+      if (lightLower.includes('หลอดไฟ') || lightLower.includes('คอมพิวเตอร์') || lightLower.includes('สว่าง') || lightLower.includes('led') || lightLower.includes('สม่ำเสมอ')) {
         lightScore = 15;
       } else if (lightLower.trim().length > 3) {
         lightScore = 8;
@@ -811,6 +727,180 @@ export function evaluateStudentSurvey(zoneId: string, input: StudentSurveyInput)
       // PDPA (10)
       if (input.pdpaAgreed) pdpaScore += 5;
       if (pdpaLower.includes('log') || pdpaLower.includes('ความลับ') || pdpaLower.includes('processor') || pdpaLower.includes('สืบค้น') || pdpaLower.includes('บันทึก')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'admin':
+      // Environment (20)
+      if (envLower.includes('ในร่ม') || envLower.includes('indoor') || envLower.includes('อำนวยการ') || envLower.includes('โถง') || envLower.includes('ทางเดิน') || envLower.includes('ฝ้าเพดาน') || envLower.includes('สะอาด')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('led') || lightLower.includes('สม่ำเสมอ') || lightLower.includes('หลอดไฟ') || lightLower.includes('สว่าง') || lightLower.includes('ทำการ')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('dome') || camLower.includes('โดม') || camLower.includes('4mp') || camLower.includes('กลมกลืน') || camLower.includes('เรียบร้อย') || camLower.includes('ip')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('100') || lensLower.includes('103') || lensLower.includes('โถง')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('ฝ้า') || condLower.includes('ราง') || condLower.includes('ซ่อน') || condLower.includes('พลาสติก')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('mask') || pdpaLower.includes('หน้ากาก') || pdpaLower.includes('ห้องน้ำ') || pdpaLower.includes('เอกสาร') || pdpaLower.includes('การเงิน') || pdpaLower.includes('privacy') || pdpaLower.includes('ส่วนบุคคล')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'parking_dome':
+      // Environment (20)
+      if (envLower.includes('โดม') || envLower.includes('จอดรถ') || envLower.includes('semi') || envLower.includes('กึ่งกลางแจ้ง') || envLower.includes('หลังคา') || envLower.includes('ไอเสีย') || envLower.includes('ควัน')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+        feedback.push('ควรระบุปัจจัยเรื่องโดมจอดรถกึ่งกลางแจ้ง (Semi-Outdoor) และไอเสียยานพาหนะ');
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('เงา') || lightLower.includes('ร่ม') || lightLower.includes('ต่าง') || lightLower.includes('มืด') || lightLower.includes('กลางคืน') || lightLower.includes('สว่าง') || lightLower.includes('wdr') || lightLower.includes('จ้า')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('bullet') || camLower.includes('กระบอก') || camLower.includes('ip67') || camLower.includes('darkfighter') || camLower.includes('4mp') || camLower.includes('ir') || camLower.includes('โลหะ')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('4.0') || lensLower.includes('4') || lensLower.includes('กว้าง') || lensLower.includes('จอดรถ')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('emt') || condLower.includes('เหล็ก') || condLower.includes('spd') || condLower.includes('surge') || condLower.includes('ip66') || condLower.includes('โครงสร้าง')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('ทรัพย์สิน') || pdpaLower.includes('ยานพาหนะ') || pdpaLower.includes('รปภ') || pdpaLower.includes('ผู้บริหาร') || pdpaLower.includes('ปลอดภัย') || pdpaLower.includes('ป้าย')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'com_tech':
+      // Environment (20)
+      if (envLower.includes('คอมพิวเตอร์') || envLower.includes('ในอาคาร') || envLower.includes('indoor') || envLower.includes('ทางเดิน') || envLower.includes('t-bar') || envLower.includes('ฝ้า') || envLower.includes('อาคารเรียน')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('led') || lightLower.includes('สะท้อน') || lightLower.includes('กระจก') || lightLower.includes('สว่าง') || lightLower.includes('หลอดไฟ')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('vandal') || camLower.includes('ik10') || camLower.includes('dome') || camLower.includes('โดม') || camLower.includes('4mp') || camLower.includes('กระแทก')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('103') || lensLower.includes('ทางเดิน') || lensLower.includes('ระเบียง')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('ฝ้า') || condLower.includes('t-bar') || condLower.includes('ไม้อัด') || condLower.includes('ซ่อน')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('สิทธิ') || pdpaLower.includes('ส่วนตัว') || pdpaLower.includes('ห้องน้ำ') || pdpaLower.includes('นักศึกษา') || pdpaLower.includes('ความเป็นส่วนตัว')) {
+        pdpaScore += 5;
+      }
+      break;
+
+    case 'canteen':
+      // Environment (20)
+      if (envLower.includes('โรงอาหาร') || envLower.includes('โภชนาการ') || envLower.includes('น้ำมัน') || envLower.includes('ควัน') || envLower.includes('ไอร้อน') || envLower.includes('semi') || envLower.includes('กึ่งกลางแจ้ง') || envLower.includes('พลุกพล่าน')) {
+        envScore = 20;
+      } else if (envLower.trim().length > 3) {
+        envScore = 10;
+        feedback.push('ควรระบุสภาพโรงอาหารที่มีละอองไอน้ำมัน ไอร้อน ควัน และความชื้น');
+      }
+
+      // Lighting (15)
+      if (lightLower.includes('ธรรมชาติ') || lightLower.includes('ช่องลม') || lightLower.includes('โคมไฟ') || lightLower.includes('ผสม') || lightLower.includes('แดด') || lightLower.includes('สว่าง')) {
+        lightScore = 15;
+      } else if (lightLower.trim().length > 3) {
+        lightScore = 8;
+      }
+
+      // Camera (25)
+      if (camLower.includes('dome') || camLower.includes('โดม') || camLower.includes('ip66') || camLower.includes('ip67') || camLower.includes('ik10') || camLower.includes('น้ำมัน') || camLower.includes('โลหะ') || camLower.includes('4mp')) {
+        camScore = 25;
+      } else if (camLower.trim().length > 3) {
+        camScore = 12;
+      }
+
+      // Lens (15)
+      if (lensLower.includes('2.8') || lensLower.includes('กว้าง') || lensLower.includes('ร้านค้า') || lensLower.includes('รับประทาน') || lensLower.includes('อาหาร')) {
+        lensScore = 15;
+      } else if (lensLower.trim().length > 2) {
+        lensScore = 8;
+      }
+
+      // Conduit (15)
+      if (condLower.includes('upvc') || condLower.includes('ซีล') || condLower.includes('แน่นหนา') || condLower.includes('น้ำมัน') || condLower.includes('ความชื้น') || condLower.includes('ท่อ')) {
+        conduitScore = 15;
+      } else if (condLower.trim().length > 3) {
+        conduitScore = 8;
+      }
+
+      // PDPA (10)
+      if (input.pdpaAgreed) pdpaScore += 5;
+      if (pdpaLower.includes('ป้าย') || pdpaLower.includes('เตือน') || pdpaLower.includes('cctv') || pdpaLower.includes('operation') || pdpaLower.includes('ทรัพย์สิน') || pdpaLower.includes('สุขอนามัย') || pdpaLower.includes('ปลอดภัย')) {
         pdpaScore += 5;
       }
       break;
@@ -859,10 +949,11 @@ export function SiteSurveySimulator() {
   const [surveyedZones, setSurveyedZones] = useState<string[]>(['gate']);
   const [pdpaAgreed, setPdpaAgreed] = useState<Record<string, boolean>>({
     gate: true,
-    flagpole: false,
-    workshop: false,
-    academic: false,
     server: false,
+    admin: false,
+    parking_dome: false,
+    com_tech: false,
+    canteen: false,
   });
 
   // Student submitted survey answers and scores
@@ -878,7 +969,7 @@ export function SiteSurveySimulator() {
     pdpaAction: string;
   }>>({
     gate: {
-      environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ',
+      environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะและสภาพแวดล้อมริมถนนสาธารณะ',
       lightingCond: '',
       recommendedCamera: '',
       lensSpec: '',
@@ -1094,7 +1185,7 @@ export function SiteSurveySimulator() {
               CCTV Site Survey & Installation Workstation
             </h1>
             <p className="text-xs text-slate-400">
-              ระบบจำลองการสำรวจพื้นที่ 5 โซนยุทธศาสตร์, ขั้นตอนการติดตั้งมาตรฐาน 6 ขั้น, องค์ประกอบ 5 ส่วน และ Commissioning
+              ระบบจำลองการสำรวจพื้นที่ 6 จุดสำรวจยุทธศาสตร์, ขั้นตอนการติดตั้งมาตรฐาน 6 ขั้น, องค์ประกอบ 5 ส่วน และ Commissioning
             </p>
           </div>
 
@@ -1201,8 +1292,8 @@ export function SiteSurveySimulator() {
               />
 
               {/* Zone Selector Buttons Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                {UBON_ZONES.map((zone) => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                {UBON_ZONES.map((zone, idx) => {
                   const isSelected = selectedZoneId === zone.id;
                   const isSubmitted = !!submittedSurveys[zone.id];
                   const submission = submittedSurveys[zone.id];
@@ -1222,7 +1313,7 @@ export function SiteSurveySimulator() {
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[10px] font-mono text-sky-400 font-bold">
-                          #{zone.id === 'gate' ? '1' : zone.id === 'flagpole' ? '2' : zone.id === 'workshop' ? '3' : zone.id === 'academic' ? '4' : '5'} • {zone.distanceMeters}m
+                          #{idx + 1} • {zone.distanceMeters}m
                         </span>
                         {isSubmitted && submission ? (
                           <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -1254,7 +1345,7 @@ export function SiteSurveySimulator() {
                   className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold transition cursor-pointer text-xs"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>ออกใบบันทึกผลการสำรวจ ({Object.keys(submittedSurveys).length}/5)</span>
+                  <span>ออกใบบันทึกผลการสำรวจ ({Object.keys(submittedSurveys).length}/6)</span>
                 </button>
               </div>
             </div>
@@ -2210,12 +2301,12 @@ export function SiteSurveySimulator() {
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-500 uppercase block">สถานที่สำรวจจริง</span>
                   <span className="text-sm font-bold text-white">วิทยาลัยเทคนิคอุบลราชธานี</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">ผัง 2D ไร้ป้ายตัวหนังสือ 5 โซน</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">ผัง 2D ไร้ป้ายตัวหนังสือ 6 โซน</span>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-500 uppercase block">ความคืบหน้าการส่งคำตอบ</span>
                   <span className="text-sm font-bold text-sky-400">
-                    {Object.keys(submittedSurveys).length} / 5 โซน ({Math.round((Object.keys(submittedSurveys).length / 5) * 100)}%)
+                    {Object.keys(submittedSurveys).length} / 6 โซน ({Math.round((Object.keys(submittedSurveys).length / 6) * 100)}%)
                   </span>
                   <span className="text-[10px] text-slate-400 block mt-0.5">
                     คะแนนเฉลี่ย:{' '}
@@ -2328,8 +2419,8 @@ export function SiteSurveySimulator() {
                 </table>
               </div>
 
-              {/* Completion Certification Seal if all 5 completed */}
-              {Object.keys(submittedSurveys).length === 5 && (
+              {/* Completion Certification Seal if all 6 completed */}
+              {Object.keys(submittedSurveys).length === 6 && (
                 <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-sky-950/80 border border-emerald-500/50 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
@@ -2340,7 +2431,7 @@ export function SiteSurveySimulator() {
                         🎖️ ผ่านการทดสอบภาคสนามระดับวิทยาลัย (UBTC Certified Field Survey)
                       </h4>
                       <p className="text-xs text-emerald-200/80">
-                        นักเรียนได้สำรวจและระบุสเปกทางวิศวกรรมครบทั้ง 5 โซนยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี
+                        นักเรียนได้สำรวจและระบุสเปกทางวิศวกรรมครบทั้ง 6 โซนยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี
                       </p>
                     </div>
                   </div>

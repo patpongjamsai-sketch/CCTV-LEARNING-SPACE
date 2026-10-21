@@ -23,11 +23,12 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
 
   // Position coordinates on 960x640 canvas matching the actual satellite image
   const zoneCoordinates: Record<string, { x: number; y: number; label: string }> = {
-    gate: { x: 235, y: 550, label: '1' }, // Main entrance gate at bottom-left road
-    flagpole: { x: 670, y: 390, label: '2' }, // Sports court / open ground at bottom-right
-    workshop: { x: 250, y: 310, label: '3' }, // Long orange workshop row on the west
-    academic: { x: 440, y: 220, label: '4' }, // Central-North educational buildings
-    server: { x: 470, y: 390, label: '5' }, // Central IT/Server hub
+    gate: { x: 845, y: 360, label: '1' }, // จุดที่ 1: หน้าป้อมยามติดถนนเข้าออกวิทยาลัย (ถ.ชวาลานอก)
+    server: { x: 535, y: 205, label: '2' }, // จุดที่ 2: ห้องควบคุมระบบกล้องวงจรปิด
+    admin: { x: 585, y: 340, label: '3' }, // จุดที่ 3: อาคารอำนวยการ
+    parking_dome: { x: 705, y: 565, label: '4' }, // จุดที่ 4: โดมใหญ่จอดรถ
+    com_tech: { x: 415, y: 525, label: '5' }, // จุดที่ 5: อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์
+    canteen: { x: 380, y: 375, label: '6' }, // จุดที่ 6: โรงอาหาร
   };
 
   const serverCoord = zoneCoordinates['server']!;
@@ -189,30 +190,34 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
                 <rect width="960" height="640" fill="url(#campusGridPattern)" />
 
                 {/* Road Network (Asphalt Roads) */}
-                {/* South Boundary Avenue (Main Street) */}
-                <path d="M 0 610 L 960 610" stroke="#1e293b" strokeWidth="36" />
+                {/* East Boundary Avenue (Chawalanok Road - ถ.ชวาลานอก) */}
+                <path d="M 885 0 L 885 640" stroke="#1e293b" strokeWidth="32" />
+                <path d="M 885 0 L 885 640" stroke="#334155" strokeWidth="2" strokeDasharray="12 10" />
+
+                {/* South Boundary Avenue (Main South Street) */}
+                <path d="M 0 610 L 960 610" stroke="#1e293b" strokeWidth="34" />
                 <path d="M 0 610 L 960 610" stroke="#334155" strokeWidth="2" strokeDasharray="12 10" />
 
-                {/* Main Entrance Road leading North from Gate */}
-                <path d="M 235 630 L 235 480 L 470 480 L 470 200 L 710 200" stroke="#1e293b" strokeWidth="32" fill="none" />
-                <path d="M 235 630 L 235 480 L 470 480 L 470 200 L 710 200" stroke="#475569" strokeWidth="2" strokeDasharray="10 8" fill="none" />
+                {/* East Entrance Gate Access Road leading West into Campus */}
+                <path d="M 885 360 L 510 360 L 510 200 L 235 200" stroke="#1e293b" strokeWidth="28" fill="none" />
+                <path d="M 885 360 L 510 360 L 510 200 L 235 200" stroke="#475569" strokeWidth="2" strokeDasharray="10 8" fill="none" />
 
-                {/* East Ring Road around Sports Field */}
-                <path d="M 710 200 L 710 600" stroke="#1e293b" strokeWidth="28" fill="none" />
-                <path d="M 710 200 L 710 600" stroke="#475569" strokeWidth="1.5" strokeDasharray="8 6" fill="none" />
+                {/* Internal Campus Avenue between Admin, Canteen, and Courts */}
+                <path d="M 510 120 L 510 610" stroke="#1e293b" strokeWidth="24" fill="none" />
+                <path d="M 510 120 L 510 610" stroke="#475569" strokeWidth="1.5" strokeDasharray="8 6" fill="none" />
 
-                {/* North Campus Internal Lanes */}
-                <path d="M 235 240 L 470 240" stroke="#1e293b" strokeWidth="24" fill="none" />
-                <path d="M 235 120 L 710 120" stroke="#1e293b" strokeWidth="24" fill="none" />
+                {/* Lane passing Canteen (Zone 6) and Computer Dept (Zone 5) */}
+                <path d="M 235 470 L 510 470 L 710 470" stroke="#1e293b" strokeWidth="24" fill="none" />
+                <path d="M 235 610 L 235 120 L 710 120" stroke="#1e293b" strokeWidth="22" fill="none" />
 
                 {/* ======================================================== */}
-                {/* ATHLETIC RUNNING TRACK & OPEN FIELD (EAST ZONE) */}
+                {/* ATHLETIC RUNNING TRACK & OPEN FIELD (EAST OF CAMPUS) */}
                 {/* ======================================================== */}
                 <rect
-                  x="740"
-                  y="200"
-                  width="180"
-                  height="340"
+                  x="705"
+                  y="215"
+                  width="165"
+                  height="285"
                   rx="16"
                   fill="#78350f"
                   stroke="#92400e"
@@ -221,10 +226,10 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
                 />
                 {/* Field Inner Ring */}
                 <rect
-                  x="755"
-                  y="220"
-                  width="150"
-                  height="300"
+                  x="720"
+                  y="230"
+                  width="135"
+                  height="255"
                   rx="12"
                   fill="#854d0e"
                   stroke="#a16207"
@@ -234,143 +239,150 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
                 />
 
                 {/* ======================================================== */}
-                {/* BASKETBALL & FUTSAL MULTI-COURT (SOUTH-EAST ZONE) */}
+                {/* ZONE 1: EAST GUARDHOUSE & ENTRANCE GATE (ริม ถ.ชวาลานอก) */}
+                {/* ======================================================== */}
+                <rect
+                  x="825"
+                  y="342"
+                  width="38"
+                  height="36"
+                  rx="4"
+                  fill="#1e293b"
+                  stroke="#38bdf8"
+                  strokeWidth="2"
+                />
+                {/* Entrance Security Barrier */}
+                <line x1="865" y1="340" x2="865" y2="380" stroke="#f59e0b" strokeWidth="4" strokeDasharray="6 4" />
+
+                {/* ======================================================== */}
+                {/* ZONE 4: LARGE COVERED PARKING DOME (โดมใหญ่จอดรถ ทิศใต้) */}
+                {/* ======================================================== */}
+                <rect
+                  x="635"
+                  y="535"
+                  width="145"
+                  height="62"
+                  rx="14"
+                  fill="url(#roofMetal)"
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                />
+                {/* Canopy roof ribs */}
+                <line x1="660" y1="535" x2="660" y2="597" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6" />
+                <line x1="685" y1="535" x2="685" y2="597" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6" />
+                <line x1="710" y1="535" x2="710" y2="597" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6" />
+                <line x1="735" y1="535" x2="735" y2="597" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6" />
+                <line x1="760" y1="535" x2="760" y2="597" stroke="#cbd5e1" strokeWidth="1" strokeOpacity="0.6" />
+
+                {/* ======================================================== */}
+                {/* BASKETBALL & FUTSAL MULTI-COURT (SOUTH-CENTRAL) */}
                 {/* ======================================================== */}
                 <rect
                   x="565"
-                  y="470"
-                  width="110"
+                  y="435"
+                  width="100"
                   height="125"
                   rx="6"
                   fill="#0284c7"
                   stroke="#38bdf8"
                   strokeWidth="1.5"
                 />
-                {/* Court markings */}
-                <rect x="575" y="480" width="40" height="50" fill="#0f766e" stroke="#ffffff" strokeWidth="1" />
-                <rect x="625" y="480" width="40" height="50" fill="#0f766e" stroke="#ffffff" strokeWidth="1" />
-                <rect x="575" y="535" width="90" height="50" fill="#0369a1" stroke="#ffffff" strokeWidth="1" />
-                <circle cx="620" cy="560" r="12" fill="none" stroke="#ffffff" strokeWidth="1" />
+                <rect x="575" y="445" width="38" height="48" fill="#0f766e" stroke="#ffffff" strokeWidth="1" />
+                <rect x="618" y="445" width="38" height="48" fill="#0f766e" stroke="#ffffff" strokeWidth="1" />
+                <rect x="575" y="500" width="80" height="50" fill="#0369a1" stroke="#ffffff" strokeWidth="1" />
+                <circle cx="615" cy="525" r="11" fill="none" stroke="#ffffff" strokeWidth="1" />
 
                 {/* ======================================================== */}
-                {/* AUDITORIUM / CURVED HALL (BOTTOM RIGHT) */}
+                {/* ZONE 3: ADMINISTRATIVE & DIRECTOR BUILDING (อาคารอำนวยการ) */}
                 {/* ======================================================== */}
                 <rect
-                  x="735"
-                  y="560"
-                  width="185"
-                  height="55"
-                  rx="14"
-                  fill="url(#roofMetal)"
-                  stroke="#94a3b8"
-                  strokeWidth="1.5"
-                />
-
-                {/* ======================================================== */}
-                {/* WORKSHOP BUILDINGS ROW (WEST ZONE - ORANGE/RED ROOFS) */}
-                {/* ======================================================== */}
-                {/* Main Long Orange Workshop A */}
-                <rect
-                  x="70"
-                  y="270"
-                  width="190"
-                  height="75"
-                  rx="4"
-                  fill="url(#roofOrange)"
-                  stroke="#ea580c"
-                  strokeWidth="1.5"
-                />
-                {/* Workshop B (White/Metal Shed) */}
-                <rect
-                  x="70"
-                  y="180"
-                  width="180"
-                  height="70"
-                  rx="4"
-                  fill="url(#roofMetal)"
-                  stroke="#cbd5e1"
-                  strokeWidth="1.5"
-                />
-                {/* Workshop C (Northwest) */}
-                <rect
-                  x="60"
-                  y="95"
-                  width="190"
-                  height="65"
-                  rx="4"
-                  fill="#334155"
-                  stroke="#64748b"
-                  strokeWidth="1.5"
-                />
-                {/* Workshop D (Southwest) */}
-                <rect
-                  x="60"
-                  y="460"
-                  width="180"
-                  height="60"
-                  rx="4"
-                  fill="url(#roofOrange)"
-                  stroke="#ea580c"
-                  strokeWidth="1.5"
-                />
-
-                {/* ======================================================== */}
-                {/* CENTRAL & NORTH ACADEMIC BUILDINGS */}
-                {/* ======================================================== */}
-                {/* Orange Gabled Hall A */}
-                <rect
-                  x="290"
-                  y="160"
-                  width="135"
-                  height="80"
-                  rx="4"
-                  fill="url(#roofOrange)"
-                  stroke="#ea580c"
-                  strokeWidth="1.5"
-                />
-                {/* Long Red Educational Building B */}
-                <rect
-                  x="480"
-                  y="225"
-                  width="160"
-                  height="45"
-                  rx="4"
-                  fill="url(#roofOrange)"
-                  stroke="#ea580c"
-                  strokeWidth="1.5"
-                />
-                {/* Central Hall / Administration C (Tiered Hip Roof) */}
-                <rect
-                  x="430"
-                  y="410"
-                  width="100"
-                  height="90"
-                  rx="6"
-                  fill="url(#roofRed)"
-                  stroke="#ef4444"
-                  strokeWidth="1.5"
-                />
-                {/* North Lab Building D */}
-                <rect
-                  x="480"
-                  y="310"
-                  width="215"
+                  x="545"
+                  y="315"
+                  width="85"
                   height="50"
                   rx="4"
-                  fill="#1e293b"
-                  stroke="#475569"
+                  fill="#334155"
+                  stroke="#94a3b8"
+                  strokeWidth="2"
+                />
+                {/* Terrace & front entrance portico */}
+                <rect x="575" y="360" width="25" height="8" fill="#475569" stroke="#64748b" strokeWidth="1" />
+
+                {/* ======================================================== */}
+                {/* ZONE 2: CCTV CONTROL & SERVER ROOM (ห้องควบคุมระบบ) */}
+                {/* ======================================================== */}
+                <rect
+                  x="510"
+                  y="185"
+                  width="55"
+                  height="40"
+                  rx="4"
+                  fill="#0f172a"
+                  stroke="#38bdf8"
+                  strokeWidth="2"
+                />
+                {/* Server room glow core */}
+                <rect x="522" y="196" width="30" height="18" rx="2" fill="#0369a1" stroke="#38bdf8" strokeWidth="1" />
+                {/* Long Workshop building above Server Room */}
+                <rect
+                  x="475"
+                  y="145"
+                  width="170"
+                  height="38"
+                  rx="4"
+                  fill="url(#roofOrange)"
+                  stroke="#ea580c"
                   strokeWidth="1.5"
                 />
 
-                {/* Tree Canopy Clusters */}
+                {/* ======================================================== */}
+                {/* ZONE 6: COLLEGE CANTEEN / CAFETERIA (โรงอาหาร) */}
+                {/* ======================================================== */}
+                <rect
+                  x="335"
+                  y="345"
+                  width="95"
+                  height="60"
+                  rx="6"
+                  fill="url(#roofOrange)"
+                  stroke="#ea580c"
+                  strokeWidth="2"
+                />
+                {/* Canteen side open deck */}
+                <rect x="335" y="400" width="95" height="10" fill="#7c2d12" stroke="#ea580c" strokeWidth="1" />
+
+                {/* ======================================================== */}
+                {/* ZONE 5: COMPUTER TECHNOLOGY DEPT (อาคารเรียนแผนกคอมพิวเตอร์) */}
+                {/* ======================================================== */}
+                <rect
+                  x="345"
+                  y="508"
+                  width="145"
+                  height="36"
+                  rx="4"
+                  fill="#1e293b"
+                  stroke="#60a5fa"
+                  strokeWidth="2"
+                />
+                {/* Windows line */}
+                <line x1="355" y1="526" x2="480" y2="526" stroke="#38bdf8" strokeWidth="2" strokeDasharray="6 4" />
+
+                {/* ======================================================== */}
+                {/* OTHER CAMPUS WORKSHOPS (WEST ROW) */}
+                {/* ======================================================== */}
+                <rect x="70" y="270" width="180" height="70" rx="4" fill="url(#roofOrange)" stroke="#ea580c" strokeWidth="1.5" />
+                <rect x="70" y="180" width="170" height="65" rx="4" fill="url(#roofMetal)" stroke="#cbd5e1" strokeWidth="1.5" />
+                <rect x="60" y="95" width="180" height="60" rx="4" fill="#334155" stroke="#64748b" strokeWidth="1.5" />
+                <rect x="60" y="460" width="170" height="55" rx="4" fill="url(#roofOrange)" stroke="#ea580c" strokeWidth="1.5" />
+
+                {/* Tree Clusters */}
                 {[
                   { cx: 310, cy: 370, r: 16 },
                   { cx: 335, cy: 385, r: 14 },
-                  { cx: 300, cy: 405, r: 15 },
                   { cx: 505, cy: 375, r: 18 },
                   { cx: 530, cy: 380, r: 16 },
-                  { cx: 380, cy: 540, r: 20 },
-                  { cx: 410, cy: 550, r: 18 },
+                  { cx: 380, cy: 570, r: 18 },
+                  { cx: 410, cy: 575, r: 16 },
                   { cx: 50, cy: 370, r: 16 },
                   { cx: 50, cy: 400, r: 18 },
                   { cx: 720, cy: 150, r: 18 },
@@ -387,10 +399,6 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
                     opacity="0.85"
                   />
                 ))}
-
-                {/* Gate Guardhouse & Barrier at Entrance */}
-                <rect x="220" y="540" width="30" height="20" rx="3" fill="#1e293b" stroke="#38bdf8" strokeWidth="1.5" />
-                <line x1="205" y1="550" x2="265" y2="550" stroke="#f59e0b" strokeWidth="3" strokeDasharray="6 4" />
               </>
             )}
 
@@ -553,7 +561,7 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
           </div>
 
           <div className="text-[10px] font-mono text-slate-400">
-            คลิกที่ <strong className="text-amber-400">หมุดตัวเลข 1 - 5</strong> เพื่อสำรวจจุดนั้น
+            คลิกที่ <strong className="text-amber-400">หมุดตัวเลข 1 - 6</strong> เพื่อสำรวจจุดนั้น
           </div>
         </div>
       </div>
