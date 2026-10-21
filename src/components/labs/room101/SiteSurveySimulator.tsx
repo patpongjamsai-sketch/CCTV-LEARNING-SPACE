@@ -1225,9 +1225,9 @@ export function SiteSurveySimulator() {
             }`}
           >
             <MapPin className="w-3.5 h-3.5" />
-            <span>แท็บ 1: ผังสำรวจ 5 โซน วท.อุบลฯ</span>
+            <span>แท็บ 1: ผังสำรวจ 6 จุดยุทธศาสตร์ วท.อุบลฯ</span>
             <span className="ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-sky-950 text-sky-200">
-              {surveyedZones.length}/5
+              {surveyedZones.length}/6
             </span>
           </button>
 

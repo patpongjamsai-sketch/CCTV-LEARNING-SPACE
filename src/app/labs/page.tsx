@@ -38,7 +38,7 @@ const roomSummaries: RoomSummary[] = [
     slug: 'room-101',
     title: 'วิทยาลัยเทคนิคอุบลราชธานี · CCTV Foundations, Site Survey & Components',
     unitId: 'U01',
-    focus: 'การสำรวจพื้นที่ 5 โซนยุทธศาสตร์ วท.อุบลฯ, 6 ขั้นตอนติดตั้งมาตรฐานช่าง, องค์ประกอบ 5 ส่วน และ 4 ขั้นตอน Commissioning',
+    focus: 'การสำรวจพื้นที่ 6 จุดยุทธศาสตร์ วท.อุบลฯ, 6 ขั้นตอนติดตั้งมาตรฐานช่าง, องค์ประกอบ 5 ส่วน และ 4 ขั้นตอน Commissioning',
     duration: '180 นาที',
     badge: '2D Pre-Lab + 3D',
     badgeColor: 'sky',
@@ -48,7 +48,7 @@ const roomSummaries: RoomSummary[] = [
         badge: '2D PRE-LAB · SITE SURVEY',
         badgeColor: 'sky',
         title: '🗺️ แผนผังจำลองการสำรวจพื้นที่และวางระบบ CCTV (วิทยาลัยเทคนิคอุบลราชธานี)',
-        desc: 'สำรวจ 5 โซนยุทธศาสตร์ (ป้อมยาม, เสาธง, โรงช่าง, อาคารเรียน, Server Room), ตรวจสอบ PDPA, จัดลำดับ 6 ขั้นตอนติดตั้ง, ประกอบ 5 องค์ประกอบ และทดสอบ Commissioning',
+        desc: 'สำรวจ 6 จุดยุทธศาสตร์ (ป้อมยาม, Server Room, อาคารอำนวยการ, โดมจอดรถ, อาคารแผนกคอมฯ, โรงอาหาร), ตรวจสอบ PDPA, จัดลำดับ 6 ขั้นตอนติดตั้ง, ประกอบ 5 องค์ประกอบ และทดสอบ Commissioning',
         actions: [
           {
             label: '🗺️ เข้าฝึก 2D Site Survey Pre-Lab →',
