@@ -5,15 +5,14 @@ import {
   ZONE_SUGGESTIONS,
 } from '../components/labs/room101/SiteSurveySimulator';
 
-describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 6 Strategic Zones)', () => {
-  it('contains exactly 6 strategic zones for Ubon Ratchathani Technical College', () => {
-    expect(UBON_ZONES).toHaveLength(6);
+describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 5 Strategic Camera Survey Points)', () => {
+  it('contains exactly 5 strategic survey zones for CCTV camera deployment', () => {
+    expect(UBON_ZONES).toHaveLength(5);
     const ids = UBON_ZONES.map((z) => z.id);
-    expect(ids).toEqual(['gate', 'server', 'admin', 'parking_dome', 'com_tech', 'canteen']);
+    expect(ids).toEqual(['gate', 'admin', 'parking_dome', 'com_tech', 'canteen']);
   });
 
-  it('evaluates student input for Zone 1 (หน้าป้อมยามติดถนนเข้าออกวิทยาลัย) with the user-specified example correctly', () => {
-    // User example: สภาพพื้นที่: กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ
+  it('evaluates student input for Point 1 (หน้าป้อมยามติดถนนเข้าออกวิทยาลัย) correctly', () => {
     const result = evaluateStudentSurvey('gate', {
       environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะและริมถนนสาธารณะ',
       lightingCond: 'ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน',
@@ -50,22 +49,7 @@ describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 6 Strategic Zon
     expect(poorResult.grade).not.toBe('A');
   });
 
-  it('evaluates Zone 2 (ห้องควบคุมระบบกล้องวงจรปิด) with server room & wireway specs', () => {
-    const result = evaluateStudentSurvey('server', {
-      environmentType: 'ในร่ม (Indoor) ห้องควบคุมปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
-      lightingCond: 'แสงสว่างสม่ำเสมอจากหลอดไฟห้องคอมพิวเตอร์และ NVR ตลอดเวลา',
-      recommendedCamera: 'Dome IP Camera 2MP ส่องหน้าตู้ Rack 19 นิ้วและประตูทางเข้า',
-      lensSpec: 'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack และประตูทางเข้าหลัก',
-      conduitType: 'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้ว',
-      pdpaAction: 'พื้นที่ความลับสูงสุด (Zone Data Processor) บันทึก Log การเข้าถึงและสืบค้นตามกฎหมาย',
-      pdpaAgreed: true,
-    });
-
-    expect(result.score).toBeGreaterThanOrEqual(80);
-    expect(result.grade).toBe('A');
-  });
-
-  it('evaluates Zone 3 (อาคารอำนวยการ) with administrative indoor specs', () => {
+  it('evaluates Point 2 (อาคารอำนวยการ) with administrative indoor specs', () => {
     const result = evaluateStudentSurvey('admin', {
       environmentType: 'ในร่ม (Indoor) โถงต้อนรับและทางเดินอาคารอำนวยการ สะอาดเรียบร้อย',
       lightingCond: 'แสงสว่างสม่ำเสมอจากหลอด LED ตลอดช่วงเวลาทำการ',
@@ -80,7 +64,7 @@ describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 6 Strategic Zon
     expect(result.grade).toBe('A');
   });
 
-  it('evaluates Zone 4 (โดมใหญ่จอดรถ) with covered canopy specs', () => {
+  it('evaluates Point 3 (โดมใหญ่จอดรถ) with covered canopy specs', () => {
     const result = evaluateStudentSurvey('parking_dome', {
       environmentType: 'กึ่งกลางแจ้งใต้หลังคาโดมจอดรถ (Semi-Outdoor) ลมพัดผ่าน ฝุ่นควันไอเสียรถยนต์',
       lightingCond: 'ใต้โดมมีเงาร่มครึ้ม แสงภายนอกสว่างจ้า และเวลากลางคืนมืดสลัว',
@@ -95,7 +79,7 @@ describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 6 Strategic Zon
     expect(result.grade).toBe('A');
   });
 
-  it('evaluates Zone 5 (อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์) with corridor IK10 specs', () => {
+  it('evaluates Point 4 (อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์) with corridor IK10 specs', () => {
     const result = evaluateStudentSurvey('com_tech', {
       environmentType: 'ในอาคารเรียน (Indoor) ระเบียงทางเดินหน้าห้องปฏิบัติการคอมพิวเตอร์ ฝ้าเพดาน T-Bar',
       lightingCond: 'แสงไฟสว่างจากหลอด LED ตามทางเดินและแสงสะท้อนจากกระจกห้องแล็บ',
@@ -110,7 +94,7 @@ describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 6 Strategic Zon
     expect(result.grade).toBe('A');
   });
 
-  it('evaluates Zone 6 (โรงอาหาร) with canteen grease-resistant specs', () => {
+  it('evaluates Point 5 (โรงอาหาร) with canteen grease-resistant specs', () => {
     const result = evaluateStudentSurvey('canteen', {
       environmentType: 'กึ่งกลางแจ้งโถงสูงโรงอาหาร (Semi-Outdoor) ละอองไอน้ำมัน ไอร้อน ควัน ฝุ่น ละอองอาหาร',
       lightingCond: 'แสงแดดธรรมชาติส่องผ่านช่องลมด้านข้างผสมกับแสงโคมไฟโรงอาหาร',
@@ -125,7 +109,7 @@ describe('CCTV Site Survey Evaluation Engine (Ubon Tech Campus - 6 Strategic Zon
     expect(result.grade).toBe('A');
   });
 
-  it('has suggestions available for all 6 zones', () => {
+  it('has suggestions available for all strategic zones', () => {
     for (const zone of UBON_ZONES) {
       const suggestions = ZONE_SUGGESTIONS[zone.id];
       expect(suggestions).toBeDefined();

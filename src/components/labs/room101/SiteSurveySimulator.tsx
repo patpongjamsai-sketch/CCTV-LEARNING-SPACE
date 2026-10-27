@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MapPin,
   Shield,
@@ -23,8 +23,10 @@ import {
   Edit3,
   Send,
   Award,
-  Sparkles,
   Sliders,
+  Download,
+  User,
+  GraduationCap,
 } from 'lucide-react';
 import { UbonCampus2DMap } from './UbonCampus2DMap';
 
@@ -111,7 +113,7 @@ export interface ComponentDetail {
   proTip: string;
 }
 
-// 6 Strategic Zones of Ubon Ratchathani Technical College
+// 5 Strategic Zones of Ubon Ratchathani Technical College (จุดสำรวจติดตั้งกล้องวงจรปิด 5 จุด)
 export const UBON_ZONES: StrategicZone[] = [
   {
     id: 'gate',
@@ -130,24 +132,8 @@ export const UBON_ZONES: StrategicZone[] = [
     svgPos: { x: 845, y: 360 },
   },
   {
-    id: 'server',
-    nameTh: '2. ห้องควบคุมระบบกล้องวงจรปิด',
-    nameEn: 'CCTV Central Control & Server Room (NVR Hub)',
-    distanceMeters: 0,
-    environmentType: 'ในร่ม (Indoor) ห้องควบคุมปรับอากาศ 24 ชม. ปราศจากฝุ่น และมีระบบคีย์การ์ด',
-    lightingCond: 'แสงสว่างสม่ำเสมอจากหลอดไฟห้องควบคุมระบบตลอดเวลา',
-    recommendedCamera: 'Dome IP Camera 2MP ตรวจจับการเข้า-ออกของเจ้าหน้าที่และสังเกตหน้าตู้ Rack',
-    lensSpec: 'เลนส์ 2.8mm ส่องตรงจุดตู้ Rack 19 นิ้วและประตูทางเข้าหลัก',
-    mountingHeight: '2.6 - 2.8 เมตร ใต้เพดานห้องควบคุม',
-    conduitType: 'Wireway (รางวายเวย์โลหะ) เข้าสู่ตู้ Rack 19 นิ้ว จัดสายด้วย Patch Panel',
-    pdpaRequirement: 'เป็นพื้นที่ความลับสูงสุดตามมาตรฐาน PDPA (Zone Data Processor)',
-    pdpaAction: 'บันทึก Log การเข้าถึงห้องและ Log การสืบค้นภาพจากเครื่อง NVR ทุกครั้งตามกฎหมาย',
-    techNote: 'ศูนย์รวมตู้ Rack 19", NVR 32-CH, PoE Switch 24-Port และระบบสำรองไฟ UPS 2000VA',
-    svgPos: { x: 535, y: 205 },
-  },
-  {
     id: 'admin',
-    nameTh: '3. อาคารอำนวยการ',
+    nameTh: '2. อาคารอำนวยการ',
     nameEn: 'Administrative & Director Building',
     distanceMeters: 40,
     environmentType: 'ในร่ม (Indoor) โถงต้อนรับและทางเดินอาคารอำนวยการ ฝ้าเพดานเรียบ สภาพแวดล้อมสะอาด',
@@ -163,7 +149,7 @@ export const UBON_ZONES: StrategicZone[] = [
   },
   {
     id: 'parking_dome',
-    nameTh: '4. โดมใหญ่จอดรถ',
+    nameTh: '3. โดมใหญ่จอดรถ',
     nameEn: 'Large Covered Parking Dome & Vehicle Canopy',
     distanceMeters: 75,
     environmentType: 'กึ่งกลางแจ้งใต้ร่มเงาหลังคาโดมโค้ง (Semi-Outdoor) ลมพัดผ่าน ฝุ่นควันและไอเสียรถยนต์',
@@ -179,7 +165,7 @@ export const UBON_ZONES: StrategicZone[] = [
   },
   {
     id: 'com_tech',
-    nameTh: '5. อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์',
+    nameTh: '4. อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์',
     nameEn: 'Computer Technology Department Building',
     distanceMeters: 65,
     environmentType: 'ในอาคารเรียน (Indoor) ระเบียงทางเดินหน้าห้องปฏิบัติการคอมพิวเตอร์ ฝ้าเพดาน T-Bar',
@@ -195,7 +181,7 @@ export const UBON_ZONES: StrategicZone[] = [
   },
   {
     id: 'canteen',
-    nameTh: '6. โรงอาหาร',
+    nameTh: '5. โรงอาหาร',
     nameEn: 'College Canteen & Cafeteria Hall',
     distanceMeters: 55,
     environmentType: 'กึ่งกลางแจ้งโถงสูง (Semi-Outdoor High Ceiling) ไอน้ำมัน ไอร้อน ควัน ฝุ่น ละอองอาหาร และคนพลุกพล่าน',
@@ -948,18 +934,22 @@ export function SiteSurveySimulator() {
   const [selectedZoneId, setSelectedZoneId] = useState<string>('gate');
   const [surveyedZones, setSurveyedZones] = useState<string[]>(['gate']);
   const [pdpaAgreed, setPdpaAgreed] = useState<Record<string, boolean>>({
-    gate: true,
-    server: false,
+    gate: false,
     admin: false,
     parking_dome: false,
     com_tech: false,
     canteen: false,
   });
 
+  // Student credentials & notice
+  const [studentName, setStudentName] = useState<string>('');
+  const [studentCode, setStudentCode] = useState<string>('');
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
   // Student submitted survey answers and scores
   const [submittedSurveys, setSubmittedSurveys] = useState<Record<string, StudentSurveyData>>({});
 
-  // Active form drafts per zone
+  // Active form drafts per zone (starts empty - students search and type their findings)
   const [surveyDrafts, setSurveyDrafts] = useState<Record<string, {
     environmentType: string;
     lightingCond: string;
@@ -967,16 +957,48 @@ export function SiteSurveySimulator() {
     lensSpec: string;
     conduitType: string;
     pdpaAction: string;
-  }>>({
-    gate: {
-      environmentType: 'กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะและสภาพแวดล้อมริมถนนสาธารณะ',
-      lightingCond: '',
-      recommendedCamera: '',
-      lensSpec: '',
-      conduitType: '',
-      pdpaAction: '',
-    },
-  });
+  }>>({});
+
+  // Load saved student data from localStorage
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem('cctv_site_survey_profile');
+      if (savedProfile) {
+        const parsed = JSON.parse(savedProfile);
+        if (parsed.name) setStudentName(parsed.name);
+        if (parsed.code) setStudentCode(parsed.code);
+      }
+      const savedDrafts = localStorage.getItem('cctv_site_survey_drafts');
+      if (savedDrafts) {
+        setSurveyDrafts(JSON.parse(savedDrafts));
+      }
+      const savedSubmissions = localStorage.getItem('cctv_site_survey_submissions');
+      if (savedSubmissions) {
+        const parsed = JSON.parse(savedSubmissions);
+        setSubmittedSurveys(parsed);
+        const keys = Object.keys(parsed);
+        if (keys.length > 0) {
+          setSurveyedZones((prev) => Array.from(new Set([...prev, ...keys])));
+        }
+      }
+      const savedPdpa = localStorage.getItem('cctv_site_survey_pdpa');
+      if (savedPdpa) {
+        setPdpaAgreed((prev) => ({ ...prev, ...JSON.parse(savedPdpa) }));
+      }
+      const savedFaults = localStorage.getItem('cctv_site_survey_faults');
+      if (savedFaults) {
+        setFaultAnswers(JSON.parse(savedFaults));
+      }
+    } catch (e) {
+      console.warn('Could not load site survey data from localStorage', e);
+    }
+  }, []);
+
+  const saveProfile = (name: string, code: string) => {
+    try {
+      localStorage.setItem('cctv_site_survey_profile', JSON.stringify({ name, code }));
+    } catch {}
+  };
 
   // Workflow Sequencer State
   const [steps, setSteps] = useState<WorkflowStep[]>([
@@ -1025,41 +1047,55 @@ export function SiteSurveySimulator() {
 
   // Update a field in the active zone draft
   const handleUpdateDraft = (field: string, value: string) => {
-    setSurveyDrafts((prev) => ({
-      ...prev,
-      [selectedZoneId]: {
-        ...(prev[selectedZoneId] || {
+    setSurveyDrafts((prev) => {
+      const current = prev[selectedZoneId] || {
+        environmentType: '',
+        lightingCond: '',
+        recommendedCamera: '',
+        lensSpec: '',
+        conduitType: '',
+        pdpaAction: '',
+      };
+      const updated = {
+        ...prev,
+        [selectedZoneId]: {
+          ...current,
+          [field]: value,
+        },
+      };
+      try {
+        localStorage.setItem('cctv_site_survey_drafts', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  };
+
+  // Reset draft inputs for self-study
+  const handleResetDraft = (zoneId: string) => {
+    setSurveyDrafts((prev) => {
+      const updated = {
+        ...prev,
+        [zoneId]: {
           environmentType: '',
           lightingCond: '',
           recommendedCamera: '',
           lensSpec: '',
           conduitType: '',
           pdpaAction: '',
-        }),
-        [field]: value,
-      },
-    }));
-  };
-
-  // Quick fill from suggestions
-  const handleApplySuggestion = (field: string, value: string) => {
-    handleUpdateDraft(field, value);
-  };
-
-  // Fill standard sample specifications for self-study
-  const handleFillStandardSpec = (zone: StrategicZone) => {
-    setSurveyDrafts((prev) => ({
-      ...prev,
-      [zone.id]: {
-        environmentType: zone.environmentType,
-        lightingCond: zone.lightingCond,
-        recommendedCamera: zone.recommendedCamera,
-        lensSpec: zone.lensSpec,
-        conduitType: zone.conduitType,
-        pdpaAction: zone.pdpaAction,
-      },
-    }));
-    setPdpaAgreed((prev) => ({ ...prev, [zone.id]: true }));
+        },
+      };
+      try {
+        localStorage.setItem('cctv_site_survey_drafts', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    setPdpaAgreed((prev) => {
+      const updated = { ...prev, [zoneId]: false };
+      try {
+        localStorage.setItem('cctv_site_survey_pdpa', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   // Submit survey for evaluation
@@ -1094,10 +1130,145 @@ export function SiteSurveySimulator() {
       submittedAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setSubmittedSurveys((prev) => ({ ...prev, [zoneId]: surveyData }));
+    setSubmittedSurveys((prev) => {
+      const updated = { ...prev, [zoneId]: surveyData };
+      try {
+        localStorage.setItem('cctv_site_survey_submissions', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
     if (!surveyedZones.includes(zoneId)) {
       setSurveyedZones((prev) => [...prev, zoneId]);
     }
+  };
+
+  // Export workstation results as JSON file for instructor inspection
+  const handleExportJson = () => {
+    if (!studentName.trim() || !studentCode.trim()) {
+      setExportNotice('⚠️ กรุณาระบุชื่อ-นามสกุล และรหัสนักศึกษา ก่อนส่งออกไฟล์ JSON');
+      setTimeout(() => setExportNotice(null), 5000);
+      return;
+    }
+
+    const payload = {
+      reportTitle: 'รายงานผลการสำรวจพื้นที่ จัดลำดับการติดตั้ง และส่งมอบระบบ CCTV (CCTV Site Survey & Installation Workstation)',
+      courseCode: '21909-2020',
+      courseName: 'การติดตั้งและบำรุงรักษาระบบโทรทัศน์วงจรปิด (CCTV System)',
+      institution: 'วิทยาลัยเทคนิคอุบลราชธานี',
+      exportedAt: new Date().toISOString(),
+      student: {
+        displayName: studentName.trim(),
+        studentCode: studentCode.trim(),
+      },
+      summary: {
+        totalSurveyZones: UBON_ZONES.length,
+        submittedSurveyZones: Object.keys(submittedSurveys).length,
+        surveyAverageScore:
+          Object.values(submittedSurveys).length > 0
+            ? Math.round(
+                Object.values(submittedSurveys).reduce((a, b) => a + b.score, 0) /
+                  Object.values(submittedSurveys).length
+              )
+            : 0,
+        workflowSequenceStatus: sequenceValid ? 'PASSED_100%' : 'PENDING_OR_INCORRECT',
+        commissioningStatus: commissioningStatus[4] === 'pass' ? 'TESTED_AND_VERIFIED' : 'PENDING',
+        faultSolvingScore: `${faultScore}/${FAULT_SCENARIOS.length}`,
+      },
+      tab1_siteSurveyResults: UBON_ZONES.map((zone, idx) => {
+        const draft = surveyDrafts[zone.id] || {
+          environmentType: '',
+          lightingCond: '',
+          recommendedCamera: '',
+          lensSpec: '',
+          conduitType: '',
+          pdpaAction: '',
+        };
+        const sub = submittedSurveys[zone.id];
+        return {
+          pointNumber: idx + 1,
+          zoneId: zone.id,
+          zoneNameTh: zone.nameTh,
+          zoneNameEn: zone.nameEn,
+          cableDistanceMeters: zone.distanceMeters,
+          studentInput: {
+            environmentType: draft.environmentType || sub?.environmentType || '',
+            lightingCond: draft.lightingCond || sub?.lightingCond || '',
+            recommendedCamera: draft.recommendedCamera || sub?.recommendedCamera || '',
+            lensSpec: draft.lensSpec || sub?.lensSpec || '',
+            conduitType: draft.conduitType || sub?.conduitType || '',
+            pdpaAction: draft.pdpaAction || sub?.pdpaAction || '',
+            pdpaAgreed: pdpaAgreed[zone.id] || false,
+          },
+          evaluation: sub
+            ? {
+                score: sub.score,
+                grade: sub.grade,
+                fieldScores: sub.fieldScores,
+                feedback: sub.feedback,
+                submittedAt: sub.submittedAt,
+              }
+            : null,
+        };
+      }),
+      tab2_installationWorkflow: {
+        isValidSequence: sequenceValid,
+        stepsOrder: steps.map((s, idx) => ({
+          currentPosition: idx + 1,
+          expectedOrder: s.orderNumber,
+          stepId: s.id,
+          titleTh: s.titleTh,
+          category: s.category,
+          isCorrectPosition: s.orderNumber === idx + 1,
+        })),
+      },
+      tab3_componentsArchitecture: {
+        mode: architectureMode,
+        coreComponentsCovered: CCTV_5_COMPONENTS.map((c) => ({
+          id: c.id,
+          nameTh: c.nameTh,
+          category: c.category,
+        })),
+      },
+      tab4_commissioningAndFaultSolving: {
+        commissioningChecks: COMMISSIONING_STEPS.map((cs) => ({
+          step: cs.step,
+          title: cs.title,
+          status: commissioningStatus[cs.step] || 'idle',
+        })),
+        faultScenarios: FAULT_SCENARIOS.map((sc, idx) => {
+          const selectedChoiceIdx = faultAnswers[sc.id];
+          const hasAnswered = selectedChoiceIdx !== undefined && selectedChoiceIdx !== null;
+          const selectedOption = hasAnswered ? sc.options[selectedChoiceIdx] : null;
+          return {
+            caseNumber: idx + 1,
+            scenarioId: sc.id,
+            title: sc.title,
+            symptom: sc.symptom,
+            question: sc.questionTh,
+            studentAnswerIndex: selectedChoiceIdx ?? null,
+            studentAnswerText: selectedOption?.text ?? null,
+            isCorrect: selectedOption?.isCorrect ?? false,
+          };
+        }),
+        totalSolvedCorrectly: faultScore,
+      },
+    };
+
+    const jsonString = JSON.stringify(payload, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeCode = (studentCode.trim() || 'student').replace(/[^a-zA-Z0-9_-]/g, '');
+    a.href = url;
+    a.download = `cctv_site_survey_${safeCode}_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setExportNotice('✓ ดาวน์โหลดไฟล์ JSON สำเร็จ: บันทึกข้อมูลครบทั้ง 4 แท็บ เรียบร้อย นำไฟล์ส่งอาจารย์ผู้สอนได้ทันที');
+    setTimeout(() => setExportNotice(null), 6000);
   };
 
   // Reorder steps
@@ -1161,7 +1332,7 @@ export function SiteSurveySimulator() {
   };
 
   // Overall Completion Calculation
-  const surveyProgress = Math.round((surveyedZones.length / UBON_ZONES.length) * 100);
+  const surveyProgress = Math.round((Object.keys(submittedSurveys).length / UBON_ZONES.length) * 100);
   const faultScore = Object.entries(faultAnswers).filter(([fid, optIdx]) => {
     const sc = FAULT_SCENARIOS.find((s) => s.id === fid);
     return sc && optIdx !== null && sc.options[optIdx]?.isCorrect;
@@ -1185,7 +1356,7 @@ export function SiteSurveySimulator() {
               CCTV Site Survey & Installation Workstation
             </h1>
             <p className="text-xs text-slate-400">
-              ระบบจำลองการสำรวจพื้นที่ 6 จุดสำรวจยุทธศาสตร์, ขั้นตอนการติดตั้งมาตรฐาน 6 ขั้น, องค์ประกอบ 5 ส่วน และ Commissioning
+              ระบบจำลองการสำรวจพื้นที่ 5 จุดสำรวจยุทธศาสตร์, ขั้นตอนการติดตั้งมาตรฐาน 6 ขั้น, องค์ประกอบ 5 ส่วน และ Commissioning
             </p>
           </div>
 
@@ -1194,7 +1365,7 @@ export function SiteSurveySimulator() {
             <div className="text-center px-2">
               <span className="text-[10px] text-slate-400 block uppercase font-medium">สำรวจพื้นที่</span>
               <span className="text-sm font-bold text-sky-400">
-                {surveyedZones.length}/{UBON_ZONES.length} โซน ({surveyProgress}%)
+                {Object.keys(submittedSurveys).length}/{UBON_ZONES.length} จุด ({surveyProgress}%)
               </span>
             </div>
             <div className="w-px h-6 bg-slate-800" />
@@ -1225,9 +1396,9 @@ export function SiteSurveySimulator() {
             }`}
           >
             <MapPin className="w-3.5 h-3.5" />
-            <span>แท็บ 1: ผังสำรวจ 6 จุดยุทธศาสตร์ วท.อุบลฯ</span>
+            <span>แท็บ 1: ผังสำรวจ 5 จุดยุทธศาสตร์ วท.อุบลฯ</span>
             <span className="ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-sky-950 text-sky-200">
-              {surveyedZones.length}/6
+              {Object.keys(submittedSurveys).length}/5
             </span>
           </button>
 
@@ -1274,6 +1445,71 @@ export function SiteSurveySimulator() {
       </header>
 
       {/* =========================================================
+          STUDENT PROFILE & JSON EXPORT BAR
+         ========================================================= */}
+      <div className="bg-slate-900/95 border-b border-slate-800 px-4 py-2.5 md:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+              <User className="w-3.5 h-3.5 text-sky-400" />
+              <span className="text-slate-400 text-[11px] whitespace-nowrap">ชื่อ-นามสกุล:</span>
+              <input
+                type="text"
+                value={studentName}
+                onChange={(e) => {
+                  setStudentName(e.target.value);
+                  saveProfile(e.target.value, studentCode);
+                }}
+                placeholder="เช่น นายช่าง มุ่งมั่น"
+                className="bg-transparent text-white font-medium focus:outline-none placeholder:text-slate-600 text-xs w-36 sm:w-48"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+              <GraduationCap className="w-3.5 h-3.5 text-sky-400" />
+              <span className="text-slate-400 text-[11px] whitespace-nowrap">รหัสนักศึกษา:</span>
+              <input
+                type="text"
+                value={studentCode}
+                onChange={(e) => {
+                  setStudentCode(e.target.value);
+                  saveProfile(studentName, e.target.value);
+                }}
+                placeholder="เช่น 66309010001"
+                className="bg-transparent text-white font-mono font-medium focus:outline-none placeholder:text-slate-600 text-xs w-32 sm:w-40"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportJson}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
+              title="บันทึกและส่งออกข้อมูลทั้ง 4 แท็บ เป็นไฟล์ JSON เพื่อนำส่งอาจารย์ตรวจ"
+            >
+              <Download className="w-4 h-4" />
+              <span>บันทึกและส่งออก JSON (Download JSON)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Export Notice Toast */}
+        {exportNotice && (
+          <div className="max-w-7xl mx-auto mt-2 p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/60 text-emerald-200 text-xs flex items-center justify-between shadow-lg">
+            <span>{exportNotice}</span>
+            <button
+              type="button"
+              onClick={() => setExportNotice(null)}
+              className="text-emerald-300 hover:text-white text-xs px-1.5 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* =========================================================
           MAIN TAB CONTENT AREA
          ========================================================= */}
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-6 space-y-6">
@@ -1292,7 +1528,7 @@ export function SiteSurveySimulator() {
               />
 
               {/* Zone Selector Buttons Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 {UBON_ZONES.map((zone, idx) => {
                   const isSelected = selectedZoneId === zone.id;
                   const isSubmitted = !!submittedSurveys[zone.id];
@@ -1336,7 +1572,7 @@ export function SiteSurveySimulator() {
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-sky-400" />
                   <span>
-                    พื้นที่จริง: <strong className="text-white">วิทยาลัยเทคนิคอุบลราชธานี</strong> (แผนผัง 2D ไร้ป้ายตัวหนังสือตามโจทย์)
+                    พื้นที่จริง: <strong className="text-white">วิทยาลัยเทคนิคอุบลราชธานี</strong> (แผนผัง 2D ไร้ป้ายตัวหนังสือ 5 จุดสำรวจ)
                   </span>
                 </div>
                 <button
@@ -1345,7 +1581,7 @@ export function SiteSurveySimulator() {
                   className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold transition cursor-pointer text-xs"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span>ออกใบบันทึกผลการสำรวจ ({Object.keys(submittedSurveys).length}/6)</span>
+                  <span>ออกใบบันทึกผลการสำรวจ ({Object.keys(submittedSurveys).length}/5)</span>
                 </button>
               </div>
             </div>
@@ -1358,7 +1594,7 @@ export function SiteSurveySimulator() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-sky-500/20 text-sky-400 border border-sky-500/30">
-                        จุดสำรวจที่ {currentZone.id === 'gate' ? '1' : currentZone.id === 'flagpole' ? '2' : currentZone.id === 'workshop' ? '3' : currentZone.id === 'academic' ? '4' : '5'}
+                        จุดสำรวจที่ {UBON_ZONES.findIndex((z) => z.id === currentZone.id) + 1} จาก 5 จุด
                       </span>
                       {currentSubmission && (
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -1394,7 +1630,7 @@ export function SiteSurveySimulator() {
                       ให้นักเรียนสำรวจพื้นที่จริง แล้วพิมพ์ข้อมูลวิศวกรรมลงในช่องกรอกข้อมูล:
                     </p>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      สามารถคลิกแท็กคำศัพท์แนะนำเพื่อกรอกข้อมูลอย่างรวดเร็ว หรือพิมพ์ระบุสภาพแวดล้อมจริง
+                      สืบค้นและระบุสภาพแวดล้อม สเปกกล้อง เลนส์ ท่อร้อยสาย และข้อกำหนด PDPA ที่ถูกต้องตามหลักวิศวกรรม
                     </p>
                   </div>
                 </div>
@@ -1421,20 +1657,6 @@ export function SiteSurveySimulator() {
                       placeholder="เช่น กึ่งกลางแจ้ง (Semi-Outdoor) / ฝุ่นควันยานพาหนะ"
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
                     />
-                    {/* Suggestions Chips */}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
-                      {ZONE_SUGGESTIONS[currentZone.id]?.environment.map((chip, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplySuggestion('environmentType', chip)}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
-                        >
-                          + {chip}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Field 2: สภาวะแสงสว่างและปัญหาแสง */}
@@ -1457,20 +1679,6 @@ export function SiteSurveySimulator() {
                       placeholder="เช่น ย้อนแสงจัดเวลากลางวัน / แสงไฟหน้ารถยนต์ส่องตรงเวลากลางคืน"
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
                     />
-                    {/* Suggestions Chips */}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
-                      {ZONE_SUGGESTIONS[currentZone.id]?.lighting.map((chip, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplySuggestion('lightingCond', chip)}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
-                        >
-                          + {chip}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Field 3: การเลือกชนิดกล้อง */}
@@ -1493,20 +1701,6 @@ export function SiteSurveySimulator() {
                       placeholder="เช่น Bullet IP Camera 4MP (True WDR 120dB + Smart IR 50m)"
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
                     />
-                    {/* Suggestions Chips */}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
-                      {ZONE_SUGGESTIONS[currentZone.id]?.camera.map((chip, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplySuggestion('recommendedCamera', chip)}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
-                        >
-                          + {chip}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Field 4: ขนาดเลนส์และระดับ DORI */}
@@ -1529,20 +1723,6 @@ export function SiteSurveySimulator() {
                       placeholder="เช่น เลนส์ 4.0mm หรือ 6.0mm (มุมมองแคบเพื่อจับป้ายทะเบียนและใบหน้า)"
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
                     />
-                    {/* Suggestions Chips */}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
-                      {ZONE_SUGGESTIONS[currentZone.id]?.lens.map((chip, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplySuggestion('lensSpec', chip)}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
-                        >
-                          + {chip}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Field 5: ท่อร้อยสายและอุปกรณ์กันน้ำ */}
@@ -1565,20 +1745,6 @@ export function SiteSurveySimulator() {
                       placeholder="เช่น ท่อร้อยสาย uPVC สีขาว 20mm + กล่องพักสายกันน้ำ IP66 พร้อม Cable Gland"
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-500 transition resize-none"
                     />
-                    {/* Suggestions Chips */}
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      <span className="text-[10px] text-slate-500 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
-                      {ZONE_SUGGESTIONS[currentZone.id]?.conduit.map((chip, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplySuggestion('conduitType', chip)}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-sky-900/60 text-slate-300 hover:text-sky-200 border border-slate-700/80 transition cursor-pointer"
-                        >
-                          + {chip}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Field 6: ข้อกำหนดและความปลอดภัย PDPA */}
@@ -1601,20 +1767,6 @@ export function SiteSurveySimulator() {
                       placeholder="เช่น ติดตั้งป้ายเตือน CCTV in Operation และห้ามส่องข้ามรั้วไปยังบ้านพักชุมชน"
                       className="w-full bg-slate-900 border border-indigo-800/60 rounded-lg p-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition resize-none"
                     />
-                    {/* Suggestions Chips */}
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      <span className="text-[10px] text-indigo-400/80 py-0.5 mr-0.5">ตัวเลือกแนะนำ:</span>
-                      {ZONE_SUGGESTIONS[currentZone.id]?.pdpa.map((chip, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleApplySuggestion('pdpaAction', chip)}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-indigo-950/80 hover:bg-indigo-900 text-indigo-200 border border-indigo-800/80 transition cursor-pointer"
-                        >
-                          + {chip}
-                        </button>
-                      ))}
-                    </div>
 
                     {/* PDPA Checkbox */}
                     <label className="flex items-center gap-2 cursor-pointer bg-slate-900/80 p-2 rounded-lg border border-indigo-800/40 hover:bg-slate-900 transition mt-2">
@@ -1664,12 +1816,12 @@ export function SiteSurveySimulator() {
               <div className="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={() => handleFillStandardSpec(currentZone)}
+                  onClick={() => handleResetDraft(currentZone.id)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition cursor-pointer"
-                  title="ใส่ตัวอย่างสเปกมาตรฐานวิทยาลัยเพื่อการเรียนรู้"
+                  title="ล้างข้อความในแบบฟอร์มเพื่อกรอกใหม่"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>ใส่ข้อความมาตรฐาน</span>
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                  <span>ล้างข้อความ</span>
                 </button>
 
                 <button
@@ -2301,12 +2453,12 @@ export function SiteSurveySimulator() {
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-500 uppercase block">สถานที่สำรวจจริง</span>
                   <span className="text-sm font-bold text-white">วิทยาลัยเทคนิคอุบลราชธานี</span>
-                  <span className="text-[10px] text-slate-400 block mt-0.5">ผัง 2D ไร้ป้ายตัวหนังสือ 6 โซน</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">ผัง 2D ไร้ป้ายตัวหนังสือ 5 จุดสำรวจ</span>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-500 uppercase block">ความคืบหน้าการส่งคำตอบ</span>
                   <span className="text-sm font-bold text-sky-400">
-                    {Object.keys(submittedSurveys).length} / 6 โซน ({Math.round((Object.keys(submittedSurveys).length / 6) * 100)}%)
+                    {Object.keys(submittedSurveys).length} / 5 จุด ({Math.round((Object.keys(submittedSurveys).length / 5) * 100)}%)
                   </span>
                   <span className="text-[10px] text-slate-400 block mt-0.5">
                     คะแนนเฉลี่ย:{' '}
@@ -2419,8 +2571,8 @@ export function SiteSurveySimulator() {
                 </table>
               </div>
 
-              {/* Completion Certification Seal if all 6 completed */}
-              {Object.keys(submittedSurveys).length === 6 && (
+              {/* Completion Certification Seal if all 5 completed */}
+              {Object.keys(submittedSurveys).length === 5 && (
                 <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-sky-950/80 border border-emerald-500/50 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
@@ -2431,7 +2583,7 @@ export function SiteSurveySimulator() {
                         🎖️ ผ่านการทดสอบภาคสนามระดับวิทยาลัย (UBTC Certified Field Survey)
                       </h4>
                       <p className="text-xs text-emerald-200/80">
-                        นักเรียนได้สำรวจและระบุสเปกทางวิศวกรรมครบทั้ง 6 โซนยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี
+                        นักเรียนได้สำรวจและระบุสเปกทางวิศวกรรมครบทั้ง 5 จุดยุทธศาสตร์ วิทยาลัยเทคนิคอุบลราชธานี
                       </p>
                     </div>
                   </div>
@@ -2442,17 +2594,27 @@ export function SiteSurveySimulator() {
               )}
             </div>
 
-            <div className="pt-2 flex items-center justify-between border-t border-slate-800">
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800">
               <span className="text-[11px] text-slate-500">
                 หลักสูตรประกาศนียบัตรวิชาชีพ (ปวช.) สาขาวิชาช่างอิเล็กทรอนิกส์ / เทคนิคคอมพิวเตอร์
               </span>
-              <button
-                type="button"
-                onClick={() => setShowSurveyReport(false)}
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white transition cursor-pointer"
-              >
-                รับทราบและปิดเอกสาร
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportJson}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 transition cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>ส่งออก JSON รายงานนี้</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSurveyReport(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                >
+                  ปิดเอกสาร
+                </button>
+              </div>
             </div>
           </div>
         </div>

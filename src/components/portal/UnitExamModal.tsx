@@ -147,21 +147,19 @@ export function UnitExamModal({
             window.dispatchEvent(new CustomEvent('cctv_exam_completed', { detail: resultRecord }));
         }
 
-        // Attempt server submission if student is logged in with class
+        // Attempt server submission if student is logged in
         try {
-            const classId = localStorage.getItem('cctv_active_class_id');
-            if (classId) {
-                await fetch('/api/learning/submissions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        kind: 'quiz',
-                        classId,
-                        quizId: `${unitId.toLowerCase()}-exam`,
-                        answers: selectedAnswers,
-                    }),
-                });
-            }
+            const classId = typeof window !== 'undefined' ? localStorage.getItem('cctv_active_class_id') : null;
+            await fetch('/api/learning/submissions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    kind: 'quiz',
+                    ...(classId ? { classId } : {}),
+                    quizId: `${unitId.toLowerCase()}-exam`,
+                    answers: selectedAnswers,
+                }),
+            });
             setSavedNotice('บันทึกผลการสอบและคะแนนลงระบบสำเร็จ');
         } catch {
             setSavedNotice('บันทึกคะแนนสะสมในเครื่องสำเร็จ (ออฟไลน์)');

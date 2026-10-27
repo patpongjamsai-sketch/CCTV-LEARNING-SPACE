@@ -97,19 +97,87 @@ export async function createLearningSubmission(
   const input = learningSubmissionInputSchema.parse(rawInput);
   const supabase = createAdminSupabaseClient();
 
-  await requireActiveStudentMembership(supabase, actorId, input.classId);
-  const classRow = await requireActiveClass(supabase, input.classId);
-
-  if (input.kind === 'quiz') {
-    const { data: quiz, error: quizError } = await supabase
-      .from('quizzes')
-      .select('id, unit_id, status, available_from, available_until')
-      .eq('id', input.quizId)
+  let resolvedClassId = input.classId;
+  if (!resolvedClassId) {
+    const { data: member } = await supabase
+      .from('class_members')
+      .select('class_id')
+      .eq('profile_id', actorId)
+      .eq('member_role', 'student')
+      .eq('active', true)
+      .order('joined_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    throwSupabaseError(quizError, 'Failed to load quiz');
+    if (!member?.class_id) {
+      throw new Error('Forbidden: student is not an active member of any class');
+    }
+    resolvedClassId = member.class_id;
+  }
+
+  if (!resolvedClassId) {
+    throw new Error('Forbidden: missing class ID');
+  }
+
+  await requireActiveStudentMembership(supabase, actorId, resolvedClassId);
+  const classRow = await requireActiveClass(supabase, resolvedClassId);
+
+  if (input.kind === 'quiz') {
+    let quiz: {
+      id: string;
+      unit_id: string;
+      status: string;
+      available_from: string | null;
+      available_until: string | null;
+    } | null = null;
+
+    // 1. Try finding quiz by UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.quizId);
+    if (isUuid) {
+      const { data, error: qErr } = await supabase
+        .from('quizzes')
+        .select('id, unit_id, status, available_from, available_until')
+        .eq('id', input.quizId)
+        .maybeSingle();
+      throwSupabaseError(qErr, 'Failed to load quiz');
+      quiz = data;
+    }
+
+    // 2. If not found by UUID, try lookup by slug or code
     if (!quiz) {
-      throw new Error('Not found: quiz not found');
+      const slugCandidate = input.quizId.toLowerCase().trim();
+      const codeCandidate = input.quizId.toUpperCase().trim();
+      const { data: byCode } = await supabase
+        .from('quizzes')
+        .select('id, unit_id, status, available_from, available_until')
+        .or(`slug.eq.${slugCandidate},code.eq.${codeCandidate}`)
+        .maybeSingle();
+      quiz = byCode;
+    }
+
+    // 3. If still not found, try extracting sequence number (e.g. "u01-exam" -> 1)
+    if (!quiz) {
+      const seqMatch = input.quizId.match(/\d+/);
+      if (seqMatch) {
+        const seq = parseInt(seqMatch[0], 10);
+        const { data: unitBySeq } = await supabase
+          .from('units')
+          .select('id')
+          .eq('sequence_no', seq)
+          .maybeSingle();
+        if (unitBySeq) {
+          const { data: byUnit } = await supabase
+            .from('quizzes')
+            .select('id, unit_id, status, available_from, available_until')
+            .eq('unit_id', unitBySeq.id)
+            .maybeSingle();
+          quiz = byUnit;
+        }
+      }
+    }
+
+    if (!quiz) {
+      throw new Error(`Not found: quiz not found for identifier "${input.quizId}"`);
     }
     if (quiz.status !== 'published') {
       throw new Error('Forbidden: quiz is not published');
@@ -134,14 +202,19 @@ export async function createLearningSubmission(
       throw new Error('Forbidden: quiz does not belong to this class course');
     }
 
+    const startedAt =
+      input.startedAt && Date.parse(input.startedAt) <= now
+        ? input.startedAt
+        : new Date(now - 60000).toISOString();
+
     const { data: attempt, error: insertError } = await supabase
       .from('quiz_attempts')
       .insert({
-        quiz_id: input.quizId,
-        class_id: input.classId,
+        quiz_id: quiz.id,
+        class_id: resolvedClassId,
         student_id: actorId,
         client_answers: input.answers,
-        started_at: input.startedAt,
+        started_at: startedAt,
         submitted_at: new Date().toISOString(),
       })
       .select('id, attempt_no, status, submitted_at')
@@ -161,15 +234,42 @@ export async function createLearningSubmission(
     };
   }
 
-  const { data: unit, error: unitError } = await supabase
-    .from('units')
-    .select('id, course_id, status')
-    .eq('id', input.unitId)
-    .maybeSingle();
+  let unit: { id: string; course_id: string; status: string } | null = null;
+  const isUnitUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.unitId);
+  if (isUnitUuid) {
+    const { data: unitData, error: uErr } = await supabase
+      .from('units')
+      .select('id, course_id, status')
+      .eq('id', input.unitId)
+      .maybeSingle();
+    throwSupabaseError(uErr, 'Failed to load learning unit');
+    unit = unitData;
+  }
 
-  throwSupabaseError(unitError, 'Failed to load learning unit');
   if (!unit) {
-    throw new Error('Not found: learning unit not found');
+    const slugCandidate = input.unitId.toLowerCase().trim();
+    const seqMatch = input.unitId.match(/\d+/);
+    if (seqMatch) {
+      const seq = parseInt(seqMatch[0], 10);
+      const { data: bySeq } = await supabase
+        .from('units')
+        .select('id, course_id, status')
+        .eq('sequence_no', seq)
+        .maybeSingle();
+      unit = bySeq;
+    }
+    if (!unit) {
+      const { data: bySlug } = await supabase
+        .from('units')
+        .select('id, course_id, status')
+        .eq('slug', slugCandidate)
+        .maybeSingle();
+      unit = bySlug;
+    }
+  }
+
+  if (!unit) {
+    throw new Error(`Not found: learning unit not found for "${input.unitId}"`);
   }
   if (unit.status !== 'published' || unit.course_id !== classRow.course_id) {
     throw new Error('Forbidden: learning unit is not available for this class');
@@ -178,8 +278,8 @@ export async function createLearningSubmission(
   const { data: submission, error: insertError } = await supabase
     .from('lab_submissions')
     .insert({
-      class_id: input.classId,
-      unit_id: input.unitId,
+      class_id: resolvedClassId,
+      unit_id: unit.id,
       student_id: actorId,
       title: input.title,
       student_notes: input.studentNotes,

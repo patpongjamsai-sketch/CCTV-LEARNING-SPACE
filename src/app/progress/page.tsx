@@ -549,7 +549,7 @@ export default async function ProgressPage() {
                                                 )}
                                                 {!unit.quizInfo.feedback && (
                                                     <p className="text-[11px] text-slate-400 mt-1">
-                                                        แบบทดสอบปรนัยและอัตนัยท้ายหน่วย
+                                                        แบบทดสอบอัตนัยวิเคราะห์ปัญหาด้วยหลักฐานท้ายหน่วย
                                                     </p>
                                                 )}
                                             </div>

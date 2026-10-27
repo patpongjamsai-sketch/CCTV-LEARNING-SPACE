@@ -67,9 +67,14 @@ export default async function DashboardPage() {
     const classCode = cls?.code || (classId ? getPvClassById(classId)?.code : null) || null;
 
     // Progress and unlock state come from the server progression predicate.
-    const overview = classId && !isStaff
-      ? await getStudentProgressOverviewService(profile.id, classId)
-      : null;
+    let overview = null;
+    if (classId && !isStaff) {
+      try {
+        overview = await getStudentProgressOverviewService(profile.id, classId);
+      } catch (e) {
+        console.warn('Unable to load server progress overview, falling back to default curriculum:', e);
+      }
+    }
 
     const units: DashboardUnit[] = [];
     let completedUnits = 0;

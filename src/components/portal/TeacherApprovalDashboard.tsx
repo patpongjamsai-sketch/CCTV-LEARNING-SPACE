@@ -15,6 +15,7 @@ import { allUnitsContent } from '../../content/courses/21909-2020';
 import { PV_CLASSES, getPvClassByCode, getPvClassById } from '../../lib/classes/classGroups';
 import { StudentAttemptHistoryModal } from './StudentAttemptHistoryModal';
 import { PendingReviewInbox } from './PendingReviewInbox';
+import { playNotificationChime } from '../../lib/soundEffects';
 
 export type TeacherApprovalDashboardProps = {
     classId?: string;
@@ -100,19 +101,16 @@ const DEFAULT_CSV_STUDENTS = `email,student_code,display_name
 69219090044@cctv.local,69219090044,นางสาวปภัสสร ผูกมิตร
 69219090045@cctv.local,69219090045,นายต้นตการณ์ โพสาวัง`;
 
-const DEFAULT_CLASS_UUID = 'ALL';
+const DEFAULT_CLASS_UUID = '22222222-2222-4222-8222-222222222222';
 
 export const resolveClassUuid = (cid: string): string => {
-    if (!cid || cid === 'ALL' || cid === 'all') return 'ALL';
+    if (!cid || cid === 'ALL' || cid === 'all') return DEFAULT_CLASS_UUID;
     const pv = getPvClassByCode(cid) || getPvClassById(cid);
     if (pv) return pv.id;
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cid)) {
         return cid;
     }
-    if (cid === 'CLASS-2569-CCTV-01' || cid === '21909-2020') {
-        return DEFAULT_CLASS_UUID;
-    }
-    return cid;
+    return DEFAULT_CLASS_UUID;
 };
 
 export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherApprovalDashboardProps) {
@@ -126,6 +124,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     const [lastSyncTime, setLastSyncTime] = useState<string>('เพิ่งอัปเดต');
     const [isLoadingStudents, setIsLoadingStudents] = useState<boolean>(false);
     const [realtimeStatus, setRealtimeStatus] = useState<'connecting' | 'connected' | 'fallback'>('connecting');
+    const [serverPendingCount, setServerPendingCount] = useState<number>(0);
     const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
 
     // Grading modal/form state
@@ -309,6 +308,53 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                     if (isActive) void fetchStudents(selectedClassUuid);
                 },
             )
+            .on(
+                'postgres_changes' as any,
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'lab_submissions',
+                    ...(isAll ? {} : { filter: `class_id=eq.${effectiveClassId}` }),
+                } as any,
+                (payload: { eventType: string }) => {
+                    if (isActive) {
+                        void fetchStudents(selectedClassUuid);
+                        if (payload.eventType === 'INSERT') {
+                            showNotice('🔔 มีผลงานปฏิบัติการ (Lab) ใหม่ส่งเข้ามาตรวจ (ตรวจได้ที่แท็บ 2)', 'info');
+                            playNotificationChime('new_submission');
+                        }
+                    }
+                },
+            )
+            .on(
+                'postgres_changes' as any,
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'quiz_attempts',
+                    ...(isAll ? {} : { filter: `class_id=eq.${effectiveClassId}` }),
+                } as any,
+                (payload: { eventType: string }) => {
+                    if (isActive) {
+                        void fetchStudents(selectedClassUuid);
+                        if (payload.eventType === 'INSERT') {
+                            showNotice('🔔 มีแบบทดสอบ (Quiz) ใหม่ส่งเข้ามาตรวจ (ตรวจได้ที่แท็บ 2)', 'info');
+                            playNotificationChime('new_submission');
+                        }
+                    }
+                },
+            )
+            .on(
+                'postgres_changes' as any,
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'unit_progress',
+                } as any,
+                () => {
+                    if (isActive) void fetchStudents(selectedClassUuid);
+                },
+            )
             .subscribe((status) => {
                 if (!isActive) return;
                 if (status === 'SUBSCRIBED') {
@@ -376,7 +422,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice(`แบบทดสอบ ปรนัย+อัตนัย (${unitId}): ${next ? '📝 ปลดล็อกให้ทำข้อสอบได้แล้ว' : '🔒 ล็อกแบบทดสอบตามเกณฑ์มาตรฐาน'}`);
+        showNotice(`แบบทดสอบอัตนัย (${unitId}): ${next ? '📝 ปลดล็อกให้ทำข้อสอบได้แล้ว' : '🔒 ล็อกแบบทดสอบตามเกณฑ์มาตรฐาน'}`);
     };
 
     // Handler to mark unit as Passed (Teacher Override)
@@ -776,10 +822,11 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     }`}
                 >
-                    <span>📝 2. ศูนย์ตรวจข้อสอบอัตนัย</span>
-                    {submissions.filter((s) => s.status === 'pending').length > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
-                            {submissions.filter((s) => s.status === 'pending').length}
+                    <span>📝 2. ศูนย์ตรวจข้อสอบอัตนัย & แล็บ</span>
+                    {(serverPendingCount > 0 || submissions.filter((s) => s.status === 'pending').length > 0) && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black animate-pulse flex items-center gap-1">
+                            <span>{serverPendingCount + submissions.filter((s) => s.status === 'pending').length}</span>
+                            <span className="text-[9px] bg-rose-700/80 px-1 rounded-full uppercase">รอตรวจ</span>
                         </span>
                     )}
                 </button>
@@ -828,7 +875,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                         <div className="text-xs text-slate-300">
                             <strong>กระบวนการเรียนรู้ 3 ขั้นตอน:</strong>
                             <span className="text-slate-400 ml-2">
-                                (1) เรียนเนื้อหา 10 บท + ตอบคำถามระหว่างเรียน → (2) ปฏิบัติการห้อง labs 3D → (3) แบบทดสอบ ปรนัย + อัตนัย
+                                (1) เรียนเนื้อหา 10 บท + ตอบคำถามระหว่างเรียน → (2) ปฏิบัติการห้อง labs 3D → (3) แบบทดสอบอัตนัยวิเคราะห์ปัญหาด้วยหลักฐาน
                             </span>
                         </div>
                         <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
@@ -946,10 +993,10 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                                 <span>📝</span>
                                                 <div>
                                                     <strong className="text-slate-200 block">
-                                                        3. แบบทดสอบ ปรนัย + อัตนัย
+                                                        3. แบบทดสอบอัตนัยประจำหน่วย
                                                     </strong>
                                                     <span className="text-[11px] text-slate-400">
-                                                        ปรนัย 10 ข้อ + อัตนัย Case Study
+                                                        วิเคราะห์ปัญหาด้วยหลักฐาน 6 ขั้นตอน
                                                     </span>
                                                 </div>
                                             </div>
@@ -1007,6 +1054,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                             fetchStudents(classId);
                             setSubmissions(getSubjectiveSubmissions());
                         }}
+                        onItemsUpdated={(count) => setServerPendingCount(count)}
                     />
 
                     {/* Local Offline Submissions (Legacy / Fallback) */}

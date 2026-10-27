@@ -55,7 +55,10 @@ function normalizeEmail(value: string | null): string | null {
     return null;
   }
 
-  const email = value.trim().toLowerCase();
+  let email = value.trim().toLowerCase();
+  if (/^\d{11}$/.test(email)) {
+    email = email + '@utc.ac.th';
+  }
   if (!email || email.length > MAX_EMAIL_LENGTH || !EMAIL.test(email)) {
     return null;
   }

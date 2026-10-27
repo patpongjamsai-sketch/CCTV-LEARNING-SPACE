@@ -367,7 +367,7 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
                                                     </span>
                                                 </div>
                                                 <p className="text-xs text-slate-300 leading-relaxed m-0">
-                                                    ศูนย์ประเมินสมรรถนะประจำหน่วย: ทำแบบทดสอบปรนัย (10 ข้อ), วินิจฉัยปัญหาเชิงลึก 6 ขั้นตอน ({bundle.faultChallenge.titleTh}), และบันทึกการสะท้อนคิด
+                                                    ศูนย์ประเมินสมรรถนะประจำหน่วย: แบบทดสอบอัตนัยวิเคราะห์ปัญหาด้วยหลักฐาน 6 ขั้นตอน ({bundle.faultChallenge.titleTh}), และบันทึกการสะท้อนคิด
                                                 </p>
                                             </div>
 

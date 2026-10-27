@@ -47,8 +47,8 @@ export const learningSubmissionInputSchema = z.discriminatedUnion('kind', [
   z
     .object({
       kind: z.literal('quiz'),
-      classId: z.string().uuid(),
-      quizId: z.string().uuid(),
+      classId: z.string().uuid().optional(),
+      quizId: z.string().min(1),
       answers: answerPayloadSchema,
       startedAt: z.string().datetime().optional(),
     })
@@ -56,8 +56,8 @@ export const learningSubmissionInputSchema = z.discriminatedUnion('kind', [
   z
     .object({
       kind: z.literal('lab'),
-      classId: z.string().uuid(),
-      unitId: z.string().uuid(),
+      classId: z.string().uuid().optional(),
+      unitId: z.string().min(1),
       title: z.string().trim().min(1).max(200),
       studentNotes: z.string().trim().max(5_000).optional(),
     })

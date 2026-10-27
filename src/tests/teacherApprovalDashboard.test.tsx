@@ -69,18 +69,27 @@ describe('Teacher Approval Dashboard SSR & Hydration contract', () => {
   });
 
   it('renders PendingReviewInbox safely with initial tabs and counters', () => {
+    let updatedCount = -1;
     const html = renderToStaticMarkup(
       <PendingReviewInbox
         classId="22222222-2222-4222-8222-222222222222"
         onReviewCompleted={() => {}}
+        onItemsUpdated={(cnt) => { updatedCount = cnt; }}
       />
     );
 
+    expect(updatedCount).toBe(-1);
     expect(html).toContain('ศูนย์ตรวจและอนุมัติงานค้าง (Pending Work Queue)');
     expect(html).toContain('ทั้งหมด (0)');
     expect(html).toContain('แล็บ 3D (0)');
     expect(html).toContain('ข้อสอบอัตนัย (0)');
     expect(html).toContain('ไม่มีงานค้างรอตรวจในขณะนี้');
+    expect(html).toContain('ซิงก์');
+  });
+
+  it('renders Tab 2 with combined real-time pending notification badge', () => {
+    const html = renderToStaticMarkup(<TeacherApprovalDashboard classId="TEST-CLASS-01" />);
+    expect(html).toContain('ศูนย์ตรวจข้อสอบอัตนัย &amp; แล็บ');
   });
 
   it('generates Thai-compatible CSV with UTF-8 BOM prefix', () => {

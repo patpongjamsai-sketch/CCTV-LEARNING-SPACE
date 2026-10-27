@@ -21,17 +21,16 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [showCables, setShowCables] = useState<boolean>(true);
 
-  // Position coordinates on 960x640 canvas matching the actual satellite image
+  // Position coordinates on 960x640 canvas matching the actual satellite image (5 จุดสำรวจ)
   const zoneCoordinates: Record<string, { x: number; y: number; label: string }> = {
     gate: { x: 845, y: 360, label: '1' }, // จุดที่ 1: หน้าป้อมยามติดถนนเข้าออกวิทยาลัย (ถ.ชวาลานอก)
-    server: { x: 535, y: 205, label: '2' }, // จุดที่ 2: ห้องควบคุมระบบกล้องวงจรปิด
-    admin: { x: 585, y: 340, label: '3' }, // จุดที่ 3: อาคารอำนวยการ
-    parking_dome: { x: 705, y: 565, label: '4' }, // จุดที่ 4: โดมใหญ่จอดรถ
-    com_tech: { x: 415, y: 525, label: '5' }, // จุดที่ 5: อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์
-    canteen: { x: 380, y: 375, label: '6' }, // จุดที่ 6: โรงอาหาร
+    admin: { x: 585, y: 340, label: '2' }, // จุดที่ 2: อาคารอำนวยการ
+    parking_dome: { x: 705, y: 565, label: '3' }, // จุดที่ 3: โดมใหญ่จอดรถ
+    com_tech: { x: 415, y: 525, label: '4' }, // จุดที่ 4: อาคารเรียนแผนกเทคโนโลยีคอมพิวเตอร์
+    canteen: { x: 380, y: 375, label: '5' }, // จุดที่ 5: โรงอาหาร
   };
 
-  const serverCoord = zoneCoordinates['server']!;
+  const serverCoord = { x: 535, y: 205, label: 'HUB' };
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl flex flex-col select-none">
@@ -469,6 +468,31 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
             {/* ======================================================== */}
             {/* LAYER 4: INTERACTIVE PULSING SURVEY PINS (NO PLACE TEXT) */}
             {/* ======================================================== */}
+            {/* Central Server / NVR Hub Marker */}
+            <g transform={`translate(${serverCoord.x}, ${serverCoord.y})`} className="select-none pointer-events-none">
+              <rect
+                x="-26"
+                y="-13"
+                width="52"
+                height="26"
+                rx="6"
+                fill="#0f172a"
+                stroke="#38bdf8"
+                strokeWidth="2"
+                filter="drop-shadow(0px 2px 6px rgba(0,0,0,0.8))"
+              />
+              <text
+                y="4"
+                fill="#38bdf8"
+                fontSize="9"
+                fontFamily="monospace"
+                fontWeight="black"
+                textAnchor="middle"
+              >
+                NVR HUB
+              </text>
+            </g>
+
             {UBON_ZONES.map((zone) => {
               const coord = zoneCoordinates[zone.id];
               if (!coord) return null;
@@ -561,7 +585,7 @@ export const UbonCampus2DMap: React.FC<UbonCampus2DMapProps> = ({
           </div>
 
           <div className="text-[10px] font-mono text-slate-400">
-            คลิกที่ <strong className="text-amber-400">หมุดตัวเลข 1 - 6</strong> เพื่อสำรวจจุดนั้น
+            คลิกที่ <strong className="text-amber-400">หมุดตัวเลข 1 - 5</strong> เพื่อสำรวจจุดนั้น
           </div>
         </div>
       </div>

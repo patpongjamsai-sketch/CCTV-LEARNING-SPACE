@@ -21,6 +21,24 @@ export const PV_CLASSES = [
 
 export type PvClassCode = (typeof PV_CLASSES)[number]['code'];
 
+export const GROUP_ID_TO_PV_CLASS: Record<string, { code: PvClassCode; id: string; title: string }> = {
+  '692190901': {
+    code: 'PV1',
+    id: '22222222-2222-4222-8222-222222222222',
+    title: 'ปวช.1 ช่างเทคนิคคอมพิวเตอร์ - กลุ่ม 1',
+  },
+  '692190902': {
+    code: 'PV2',
+    id: '22222222-2222-4222-8222-222222222223',
+    title: 'ปวช.1 ช่างเทคนิคคอมพิวเตอร์ - กลุ่ม 2',
+  },
+  '692190903': {
+    code: 'PV3',
+    id: '22222222-2222-4222-8222-222222222224',
+    title: 'ปวช.1 ช่างเทคนิคคอมพิวเตอร์ - กลุ่ม 3',
+  },
+};
+
 export function getPvClassByCode(code: string) {
   if (!code) return null;
   const normalized = code.trim().toUpperCase();

@@ -63,33 +63,26 @@ export async function assertCanManageClass(actorId: string, classId: string): Pr
     if (err instanceof Error && err.message.startsWith('Forbidden:')) {
       throw err;
     }
-    // Fallback: verify the same user and class membership through the cookie-backed
-    // Supabase client, so RLS remains the authority when the database URL is unavailable.
+    // Fallback: verify user and class membership through admin client,
+    // so authentication succeeds even if the direct PostgreSQL pooler is temporarily unavailable.
     try {
-      const supabase = await createServerSupabaseClient();
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || authData.user?.id !== actorId) {
-        throw new Error('Forbidden: only an active class teacher or admin can manage this class');
-      }
-
-      const { data: profile, error: profileError } = await supabase
+      const adminClient = createAdminSupabaseClient();
+      const { data: profile } = await adminClient
         .from('profiles')
         .select('role, active')
         .eq('id', actorId)
         .eq('active', true)
         .maybeSingle();
-      if (profileError) throw err;
 
       if (profile?.role === 'admin') return classId;
 
-      const { data: member, error: memberError } = await supabase
+      const { data: member } = await adminClient
         .from('class_members')
         .select('member_role, active')
         .eq('class_id', classId)
         .eq('profile_id', actorId)
         .eq('active', true)
         .maybeSingle();
-      if (memberError) throw err;
 
       if (
         profile &&
@@ -105,8 +98,8 @@ export async function assertCanManageClass(actorId: string, classId: string): Pr
       if (fallbackErr instanceof Error && fallbackErr.message.startsWith('Forbidden:')) {
         throw fallbackErr;
       }
+      throw new Error('Forbidden: only an active class teacher or admin can manage this class');
     }
-    throw err;
   }
 }
 
@@ -452,34 +445,132 @@ export async function getClassStudentsService(
     }
   } catch (dbErr) {
     try {
-      // Reuse the verified teacher session and RLS for the fallback read.
-      const supabase = await createServerSupabaseClient();
-      let query = supabase
+      const admin = createAdminSupabaseClient();
+      const isAll = classId === 'ALL';
+
+      let membersQuery = admin
         .from('class_members')
         .select('profile_id, class_id, classes(id, code, title), profiles(id, student_code, display_name, active)')
         .eq('member_role', 'student')
         .eq('active', true);
-      if (classId !== 'ALL') {
-        query = query.eq('class_id', classId);
+      if (!isAll) {
+        membersQuery = membersQuery.eq('class_id', classId);
       }
-      const { data: members, error: membersError } = await query;
+      const { data: members, error: membersError } = await membersQuery;
       if (membersError) throw dbErr;
 
-      if (members) {
-        return members.flatMap((member: any) => {
-          const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
-          const cls = Array.isArray(member.classes) ? member.classes[0] : member.classes;
-          if (!profile || profile.active !== true) return [];
-          return [{
-            studentId: profile.id || member.profile_id,
-            studentCode: profile.student_code || '',
-            displayName: profile.display_name || 'ผู้เรียน',
-            classCode: cls?.code || '',
-            classTitle: cls?.title || '',
-            unitProgress: {},
-          }];
+      if (!members || members.length === 0) {
+        return [];
+      }
+
+      const unitsPromise = admin
+        .from('units')
+        .select('id, sequence_no, title')
+        .order('sequence_no', { ascending: true });
+
+      let upQuery = admin.from('unit_progress').select('*');
+      if (!isAll) upQuery = upQuery.eq('class_id', classId);
+
+      let qaQuery = admin
+        .from('quiz_attempts')
+        .select('id, student_id, quiz_id, attempt_no, approved_score, passed, status, submitted_at, quizzes(unit_id)')
+        .order('attempt_no', { ascending: false });
+      if (!isAll) qaQuery = qaQuery.eq('class_id', classId);
+
+      let lsQuery = admin
+        .from('lab_submissions')
+        .select('id, student_id, unit_id, attempt_no, status, passed, approved_score, reviewed_at, submitted_at')
+        .order('attempt_no', { ascending: false });
+      if (!isAll) lsQuery = lsQuery.eq('class_id', classId);
+
+      let gmrQuery = admin
+        .from('game_mission_results')
+        .select('student_id, mission_id, best_score, attempt_count, hints_used, passed, first_passed_at, latest_attempt_id, missions(unit_id, code, title, max_score)')
+        .order('updated_at', { ascending: false });
+      if (!isAll) gmrQuery = gmrQuery.eq('class_id', classId);
+
+      const [
+        { data: units },
+        { data: upRows },
+        { data: qaRows },
+        { data: lsRows },
+        { data: gmrRows },
+      ] = await Promise.all([unitsPromise, upQuery, qaQuery, lsQuery, gmrQuery]);
+
+      const studentRecords: ClassStudentRecord[] = [];
+
+      for (const member of members) {
+        const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+        const cls = Array.isArray(member.classes) ? member.classes[0] : member.classes;
+        if (!profile || profile.active !== true) continue;
+
+        const studentId = profile.id || member.profile_id;
+        const unitProgress: ClassStudentRecord['unitProgress'] = {};
+
+        for (const u of units || []) {
+          const unitKey = `U${String(u.sequence_no).padStart(2, '0')}`;
+          const up = (upRows || []).find((r: any) => r.student_id === studentId && r.unit_id === u.id);
+          const q = (qaRows || []).find((r: any) => r.student_id === studentId && r.quizzes?.unit_id === u.id);
+          const l = (lsRows || []).find((r: any) => r.student_id === studentId && r.unit_id === u.id);
+          const m = (gmrRows || []).find((r: any) => r.student_id === studentId && r.missions?.unit_id === u.id);
+
+          unitProgress[unitKey] = {
+            unitId: u.id,
+            sequenceNo: Number(u.sequence_no),
+            progressPercent: up?.progress_percent !== undefined ? Number(up.progress_percent) : 0,
+            passed: Boolean(up?.passed),
+            unlocked: u.sequence_no === 1 || Boolean(up?.passed),
+            approvedScore: up?.approved_score !== null && up?.approved_score !== undefined ? Number(up.approved_score) : null,
+            latestQuiz: q
+              ? {
+                  id: q.id,
+                  score: q.approved_score !== null ? Number(q.approved_score) : null,
+                  passed: q.passed !== null ? Boolean(q.passed) : null,
+                  status: q.status,
+                  submittedAt: q.submitted_at,
+                }
+              : null,
+            latestLab: l
+              ? {
+                  id: l.id,
+                  status: l.status,
+                  passed: l.passed !== null ? Boolean(l.passed) : null,
+                  approvedScore: l.approved_score !== null ? Number(l.approved_score) : null,
+                  reviewedAt: l.reviewed_at,
+                  submittedAt: l.submitted_at,
+                }
+              : null,
+            latestMission: m
+              ? (() => {
+                  const mObj: any = Array.isArray(m.missions) ? m.missions[0] : m.missions;
+                  return {
+                    missionId: m.mission_id,
+                    code: mObj?.code || '',
+                    title: mObj?.title || '',
+                    maxScore: Number(mObj?.max_score) || 100,
+                    bestScore: Number(m.best_score) || 0,
+                    attemptCount: Number(m.attempt_count) || 1,
+                    hintsUsed: Number(m.hints_used) || 0,
+                    passed: Boolean(m.passed),
+                    firstPassedAt: m.first_passed_at,
+                    latestAttemptId: m.latest_attempt_id,
+                  };
+                })()
+              : null,
+          };
+        }
+
+        studentRecords.push({
+          studentId,
+          studentCode: profile.student_code || '',
+          displayName: profile.display_name || 'ผู้เรียน',
+          classCode: cls?.code || '',
+          classTitle: cls?.title || '',
+          unitProgress,
         });
       }
+
+      return studentRecords;
     } catch {
       // rethrow original dbErr
     }

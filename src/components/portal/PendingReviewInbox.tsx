@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createBrowserSupabaseClient } from '../../lib/supabase/client';
+import { isNotificationSoundEnabled, setNotificationSoundEnabled, playNotificationChime } from '../../lib/soundEffects';
 
 export type PendingItem = {
     id: string;
@@ -25,9 +27,10 @@ export type PendingItem = {
 type Props = {
     classId: string;
     onReviewCompleted?: () => void;
+    onItemsUpdated?: (count: number) => void;
 };
 
-export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
+export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated }: Props) {
     const [items, setItems] = useState<PendingItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [filterKind, setFilterKind] = useState<'all' | 'lab' | 'quiz'>('all');
@@ -39,25 +42,154 @@ export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
     const [reviewStatus, setReviewStatus] = useState<'passed' | 'revision_required'>('passed');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [actionNotice, setActionNotice] = useState<string | null>(null);
+    const [recentArrivalIds, setRecentArrivalIds] = useState<string[]>([]);
+    const [isRealtimeActive, setIsRealtimeActive] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
-    const fetchPending = async () => {
-        setIsLoading(true);
+    useEffect(() => {
+        setSoundEnabled(isNotificationSoundEnabled());
+        const handleSoundChange = (e: Event) => {
+            const customEvent = e as CustomEvent<{ enabled: boolean }>;
+            if (customEvent.detail?.enabled !== undefined) {
+                setSoundEnabled(customEvent.detail.enabled);
+            }
+        };
+        window.addEventListener('cctv_sound_setting_changed', handleSoundChange);
+        return () => window.removeEventListener('cctv_sound_setting_changed', handleSoundChange);
+    }, []);
+
+    const toggleSound = () => {
+        const next = !soundEnabled;
+        setSoundEnabled(next);
+        setNotificationSoundEnabled(next);
+        if (next) {
+            playNotificationChime('alert');
+        }
+    };
+
+    const triggerNotice = (msg: string) => {
+        setActionNotice(msg);
+    };
+
+    const fetchPending = async (isBackground = false) => {
+        if (!isBackground) {
+            setIsLoading(true);
+        }
         try {
             const res = await fetch(`/api/classes/${encodeURIComponent(classId)}/reviews/pending`);
             if (res.ok) {
                 const data = await res.json();
-                setItems(Array.isArray(data) ? data : []);
+                const list = Array.isArray(data) ? data : [];
+                setItems(list);
+                if (onItemsUpdated) {
+                    onItemsUpdated(list.length);
+                }
             }
         } catch {
             // handle error silently
         } finally {
-            setIsLoading(false);
+            if (!isBackground) {
+                setIsLoading(false);
+            }
         }
     };
 
     useEffect(() => {
+        if (!actionNotice) return;
+        const timer = setTimeout(() => {
+            setActionNotice(null);
+        }, 6000);
+        return () => clearTimeout(timer);
+    }, [actionNotice]);
+
+    useEffect(() => {
         if (!classId) return;
+        let isActive = true;
+
         void fetchPending();
+
+        let channel: any = null;
+        try {
+            const supabase = createBrowserSupabaseClient();
+            const isAll = classId === 'ALL';
+
+            channel = supabase
+                .channel(`teacher-pending-inbox:${classId}`)
+                .on(
+                    'postgres_changes' as any,
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'lab_submissions',
+                        ...(isAll ? {} : { filter: `class_id=eq.${classId}` }),
+                    } as any,
+                    (payload: { eventType: string; new?: { id?: string } }) => {
+                        if (isActive) {
+                            void fetchPending(true);
+                            if (payload.eventType === 'INSERT') {
+                                if (payload.new?.id) {
+                                    const insertedId = String(payload.new.id);
+                                    setRecentArrivalIds((prev) => Array.from(new Set([...prev, insertedId])));
+                                    setTimeout(() => {
+                                        setRecentArrivalIds((prev) => prev.filter((id) => id !== insertedId));
+                                    }, 30000);
+                                }
+                                triggerNotice('🔔 มีผลงานแล็บใหม่ส่งเข้ามาตรวจแบบเรียลไทม์');
+                                playNotificationChime('new_submission');
+                            }
+                        }
+                    }
+                )
+                .on(
+                    'postgres_changes' as any,
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'quiz_attempts',
+                        ...(isAll ? {} : { filter: `class_id=eq.${classId}` }),
+                    } as any,
+                    (payload: { eventType: string; new?: { id?: string } }) => {
+                        if (isActive) {
+                            void fetchPending(true);
+                            if (payload.eventType === 'INSERT') {
+                                if (payload.new?.id) {
+                                    const insertedId = String(payload.new.id);
+                                    setRecentArrivalIds((prev) => Array.from(new Set([...prev, insertedId])));
+                                    setTimeout(() => {
+                                        setRecentArrivalIds((prev) => prev.filter((id) => id !== insertedId));
+                                    }, 30000);
+                                }
+                                triggerNotice('🔔 มีแบบทดสอบใหม่ส่งเข้ามาตรวจแบบเรียลไทม์');
+                                playNotificationChime('new_submission');
+                            }
+                        }
+                    }
+                )
+                .subscribe((status: string) => {
+                    if (isActive) {
+                        if (status === 'SUBSCRIBED') {
+                            setIsRealtimeActive(true);
+                        } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED' || status === 'TIMED_OUT') {
+                            setIsRealtimeActive(false);
+                        }
+                    }
+                });
+        } catch {
+            // Fallback gracefully if Supabase client cannot be initialized in environment
+        }
+
+        return () => {
+            isActive = false;
+            setIsRealtimeActive(false);
+            if (channel) {
+                try {
+                    const supabase = createBrowserSupabaseClient();
+                    void supabase.removeChannel(channel);
+                } catch {
+                    // ignore
+                }
+            }
+        };
     }, [classId]);
 
     const handleSubmitReview = async () => {
@@ -94,6 +226,7 @@ export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
             }
 
             setActionNotice(`✓ บันทึกผลการตรวจของ ${selectedItem.displayName} เรียบร้อยแล้ว`);
+            playNotificationChime('approval_success');
             setSelectedItem(null);
             void fetchPending();
             if (onReviewCompleted) onReviewCompleted();
@@ -113,12 +246,23 @@ export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
         <div className="space-y-4">
             {/* Header & Filter Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <span className="text-base font-bold text-white">
                         📥 ศูนย์ตรวจและอนุมัติงานค้าง (Pending Work Queue)
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-mono font-bold">
                         {items.length} งานรอตรวจ
+                    </span>
+                    <span
+                        className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono border transition-colors ${
+                            isRealtimeActive
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : 'bg-slate-800 text-slate-400 border-slate-700'
+                        }`}
+                        title={isRealtimeActive ? 'เชื่อมต่อ Supabase Realtime สำเร็จ ข้อมูลจะอัปเดตทันทีเมื่อนักเรียนกดส่ง' : 'กำลังเชื่อมต่อหรือใช้โหมดอัปเดตมาตรฐาน'}
+                    >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isRealtimeActive ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'}`} />
+                        <span>{isRealtimeActive ? '⚡ ซิงก์เรียลไทม์สด' : 'ซิงก์มาตรฐาน'}</span>
                     </span>
                 </div>
 
@@ -164,12 +308,36 @@ export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
                     >
                         🔄
                     </button>
+                    <button
+                        type="button"
+                        onClick={toggleSound}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
+                            soundEnabled
+                                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25'
+                                : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-slate-200'
+                        }`}
+                        title={soundEnabled ? 'เสียงแจ้งเตือนเปิดอยู่ (คลิกเพื่อปิดเสียง)' : 'เสียงแจ้งเตือนปิดอยู่ (คลิกเพื่อเปิดเสียง)'}
+                    >
+                        <span>{soundEnabled ? '🔊' : '🔇'}</span>
+                        <span className="text-[11px] font-sans hidden md:inline">{soundEnabled ? 'เปิดเสียง' : 'ปิดเสียง'}</span>
+                    </button>
                 </div>
             </div>
 
             {actionNotice && (
-                <div className="p-3.5 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-medium">
-                    {actionNotice}
+                <div className="p-3.5 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-medium flex items-center justify-between transition-all shadow-md">
+                    <div className="flex items-center gap-2">
+                        <span className="animate-bounce">🔔</span>
+                        <span>{actionNotice}</span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setActionNotice(null)}
+                        className="text-sky-400 hover:text-white text-xs px-2 py-0.5 rounded-lg hover:bg-sky-500/20 transition-colors cursor-pointer"
+                        title="ปิดการแจ้งเตือน"
+                    >
+                        ✕
+                    </button>
                 </div>
             )}
 
@@ -188,69 +356,85 @@ export function PendingReviewInbox({ classId, onReviewCompleted }: Props) {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredItems.map((item) => (
-                        <div
-                            key={item.id}
-                            className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between space-y-3"
-                        >
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <span
-                                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
-                                            item.kind === 'lab'
-                                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                        }`}
-                                    >
-                                        {item.kind === 'lab' ? '🔬 ปฏิบัติการแล็บ' : '📝 ข้อสอบอัตนัย'} · U{String(item.unitSequenceNo).padStart(2, '0')}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 font-mono">
-                                        รอบที่ {item.attemptNo}
-                                    </span>
-                                </div>
-
-                                <div>
-                                    <h4 className="text-sm font-bold text-white m-0 truncate">
-                                        {item.title}
-                                    </h4>
-                                    <div className="text-xs text-slate-300 font-medium mt-0.5">
-                                        {item.displayName} <span className="font-mono text-sky-400">({item.studentCode})</span>
-                                    </div>
-                                </div>
-
-                                {item.studentNotes && (
-                                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 italic line-clamp-2">
-                                        &quot;{item.studentNotes}&quot;
-                                    </div>
-                                )}
-
-                                <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono pt-1">
-                                    {item.evidenceCount !== undefined && item.evidenceCount > 0 && (
-                                        <span>📎 ไฟล์แนบ: {item.evidenceCount} ไฟล์</span>
-                                    )}
-                                    <span>⏱️ ส่งเมื่อ: {item.submittedAt ? new Date(item.submittedAt).toLocaleString('th-TH') : '-'}</span>
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSelectedItem(item);
-                                    setReviewScore('85');
-                                    setReviewStatus('passed');
-                                    setReviewFeedback(
-                                        item.kind === 'lab'
-                                            ? 'ผ่านเกณฑ์มาตรฐานการติดตั้งและต่อสาย มีหลักฐานครบถ้วน'
-                                            : 'ตอบได้ตรงประเด็นตามหลักวิชาชีพการติดตั้งกล้องวงจรปิด',
-                                    );
-                                }}
-                                className="w-full py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                    {filteredItems.map((item) => {
+                        const isRecent = recentArrivalIds.includes(item.id);
+                        return (
+                            <div
+                                key={item.id}
+                                className={`p-4 rounded-2xl bg-slate-900 border transition-all flex flex-col justify-between space-y-3 ${
+                                    isRecent
+                                        ? 'border-amber-400/90 ring-2 ring-amber-400/30 shadow-lg shadow-amber-500/15 bg-slate-900/95'
+                                        : 'border-slate-800 hover:border-slate-700'
+                                }`}
                             >
-                                <span>⚖️</span>
-                                <span>เปิดตรวจและให้คะแนน</span>
-                            </button>
-                        </div>
-                    ))}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span
+                                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
+                                                    item.kind === 'lab'
+                                                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                                }`}
+                                            >
+                                                {item.kind === 'lab' ? '🔬 ปฏิบัติการแล็บ' : '📝 ข้อสอบอัตนัย'} · U{String(item.unitSequenceNo).padStart(2, '0')}
+                                            </span>
+                                            {isRecent && (
+                                                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold animate-pulse flex items-center gap-1">
+                                                    <span>✨</span>
+                                                    <span>ส่งใหม่สด (Live)</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-[10px] text-slate-400 font-mono">
+                                            รอบที่ {item.attemptNo}
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="text-sm font-bold text-white m-0 truncate">
+                                            {item.title}
+                                        </h4>
+                                        <div className="text-xs text-slate-300 font-medium mt-0.5">
+                                            {item.displayName} <span className="font-mono text-sky-400">({item.studentCode})</span>
+                                        </div>
+                                    </div>
+
+                                    {item.studentNotes && (
+                                        <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 italic line-clamp-2">
+                                            &quot;{item.studentNotes}&quot;
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono pt-1">
+                                        {item.evidenceCount !== undefined && item.evidenceCount > 0 && (
+                                            <span>📎 ไฟล์แนบ: {item.evidenceCount} ไฟล์</span>
+                                        )}
+                                        <span>⏱️ ส่งเมื่อ: {item.submittedAt ? new Date(item.submittedAt).toLocaleString('th-TH') : '-'}</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedItem(item);
+                                        setRecentArrivalIds((prev) => prev.filter((id) => id !== item.id));
+                                        setReviewScore('85');
+                                        setReviewStatus('passed');
+                                        setReviewFeedback(
+                                            item.kind === 'lab'
+                                                ? 'ผ่านเกณฑ์มาตรฐานการติดตั้งและต่อสาย มีหลักฐานครบถ้วน'
+                                                : 'ตอบได้ตรงประเด็นตามหลักวิชาชีพการติดตั้งกล้องวงจรปิด',
+                                        );
+                                    }}
+                                    className="w-full py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                                >
+                                    <span>⚖️</span>
+                                    <span>เปิดตรวจและให้คะแนน</span>
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
