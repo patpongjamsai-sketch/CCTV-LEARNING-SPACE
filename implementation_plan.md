@@ -1,36 +1,45 @@
-# แผนการดำเนินงาน: Deploy Web Application (อัปเดตระบบรายชื่อนักศึกษา 40 คน และระบบล็อกอิน @utc.ac.th)
+# แผนการดำเนินงาน: นำเข้ารายชื่อนักเรียน 40 คน เข้าสู่ระบบชั้นเรียน (Class Members) และตั้งค่า Auto-Enrollment สำหรับ Google OAuth (@utc.ac.th)
 
 ## 1. วัตถุประสงค์ (Objective)
-ทำการส่งมอบและ Deploy โค้ดส่วนที่มีการปรับปรุงล่าสุดขึ้นสู่ระบบ Production ผ่าน Git Remote Repository (`origin/main`) บน GitHub (`patpongjamsai-sketch/CCTV-LEARNING-SPACE`) เพื่อให้ระบบ Hosting (Vercel/CI/CD) ทำการ Build และเผยแพร่เวอร์ชันใหม่ของ Web Application สู่สาธารณะ
+ทำให้ **"กรณีที่ 1"** ทำงานได้อย่างสมบูรณ์แบบ 100%:
+- นักเรียนล็อกอินด้วย Google (`<student_id>@utc.ac.th`) หรือใช้อีเมล+รหัสผ่าน ระบบจะเชื่อมโยงเข้าห้องเรียนให้อัตโนมัติทันที โดย**ไม่มีป๊อปอัปขึ้นมาถามห้องเรียนอีก**
+- รายชื่อนักเรียนทั้ง 40 คน **จะปรากฏในหน้ารายชื่อของครูผู้สอน (`/teacher`) ทันที** แยกตามกลุ่ม PV1 (13 คน), PV2 (14 คน), PV3 (13 คน)
 
 ---
 
-## 2. รายการไฟล์และฟังก์ชันที่ส่งมอบ (Changes to Deploy)
+## 2. ขั้นตอนการดำเนินการ (Action Plan)
 
-1. **ระบบฐานข้อมูลและทะเบียนนักศึกษา 40 คน:**
-   - [`supabase/seed_students_40.sql`](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/supabase/seed_students_40.sql): อัปเดตโครงสร้างตาราง `public.students` รองรับคอลัมน์ `email VARCHAR(100)` โดเมน `@utc.ac.th` พร้อม RLS Policy
-2. **ระบบเปิดใช้งานและตั้งรหัสผ่านครั้งแรก (First-Time Activation):**
-   - [`src/app/api/auth/first-time-setup/route.ts`](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/app/api/auth/first-time-setup/route.ts): Endpoint ตรวจสอบข้อมูลนักศึกษา, สร้างบัญชีผู้ใช้ใน Supabase Auth แบบ Auto-confirm, บันทึกโปรไฟล์ และลงทะเบียนเข้าห้องเรียน (PV1, PV2, PV3)
-   - [`src/lib/classes/classGroups.ts`](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/lib/classes/classGroups.ts): แมปปิ้งกลุ่มเรียน 692190901, 692190902, 692190903 เข้ากับคลาส PV1, PV2, PV3
-3. **หน้าจอเข้าสู่ระบบใหม่ (Login UI):**
-   - [`src/app/login/LoginForm.tsx`](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/app/login/LoginForm.tsx): เพิ่มแท็บ "ตั้งรหัสผ่านครั้งแรก" แสดงชื่อผู้เรียนอัตโนมัติ และปรับฟิลด์ล็อกอินให้ระบุอีเมล `@utc.ac.th` อย่างชัดเจน
-   - [`src/lib/auth/validation.ts`](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/lib/auth/validation.ts): ตรวจสอบความถูกต้องและแปลงรหัสนักศึกษาเป็นอีเมลอัตโนมัติ
-4. **ชุดการทดสอบ (Automated Tests):**
-   - [`src/tests/firstTimeSetupApi.test.ts`](file:///e:/งานปี%202026/แผนการสอน%20หน่วยการสอน%20วิชาสอน%20คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/tests/firstTimeSetupApi.test.ts): ทดสอบความถูกต้องของ API การตั้งรหัสผ่านครั้งแรกและการเข้าสู่ระบบอัตโนมัติ
+### ขั้นตอนที่ 1: ลงทะเบียนครูผู้สอนเข้าดูแลทั้ง 3 กลุ่มเรียน
+- เพิ่มสิทธิ์ให้บัญชีครูผู้สอน (`patpong jamsai` / `Patpong`) เป็น `teacher` ในห้องเรียนทั้ง 3 กลุ่ม:
+  - `PV1`: `22222222-2222-4222-8222-222222222222` (กลุ่ม 1)
+  - `PV2`: `22222222-2222-4222-8222-222222222223` (กลุ่ม 2)
+  - `PV3`: `22222222-2222-4222-8222-222222222224` (กลุ่ม 3)
+  *(ทำให้ครูสามารถสลับดูรายชื่อนักเรียนและตรวจงานในหน้า `/teacher` ได้ครบทุกกลุ่ม)*
+
+### ขั้นตอนที่ 2: Pre-provisioning บัญชีและลงทะเบียนนักเรียน 40 คน เข้าสู่ระบบ
+รันสคริปต์สร้างและผูกข้อมูลนักเรียนทั้ง 40 คน จากตาราง `public.students`:
+1. สร้าง User ใน **`auth.users`** (อีเมล `<student_id>@utc.ac.th`, ยืนยันอีเมลอัตโนมัติ `email_confirm: true`)
+2. สร้าง/อัปเดตใน **`public.profiles`**:
+   - `student_code`: รหัสนักศึกษา 11 หลัก
+   - `display_name`: คำนำหน้า ชื่อ นามสกุลจริง (เช่น `นางสาวบัณฑิตา เพ็งกลาง`)
+   - `role`: `'student'`
+3. ผูกเข้าสู่ **`public.class_members`** ให้ตรงตามกลุ่มเรียน:
+   - **กลุ่ม 692190901 (13 คน)** -> คลาส **PV1**
+   - **กลุ่ม 692190902 (14 คน)** -> คลาส **PV2**
+   - **กลุ่ม 692190903 (13 คน)** -> คลาส **PV3**
+4. ล้างข้อมูลบัญชีทดสอบเดิม (5 คน) ออกจากคลาส เพื่อให้เหลือเฉพาะนักเรียนจริง 40 คน
+
+### ขั้นตอนที่ 3: ปรับปรุง Database Trigger อัตโนมัติ (`private.handle_new_auth_user`)
+- ปรับปรุง Trigger ใน Supabase ให้ตรวจสอบว่า: หากมีผู้ใช้ล็อกอินผ่าน Google OAuth เข้ามาใหม่ด้วยอีเมล `@utc.ac.th` ระบบจะค้นหาใน `public.students` และทำการผูกชื่อ-รหัส พร้อมนำเข้า `public.class_members` ให้อัตโนมัติทันที
 
 ---
 
-## 3. ขั้นตอนการดำเนินการ Deploy (Execution Steps)
-
-1. **ตรวจสอบความสมบูรณ์ของโค้ด (Pre-deployment Verification):**
-   - รัน Typecheck: `npm run lint` (`tsc --noEmit`)
-   - รัน Automated Tests: `npm test` (56 files, 257 tests)
-2. **บันทึกการเปลี่ยนแปลง (Git Commit):**
-   - เพิ่มไฟล์ที่แก้ไขและไฟล์ใหม่ทั้งหมดเข้า Git Staging
-   - ทำการ Commit ด้วยข้อความมาตรฐาน:  
-     `feat(auth): enable student first-time password setup, enforce @utc.ac.th email, and seed 40-student roster`
-3. **ส่งขึ้นระบบ Production (Git Push):**
-   - รันคำสั่ง `git push origin main`
-   - ระบบ CI/CD และ Vercel จะเริ่มกระบวนการ Build และ Deploy ขึ้น Production โดยอัตโนมัติ
-4. **ตรวจสอบสถานะหลัง Deploy (Post-deployment Check):**
-   - ตรวจสอบสถานะการ Push บน GitHub Repository
+## 3. การตรวจสอบความถูกต้อง (Verification)
+1. ตรวจสอบตาราง `public.class_members`:
+   - คลาส PV1 มีนักเรียน 13 คน
+   - คลาส PV2 มีนักเรียน 14 คน
+   - คลาส PV3 มีนักเรียน 13 คน
+   - รวมทั้งหมด 40 คน
+2. ตรวจสอบหน้า `/teacher` เพื่อยืนยันว่ารายชื่อนักเรียนทั้ง 40 คน ปรากฏในแต่ละกลุ่มเรียนครบถ้วน
+3. รันการทดสอบ Unit Tests (`npm test`) และ Typecheck (`npm run lint`)
+4. Git Commit & Push เพื่ออัปเดตระบบ
