@@ -20,6 +20,7 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
     const [faultSubmissions, setFaultSubmissions] = useState<Record<string, { status: string; submittedAt: string; count?: number }>>({});
     const [questionSubmissionMap, setQuestionSubmissionMap] = useState<Record<string, boolean>>({});
     const [reflections, setReflections] = useState<Record<string, { submittedAt: string }>>({});
+    const [serverFeedback, setServerFeedback] = useState<{ status: string; score: number | null; feedback: string | null } | null>(null);
 
     const [currentUser, setCurrentUser] = useState<{ displayName: string; studentCode?: string; role: string } | null>(null);
 
@@ -149,6 +150,24 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
             window.removeEventListener('cctv_reflection_saved', handleReflEvent);
         };
     }, [bundles]);
+
+    // Load server-side review feedback whenever selected unit changes
+    useEffect(() => {
+        fetch(`/api/learning/subjective?unitId=${encodeURIComponent(selectedUnitId)}`, { cache: 'no-store' })
+            .then((res) => (res.ok ? res.json() : null))
+            .then((data) => {
+                if (data?.submission) {
+                    setServerFeedback({
+                        status: data.submission.status,
+                        score: data.submission.score,
+                        feedback: data.submission.feedback,
+                    });
+                } else {
+                    setServerFeedback(null);
+                }
+            })
+            .catch(() => setServerFeedback(null));
+    }, [selectedUnitId]);
 
     if (!activeBundle) return null;
 
@@ -361,6 +380,36 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                     </div>
                 </div>
 
+                {/* Teacher Review Feedback Banner (if reviewed by teacher) */}
+                {serverFeedback?.status === 'revision_required' ? (
+                    <div className="p-4 rounded-2xl bg-amber-950/60 border border-amber-500/60 text-xs space-y-2">
+                        <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
+                            <span>⚠️</span>
+                            <span>ครูผู้สอนส่งข้อคิดเห็นขอให้ปรับปรุงแก้ไข (Revision Required)</span>
+                        </div>
+                        <div className="p-3 bg-slate-950/80 rounded-xl border border-amber-500/30 text-amber-200">
+                            <strong>คำแนะนำจากครู:</strong> {serverFeedback.feedback || 'โปรดปรับปรุงคำตอบตามเกณฑ์'}
+                            {serverFeedback.score !== null && (
+                                <span className="block mt-1 font-mono font-bold text-amber-300">
+                                    คะแนนที่ได้เบื้องต้น: {serverFeedback.score} / 20 คะแนน
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                ) : serverFeedback?.status === 'graded' || serverFeedback?.status === 'approved' ? (
+                    <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/50 text-xs space-y-2">
+                        <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
+                            <span>✓</span>
+                            <span>ผลการประเมิน: ผ่านเกณฑ์แล้ว (Approved) · คะแนน {serverFeedback.score || 0} / 20 คะแนน</span>
+                        </div>
+                        {serverFeedback.feedback && (
+                            <div className="p-3 bg-slate-950/80 rounded-xl border border-emerald-500/30 text-slate-200">
+                                <strong>ข้อคิดเห็นจากครู:</strong> {serverFeedback.feedback}
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+
                 {/* Question Scenarios Grid */}
                 <div className="space-y-4 pt-2">
                     <div className="flex items-center justify-between">
@@ -370,7 +419,7 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                         {activeFault && (
                             <span className="text-xs text-emerald-400 font-mono font-medium flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                                โหลด JSON แล้ว {activeFault.count || 1}/{currentUnitQuestions.length} ข้อ
+                                ส่งแล้ว {activeFault.count || 1}/{currentUnitQuestions.length} ข้อ
                             </span>
                         )}
                     </div>
@@ -411,14 +460,24 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
 
                                     <div className="shrink-0 flex flex-col sm:flex-row md:flex-col items-end justify-center gap-2">
                                         <div className="text-xs">
-                                            {isSubmitted ? (
+                                            {serverFeedback?.status === 'revision_required' ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/20 border border-amber-500/50 text-amber-300 font-bold font-mono">
+                                                    <span>⚠️</span>
+                                                    <span>ขอให้แก้ไข</span>
+                                                </span>
+                                            ) : serverFeedback?.status === 'graded' || serverFeedback?.status === 'approved' ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-950/80 border border-emerald-800/50 text-emerald-300 font-bold font-mono">
                                                     <span>✓</span>
-                                                    <span>ดาวน์โหลด JSON แล้ว</span>
+                                                    <span>ผ่านแล้ว ({serverFeedback.score || 0}/20)</span>
+                                                </span>
+                                            ) : isSubmitted ? (
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-950/80 border border-sky-800/50 text-sky-300 font-bold font-mono">
+                                                    <span>✓</span>
+                                                    <span>ส่งตรวจแล้ว (รอผล)</span>
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 font-mono text-[11px]">
-                                                    รอตอบให้ครบ 6 ข้อ
+                                                    รอการส่งคำตอบ
                                                 </span>
                                             )}
                                         </div>
@@ -429,7 +488,13 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
                                             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold text-xs transition-all shadow-md shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5"
                                         >
                                             <span>🔍</span>
-                                            <span>{isSubmitted ? 'ดู / ดาวน์โหลดซ้ำ (6 ขั้นตอน)' : 'เริ่มทำข้อสอบอัตนัย (6 ขั้นตอน) →'}</span>
+                                            <span>
+                                                {serverFeedback?.status === 'revision_required'
+                                                    ? 'แก้ไขคำตอบตามคำแนะนำครู →'
+                                                    : isSubmitted
+                                                        ? 'ดูคำตอบ / ปรับปรุงคำตอบ'
+                                                        : 'เริ่มทำข้อสอบอัตนัย →'}
+                                            </span>
                                         </button>
                                     </div>
                                 </div>

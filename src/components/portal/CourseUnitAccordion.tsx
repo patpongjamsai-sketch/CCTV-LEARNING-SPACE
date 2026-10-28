@@ -64,7 +64,7 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
             {/* Accordion Controls */}
             <div className="flex items-center justify-between px-1">
                 <p className="text-xs text-slate-400 font-mono">
-                    กระบวนการเรียนรู้ 3 ขั้นตอน: 1.เนื้อหา 10 บท + ตอบคำถาม → 2.ห้องแล็บ 3D → 3.แบบทดสอบ ปรนัย+อัตนัย
+                    กระบวนการเรียนรู้: 1.แบบทดสอบอัตนัยวิเคราะห์ปัญหาด้วยหลักฐาน → 2.ห้องปฏิบัติการเสมือนจริง 3D → 3.แบบทดสอบสมรรถนะ
                 </p>
                 <button
                     type="button"
@@ -87,16 +87,17 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
                     const isPassed = isUnitFullyPassed(uid);
                     const roomNum = bundle.unit.number + 100;
 
-                    // Calculate 3-step progression percentage
+                    // Calculate progression percentage
                     let unitProgress = 0;
                     if (isPassed) {
                         unitProgress = 100;
                     } else {
-                        const lessonShare = (lessonProgress.completedCount / 10) * 40;
-                        const labShare = labGate.unlocked ? 30 : 0;
+                        const diagShare = labGate.unlocked ? 40 : 0;
+                        const labSaved = typeof window !== 'undefined' ? (localStorage.getItem(`cctv_lab_passed_${uid}`) || localStorage.getItem(`cctv_lab_submission_${uid}`)) : null;
+                        const labShare = labSaved ? 30 : 0;
                         const examSaved = typeof window !== 'undefined' ? localStorage.getItem(`cctv_unit_exam_${uid}`) : null;
                         const examShare = examSaved ? 30 : 0;
-                        unitProgress = Math.round(lessonShare + labShare + examShare);
+                        unitProgress = Math.min(100, Math.round(diagShare + labShare + examShare));
                     }
 
                     return (

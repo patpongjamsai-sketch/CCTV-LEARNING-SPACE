@@ -199,7 +199,7 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
         try {
             let res: Response;
             if (selectedItem.kind === 'lab') {
-                res = await fetch(`/api/classes/${encodeURIComponent(classId)}/labs/${encodeURIComponent(selectedItem.id)}/review`, {
+                res = await fetch(`/api/learning/lab-submissions/${encodeURIComponent(selectedItem.id)}/review`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -209,7 +209,7 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
                     }),
                 });
             } else {
-                res = await fetch(`/api/classes/${encodeURIComponent(classId)}/quizzes/${encodeURIComponent(selectedItem.id)}/review`, {
+                res = await fetch(`/api/classes/${encodeURIComponent(selectedItem.classId || classId)}/quizzes/${encodeURIComponent(selectedItem.id)}/review`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -232,6 +232,84 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
             if (onReviewCompleted) onReviewCompleted();
         } catch (err) {
             setActionNotice(err instanceof Error ? `ข้อผิดพลาด: ${err.message}` : 'เกิดข้อผิดพลาดในการบันทึกผล');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleQuickPass = async (item: PendingItem) => {
+        setIsSubmitting(true);
+        try {
+            let res: Response;
+            if (item.kind === 'lab') {
+                res = await fetch(`/api/learning/lab-submissions/${encodeURIComponent(item.id)}/review`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'passed',
+                        approvedScore: 85,
+                        feedback: 'ผ่านเกณฑ์มาตรฐานการติดตั้งและต่อสาย มีหลักฐานครบถ้วน',
+                    }),
+                });
+            } else {
+                res = await fetch(`/api/classes/${encodeURIComponent(item.classId || classId)}/quizzes/${encodeURIComponent(item.id)}/review`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedScore: 18,
+                        feedback: 'ตอบได้ตรงประเด็นตามหลักวิชาชีพการติดตั้งกล้องวงจรปิด',
+                    }),
+                });
+            }
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'อนุมัติไม่สำเร็จ');
+            }
+
+            triggerNotice(`⚡ อนุมัติผ่านผลงานของ ${item.displayName} เรียบร้อยแล้ว`);
+            playNotificationChime('approval_success');
+            void fetchPending();
+            if (onReviewCompleted) onReviewCompleted();
+        } catch (err) {
+            triggerNotice(err instanceof Error ? `ข้อผิดพลาด: ${err.message}` : 'เกิดข้อผิดพลาดในการอนุมัติ');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleBatchApprove = async () => {
+        if (filteredItems.length === 0) return;
+        const confirmMsg = `ยืนยันการอนุมัติผ่านงานที่ค้างตรวจทั้งหมด ${filteredItems.length} รายการทันทีหรือไม่?`;
+        if (typeof window !== 'undefined' && !window.confirm(confirmMsg)) return;
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/classes/${encodeURIComponent(classId)}/reviews/batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: filteredItems.map((it) => ({
+                        id: it.id,
+                        kind: it.kind,
+                        classId: it.classId || classId,
+                    })),
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'บันทึกการอนุมัติกลุ่มไม่สำเร็จ');
+            }
+
+            const data = await res.json();
+            triggerNotice(`⚡ อนุมัติผ่านผลงานทั้งหมด ${data.approvedCount || filteredItems.length} รายการเรียบร้อยแล้ว`);
+            playNotificationChime('approval_success');
+            void fetchPending();
+            if (onReviewCompleted) onReviewCompleted();
+        } catch (err) {
+            triggerNotice(err instanceof Error ? `ข้อผิดพลาด: ${err.message}` : 'เกิดข้อผิดพลาดในการอนุมัติกลุ่ม');
         } finally {
             setIsSubmitting(false);
         }
@@ -308,6 +386,18 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
                     >
                         🔄
                     </button>
+                    {filteredItems.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => void handleBatchApprove()}
+                            disabled={isSubmitting}
+                            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5 shrink-0"
+                            title="อนุมัติผ่านงานที่ค้างตรวจทั้งหมดในคิวนี้ทันที"
+                        >
+                            <span>⚡</span>
+                            <span>อนุมัติผ่านทั้งหมด ({filteredItems.length})</span>
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={toggleSound}
@@ -414,24 +504,36 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
                                     </div>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedItem(item);
-                                        setRecentArrivalIds((prev) => prev.filter((id) => id !== item.id));
-                                        setReviewScore('85');
-                                        setReviewStatus('passed');
-                                        setReviewFeedback(
-                                            item.kind === 'lab'
-                                                ? 'ผ่านเกณฑ์มาตรฐานการติดตั้งและต่อสาย มีหลักฐานครบถ้วน'
-                                                : 'ตอบได้ตรงประเด็นตามหลักวิชาชีพการติดตั้งกล้องวงจรปิด',
-                                        );
-                                    }}
-                                    className="w-full py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
-                                >
-                                    <span>⚖️</span>
-                                    <span>เปิดตรวจและให้คะแนน</span>
-                                </button>
+                                <div className="flex items-center gap-2 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => void handleQuickPass(item)}
+                                        disabled={isSubmitting}
+                                        className="py-2 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                                        title="อนุมัติผ่านทันทีด้วยคะแนนมาตรฐาน (Quick Pass)"
+                                    >
+                                        <span>⚡</span>
+                                        <span className="hidden sm:inline">ผ่านทันที</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedItem(item);
+                                            setRecentArrivalIds((prev) => prev.filter((id) => id !== item.id));
+                                            setReviewScore(item.kind === 'quiz' ? '18' : '85');
+                                            setReviewStatus('passed');
+                                            setReviewFeedback(
+                                                item.kind === 'lab'
+                                                    ? 'ผ่านเกณฑ์มาตรฐานการติดตั้งและต่อสาย มีหลักฐานครบถ้วน'
+                                                    : 'ตอบได้ตรงประเด็นตามหลักวิชาชีพการติดตั้งกล้องวงจรปิด ครบถ้วนตามมาตรฐาน',
+                                            );
+                                        }}
+                                        className="flex-1 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                                    >
+                                        <span>⚖️</span>
+                                        <span>เปิดตรวจและให้คะแนน</span>
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}
@@ -475,14 +577,49 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
                                 </div>
                             )}
 
-                            {Boolean(selectedItem.clientAnswers) && (
-                                <div className="space-y-1">
-                                    <label className="text-xs font-semibold text-slate-300">คำตอบข้อสอบอัตนัย:</label>
-                                    <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 font-mono overflow-x-auto max-h-36">
-                                        <pre className="whitespace-pre-wrap">{JSON.stringify(selectedItem.clientAnswers, null, 2)}</pre>
+                            {Boolean(selectedItem.clientAnswers) && (() => {
+                                const raw = selectedItem.clientAnswers as Record<string, unknown> | null;
+                                const evidenceImg = (raw?._evidence as { filePreview?: string } | undefined)?.filePreview ||
+                                    (raw?.evidenceFilePreview as string | undefined) || null;
+                                const evidenceName = (raw?._evidence as { fileName?: string } | undefined)?.fileName ||
+                                    (raw?.evidenceFileName as string | undefined) || null;
+
+                                const textEntries = Object.entries(raw || {}).filter(([k]) =>
+                                    k !== '_evidence' && k !== 'evidenceFilePreview' && k !== 'evidenceFileName'
+                                );
+
+                                return (
+                                    <div className="space-y-3">
+                                        <label className="text-xs font-semibold text-slate-300 block">คำตอบและหลักฐานจากผู้เรียน:</label>
+                                        
+                                        {evidenceImg && (
+                                            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                                                <span className="text-xs text-sky-400 font-semibold flex items-center gap-1.5">
+                                                    <span>📷</span>
+                                                    <span>รูปภาพหลักฐาน ({evidenceName || 'ภาพถ่ายการตรวจวัด/วงจร'}):</span>
+                                                </span>
+                                                <div className="rounded-xl overflow-hidden border border-slate-800 bg-black flex items-center justify-center max-h-64">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={evidenceImg} alt="หลักฐานการตรวจวัด" className="max-h-64 object-contain" />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 space-y-2.5 max-h-48 overflow-y-auto">
+                                            {textEntries.length > 0 ? (
+                                                textEntries.map(([key, val]) => (
+                                                    <div key={key} className="border-b border-slate-800/80 pb-2 last:border-0 last:pb-0">
+                                                        <span className="text-[11px] font-mono text-amber-400 font-bold block">{key}:</span>
+                                                        <span className="text-xs text-slate-200 leading-relaxed block whitespace-pre-wrap">{String(val || '-')}</span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <pre className="whitespace-pre-wrap font-mono text-xs">{JSON.stringify(raw, null, 2)}</pre>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
@@ -501,12 +638,14 @@ export function PendingReviewInbox({ classId, onReviewCompleted, onItemsUpdated 
 
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-300 mb-1">
-                                        คะแนนที่ให้ (เต็ม 100)
+                                        {selectedItem.kind === 'quiz'
+                                            ? 'คะแนนที่ให้ (เต็ม 20 คะแนน, เกณฑ์ผ่าน 12 คะแนน)'
+                                            : 'คะแนนที่ให้ (เต็ม 100 คะแนน, เกณฑ์ผ่าน 60 คะแนน)'}
                                     </label>
                                     <input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max={selectedItem.kind === 'quiz' ? 20 : 100}
                                         value={reviewScore}
                                         onChange={(e) => setReviewScore(e.target.value)}
                                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 font-mono font-bold focus:outline-none focus:border-sky-500"

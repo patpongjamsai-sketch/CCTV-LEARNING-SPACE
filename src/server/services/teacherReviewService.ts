@@ -435,12 +435,13 @@ export async function reviewQuizAttemptService(
         where id = ${attemptId}
       `;
       if (subj) {
+        const finalSubjStatus = input.status === 'approved' ? 'graded' : 'revision_required';
         await sql`
           update public.subjective_submissions
           set
             score = ${input.approvedScore},
             feedback = ${input.feedback ?? null},
-            status = 'graded',
+            status = ${finalSubjStatus},
             updated_at = now()
           where id = ${attemptId}
         `;

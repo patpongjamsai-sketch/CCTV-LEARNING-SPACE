@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { toFinalizeResponse, type FinalizeResponse } from './finalizeResult';
 import { isLabUnlocked } from '../../../../lib/progressionState';
+import { VirtualJoystick } from '../../../../components/3d/VirtualJoystick';
 
 const Cctv3DLabApp = dynamic(
   () => import('../../../../components/labs/3d/Cctv3DLabApp').then((mod) => mod.Cctv3DLabApp),
@@ -257,6 +258,9 @@ export function LabClientContainer({
         onSessionStart={handleSessionStart}
         onCompleted={handleCompleted}
       />
+
+      {/* Mobile/Touch Screen On-Screen Virtual Joystick & Action Buttons */}
+      <VirtualJoystick />
 
       {/* Final Assessment Result Modal */}
       {result && (

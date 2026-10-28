@@ -61,6 +61,14 @@ export function FaultChallengeModal({
     const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
     const [submittedAt, setSubmittedAt] = useState<string | null>(null);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
+    const [isCompressing, setIsCompressing] = useState<boolean>(false);
+    const [isSavingToServer, setIsSavingToServer] = useState<boolean>(false);
+    const [teacherReview, setTeacherReview] = useState<{
+        status: string;
+        score: number | null;
+        feedback: string | null;
+    } | null>(null);
 
     const hasSubQuestions = Boolean(activeQuestion?.subQuestions && activeQuestion.subQuestions.length > 0);
     const subQuestions = useMemo(() => activeQuestion?.subQuestions || [], [activeQuestion]);
@@ -96,6 +104,39 @@ export function FaultChallengeModal({
             }
         }
     }, [initialQuestionId, questions, selectedQuestionId]);
+
+    // Load teacher review and saved submission whenever modal opens
+    useEffect(() => {
+        if (isOpen && activeQuestion) {
+            fetch(`/api/learning/subjective?unitId=${encodeURIComponent(unitId)}&questionId=${encodeURIComponent(activeQuestion.id)}`, { cache: 'no-store' })
+                .then((res) => (res.ok ? res.json() : null))
+                .then((data) => {
+                    if (data?.submission) {
+                        setTeacherReview({
+                            status: data.submission.status,
+                            score: data.submission.score,
+                            feedback: data.submission.feedback,
+                        });
+                        // If student already has a submission on server
+                        if (data.submission.answers) {
+                            if (data.submission.answers._evidence) {
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    evidenceFileName: data.submission.answers._evidence.fileName || '',
+                                    evidenceFilePreview: data.submission.answers._evidence.filePreview || null,
+                                }));
+                            } else if (data.submission.answers.evidenceFilePreview) {
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    ...data.submission.answers,
+                                }));
+                            }
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [isOpen, unitId, activeQuestion]);
 
     // Load saved submission whenever modal opens or selected question changes
     useEffect(() => {
@@ -181,19 +222,86 @@ export function FaultChallengeModal({
         }));
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Client-side image compressor: max 1280px, quality 0.72 (~150-250KB)
+    const compressImageFile = (
+        file: File,
+        maxWidth = 1280,
+        maxHeight = 1280,
+        quality = 0.72
+    ): Promise<{ dataUrl: string; originalSize: number; compressedSize: number }> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > maxWidth || height > maxHeight) {
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width = Math.round(width * ratio);
+                        height = Math.round(height * ratio);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        const fallback = e.target?.result as string;
+                        resolve({ dataUrl: fallback, originalSize: file.size, compressedSize: file.size });
+                        return;
+                    }
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    const stringLength = compressedDataUrl.length - 'data:image/jpeg;base64,'.length;
+                    const sizeInBytes = Math.round(4 * Math.ceil(stringLength / 3) * 0.562489633438312);
+                    resolve({
+                        dataUrl: compressedDataUrl,
+                        originalSize: file.size,
+                        compressedSize: sizeInBytes,
+                    });
+                };
+                img.onerror = () => {
+                    const fallback = e.target?.result as string;
+                    resolve({ dataUrl: fallback, originalSize: file.size, compressedSize: file.size });
+                };
+                img.src = e.target?.result as string;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
+        setIsCompressing(true);
+        setCompressionInfo('กำลังบีบอัดรูปภาพให้เหมาะสมกับการจัดเก็บ...');
+
+        try {
+            const { dataUrl, originalSize, compressedSize } = await compressImageFile(file);
             setFormData((prev) => ({
                 ...prev,
                 evidenceFileName: file.name,
-                evidenceFilePreview: reader.result as string,
+                evidenceFilePreview: dataUrl,
             }));
-        };
-        reader.readAsDataURL(file);
+            const origMb = (originalSize / (1024 * 1024)).toFixed(1);
+            const compKb = Math.round(compressedSize / 1024);
+            setCompressionInfo(`✓ บีบอัดรูปภาพสำเร็จ: จาก ${origMb} MB เหลือ ~${compKb} KB (ประหยัดพื้นที่กว่า 95%)`);
+        } catch (err) {
+            console.warn('Image compression fallback:', err);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData((prev) => ({
+                    ...prev,
+                    evidenceFileName: file.name,
+                    evidenceFilePreview: reader.result as string,
+                }));
+                setCompressionInfo(null);
+            };
+            reader.readAsDataURL(file);
+        } finally {
+            setIsCompressing(false);
+        }
     };
 
     const handleRemoveEvidence = () => {
@@ -202,6 +310,7 @@ export function FaultChallengeModal({
             evidenceFileName: '',
             evidenceFilePreview: null,
         }));
+        setCompressionInfo(null);
     };
 
     const handleLoadSample = () => {
@@ -232,7 +341,80 @@ export function FaultChallengeModal({
         }
     };
 
-    // Download JSON export function (No server submission)
+    // Primary Submission to Server & Database
+    const handleSubmitToTeacher = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+
+        if (!isAllTopicsComplete) {
+            alert(`กรุณาตอบคำถามให้ครบทุกประเด็นย่อยก่อนส่งตรวจ (ยังขาด: ${missingTopicsList.join(', ')})`);
+            return;
+        }
+
+        setIsSavingToServer(true);
+        const timestamp = new Date().toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+        const qId = activeQuestion?.id || `${unitId}-F01`;
+
+        // Ensure evidence is bundled cleanly into answers
+        const payloadAnswers = hasSubQuestions
+            ? {
+                  ...subAnswers,
+                  _evidence: {
+                      fileName: formData.evidenceFileName || null,
+                      filePreview: formData.evidenceFilePreview || null,
+                  },
+              }
+            : formData;
+
+        const record = {
+            unitId,
+            questionId: qId,
+            questionTitle: activeQuestion?.titleTh || faultTitle || 'แบบทดสอบอัตนัย',
+            formData,
+            subAnswers,
+            studentName,
+            studentCode,
+            submittedAt: timestamp,
+            status: 'submitted',
+        };
+
+        localStorage.setItem(`cctv_subjective_submission_${unitId}_${qId}`, JSON.stringify(record));
+        localStorage.setItem(`cctv_fault_submission_${unitId}`, JSON.stringify(record));
+        if (studentName) localStorage.setItem('cctv_student_name', studentName);
+        if (studentCode) localStorage.setItem('cctv_student_code', studentCode);
+
+        try {
+            await fetch('/api/learning/subjective', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    unitId,
+                    questionId: qId,
+                    answers: payloadAnswers,
+                    studentName,
+                    studentCode,
+                }),
+            });
+        } catch (err) {
+            console.warn('API subjective submission sync warning:', err);
+        } finally {
+            setIsSavingToServer(false);
+        }
+
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('cctv_fault_submitted', { detail: record }));
+            window.dispatchEvent(new CustomEvent('cctv_subjective_submitted', { detail: record }));
+            window.dispatchEvent(new CustomEvent('cctv_approvals_updated'));
+        }
+
+        setIsSubmitted(true);
+        setSubmittedAt(timestamp);
+        setStatusMessage(
+            '✓ ส่งแบบทดสอบขึ้นระบบเรียบร้อยแล้ว ครูผู้สอนได้รับข้อมูลและหลักฐานของคุณแล้ว ห้องแล็บ 3D ปลดล็อกทันที!'
+        );
+        if (onComplete) onComplete();
+    };
+
+    // Optional Backup: Download JSON export file
     const handleDownloadJson = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
 
@@ -310,52 +492,6 @@ export function FaultChallengeModal({
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
-        const record = {
-            unitId,
-            questionId: qId,
-            questionTitle: activeQuestion?.titleTh || faultTitle || 'แบบทดสอบอัตนัย',
-            formData,
-            subAnswers,
-            studentName,
-            studentCode,
-            submittedAt: timestamp,
-            status: 'downloaded',
-        };
-
-        localStorage.setItem(`cctv_subjective_submission_${unitId}_${qId}`, JSON.stringify(record));
-        localStorage.setItem(`cctv_fault_submission_${unitId}`, JSON.stringify(record));
-        if (studentName) localStorage.setItem('cctv_student_name', studentName);
-        if (studentCode) localStorage.setItem('cctv_student_code', studentCode);
-
-        // Sync with Supabase Database via API to unlock 3D Lab immediately
-        fetch('/api/learning/subjective', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                unitId,
-                questionId: qId,
-                answers: hasSubQuestions ? subAnswers : formData,
-                studentName,
-                studentCode,
-            }),
-        }).catch((err) => {
-            console.warn('API subjective submission sync warning:', err);
-        });
-
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('cctv_fault_submitted', { detail: record }));
-            window.dispatchEvent(new CustomEvent('cctv_subjective_submitted', { detail: record }));
-        }
-
-        setIsSubmitted(true);
-        setSubmittedAt(timestamp);
-        setStatusMessage(
-            hasSubQuestions
-                ? `บันทึกคำตอบอัตนัยครบทั้ง ${totalTopicsCount} ประเด็นลงในไฟล์ JSON สำเร็จเรียบร้อย สามารถนำไฟล์นี้ส่งให้อาจารย์ผู้สอนได้ทันที`
-                : 'ดาวน์โหลดไฟล์ผลงาน JSON สำเร็จเรียบร้อย สามารถนำไฟล์นี้ส่งให้อาจารย์ผู้สอนได้ทันที'
-        );
-        if (onComplete) onComplete();
     };
 
     const handleResetToEdit = () => {
@@ -469,49 +605,115 @@ export function FaultChallengeModal({
                         </div>
                     )}
 
-                    {/* Status Badge when downloaded */}
-                    {isSubmitted && (
-                        <div className="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 space-y-3">
+                    {/* Status Badge when downloaded or reviewed */}
+                    {teacherReview?.status === 'revision_required' ? (
+                        <div className="p-5 rounded-2xl bg-amber-950/50 border border-amber-500/60 space-y-3">
+                            <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
+                                <span>⚠️</span>
+                                <span>สถานะ: ครูผู้สอนส่งข้อคิดเห็นให้ปรับปรุงแก้ไข (Revision Required)</span>
+                            </div>
+                            <div className="p-3.5 bg-slate-950/90 rounded-xl border border-amber-500/30 text-xs text-amber-200 space-y-1.5">
+                                <div>
+                                    <strong>ข้อคิดเห็นจากครูผู้สอน:</strong> {teacherReview.feedback || 'โปรดปรับปรุงคำตอบและการวิเคราะห์ตามเกณฑ์'}
+                                </div>
+                                {teacherReview.score !== null && (
+                                    <div className="font-mono text-amber-300 font-bold pt-1 border-t border-amber-500/20">
+                                        คะแนนที่ได้รับเบื้องต้น: {teacherReview.score} / 20 คะแนน (เกณฑ์ผ่าน 12 คะแนน)
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex gap-2 pt-1 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={handleResetToEdit}
+                                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                                >
+                                    <span>✏️</span>
+                                    <span>แก้ไขคำตอบและส่งตรวจใหม่</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                                >
+                                    ปิด
+                                </button>
+                            </div>
+                        </div>
+                    ) : teacherReview?.status === 'graded' || teacherReview?.status === 'approved' ? (
+                        <div className="p-5 rounded-2xl bg-emerald-950/40 border border-emerald-500/50 space-y-3">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-2 text-emerald-300 font-bold text-sm">
+                                    <span>✓</span>
+                                    <span>สถานะ: ผ่านการประเมินแล้ว (Approved) · ได้รับ {teacherReview.score || 0} / 20 คะแนน</span>
+                                </div>
+                                <span className="text-xs text-emerald-400 font-mono font-bold">✓ ปลดล็อกห้องแล็บ 3D แล้ว</span>
+                            </div>
+                            {teacherReview.feedback && (
+                                <div className="p-3 bg-slate-950/80 rounded-xl border border-emerald-500/30 text-xs text-slate-200">
+                                    <strong>ข้อคิดเห็นจากครูผู้สอน:</strong> {teacherReview.feedback}
+                                </div>
+                            )}
+                            <div className="flex gap-2 pt-1 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={handleResetToEdit}
+                                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer"
+                                >
+                                    ✏️ ดูคำตอบที่ส่งไป
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-md"
+                                >
+                                    🎮 เข้าสู่ห้องปฏิบัติการ 3D
+                                </button>
+                            </div>
+                        </div>
+                    ) : isSubmitted ? (
+                        <div className="p-5 rounded-2xl bg-sky-950/40 border border-sky-500/40 space-y-3">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                                    <strong className="text-sm text-emerald-300">
-                                        สถานะ: ดาวน์โหลดไฟล์ JSON สำเร็จแล้ว (เสร็จสมบูรณ์)
+                                    <span className="w-3 h-3 rounded-full bg-sky-400 animate-pulse" />
+                                    <strong className="text-sm text-sky-300">
+                                        สถานะ: ส่งแบบทดสอบขึ้นระบบเรียบร้อยแล้ว (รอครูตรวจประเมิน)
                                     </strong>
                                 </div>
                                 <span className="text-xs font-mono text-slate-400">
-                                    ดาวน์โหลดเมื่อ: {submittedAt || 'ล่าสุด'}
+                                    ส่งเมื่อ: {submittedAt || 'ล่าสุด'}
                                 </span>
                             </div>
                             <p className="text-xs text-slate-300 leading-relaxed m-0">
-                                {statusMessage || 'บันทึกรายงานการวิเคราะห์ปัญหาด้วยหลักฐาน 6 ขั้นตอนลงในไฟล์ JSON เรียบร้อยแล้ว'}
+                                {statusMessage || 'บันทึกคำตอบและหลักฐานเข้าสู่ระบบเรียบร้อย ห้องปฏิบัติการ 3D ปลดล็อกแล้ว สามารถเข้าทำแล็บได้ทันที'}
                             </p>
                             <div className="flex gap-2 pt-1 flex-wrap">
                                 <button
                                     type="button"
-                                    onClick={(e) => handleDownloadJson(e)}
-                                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
-                                >
-                                    <span>📥</span>
-                                    <span>ดาวน์โหลดไฟล์ JSON อีกครั้ง</span>
-                                </button>
-                                <button
-                                    type="button"
                                     onClick={handleResetToEdit}
-                                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer"
+                                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition-colors cursor-pointer"
                                 >
                                     ✏️ แก้ไขคำตอบ
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={onClose}
-                                    className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                                    onClick={(e) => handleDownloadJson(e)}
+                                    className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border border-slate-700"
+                                    title="ดาวน์โหลดเก็บไว้เป็นไฟล์สำรองออฟไลน์"
                                 >
-                                    ✓ ปิดหน้าต่าง
+                                    <span>📁</span>
+                                    <span>บันทึกไฟล์สำรอง (JSON Backup)</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-4 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-md"
+                                >
+                                    🎮 ไปยังห้องปฏิบัติการ 3D
                                 </button>
                             </div>
                         </div>
-                    )}
+                    ) : null}
 
                     {/* Student Identity Box */}
                     <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
@@ -643,7 +845,7 @@ export function FaultChallengeModal({
                     )}
 
                     {/* The Form Fields */}
-                    <form onSubmit={handleDownloadJson} className="space-y-6">
+                    <form onSubmit={handleSubmitToTeacher} className="space-y-6">
                         {hasSubQuestions ? (
                             <>
                                 {subQuestions.map((sq, idx) => (
@@ -726,22 +928,32 @@ export function FaultChallengeModal({
                                                 <div className="text-xs text-slate-300 truncate">
                                                     <span className="font-mono text-emerald-400 block font-bold">✓ แนบไฟล์สำเร็จ</span>
                                                     <span className="text-slate-400 truncate block">{formData.evidenceFileName}</span>
+                                                    {compressionInfo && (
+                                                        <span className="text-[10px] text-emerald-300 font-mono block mt-0.5">{compressionInfo}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                 <p className="text-[11px] text-slate-400 m-0">
-                                                    รองรับภาพถ่ายหน้างานจริงจากมือถือ, ภาพไดอะแกรม, หรือภาพแคปหน้าจอ (JPG, PNG, GIF)
+                                                    รองรับภาพถ่ายหน้างานจริงจากมือถือ, ภาพไดอะแกรม, หรือภาพแคปหน้าจอ (JPG, PNG) ระบบจะย่อขนาดไฟล์ให้อัตโนมัติ
                                                 </p>
-                                                <label className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold cursor-pointer border border-slate-700 text-center transition-colors">
-                                                    <span>📷 เลือกรูปภาพหลักฐาน</span>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={handleFileUpload}
-                                                        className="hidden"
-                                                    />
-                                                </label>
+                                                {isCompressing ? (
+                                                    <div className="text-xs text-amber-400 font-mono animate-pulse flex items-center gap-1.5 px-3 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30">
+                                                        <span>⏳</span>
+                                                        <span>กำลังย่อขนาดรูปภาพ...</span>
+                                                    </div>
+                                                ) : (
+                                                    <label className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold cursor-pointer border border-slate-700 text-center transition-colors">
+                                                        <span>📷 เลือกรูปภาพหลักฐาน</span>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleFileUpload}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -871,22 +1083,32 @@ export function FaultChallengeModal({
                                                 <div className="text-xs text-slate-300 truncate">
                                                     <span className="font-mono text-emerald-400 block font-bold">✓ แนบไฟล์สำเร็จ</span>
                                                     <span className="text-slate-400 truncate block">{formData.evidenceFileName}</span>
+                                                    {compressionInfo && (
+                                                        <span className="text-[10px] text-emerald-300 font-mono block mt-0.5">{compressionInfo}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                 <p className="text-[11px] text-slate-400 m-0">
-                                                    รองรับภาพถ่ายหน้างานจริงจากมือถือ, กล้อง, หรือภาพแคปหน้าจอ (JPG, PNG, GIF)
+                                                    รองรับภาพถ่ายหน้างานจริงจากมือถือ, กล้อง, หรือภาพแคปหน้าจอ (JPG, PNG) ระบบจะย่อขนาดไฟล์ให้อัตโนมัติ
                                                 </p>
-                                                <label className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold cursor-pointer border border-slate-700 text-center transition-colors">
-                                                    <span>📷 เลือกรูปภาพหลักฐาน</span>
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={handleFileUpload}
-                                                        className="hidden"
-                                                    />
-                                                </label>
+                                                {isCompressing ? (
+                                                    <div className="text-xs text-amber-400 font-mono animate-pulse flex items-center gap-1.5 px-3 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30">
+                                                        <span>⏳</span>
+                                                        <span>กำลังย่อขนาดรูปภาพ...</span>
+                                                    </div>
+                                                ) : (
+                                                    <label className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold cursor-pointer border border-slate-700 text-center transition-colors">
+                                                        <span>📷 เลือกรูปภาพหลักฐาน</span>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleFileUpload}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -945,32 +1167,44 @@ export function FaultChallengeModal({
                         <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800">
                             <span className="text-[11px] text-slate-400 font-mono">
                                 {isAllTopicsComplete
-                                    ? `✓ ตอบครบทั้ง ${totalTopicsCount} ประเด็นแล้ว พร้อมดาวน์โหลดผลงาน JSON`
-                                    : `* ต้องตอบให้ครบทุกหัวข้อย่อยเพื่อดาวน์โหลด JSON (ตอบแล้ว ${completedTopicsCount}/${totalTopicsCount})`}
+                                    ? `✓ ตอบครบทั้ง ${totalTopicsCount} ประเด็นแล้ว พร้อมส่งงานให้อาจารย์`
+                                    : `* ต้องตอบให้ครบทุกหัวข้อย่อยเพื่อส่งตรวจ (ตอบแล้ว ${completedTopicsCount}/${totalTopicsCount})`}
                             </span>
 
-                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
                                 >
                                     ปิด
                                 </button>
                                 <button
-                                    type="submit"
+                                    type="button"
+                                    onClick={(e) => handleDownloadJson(e)}
                                     disabled={!isAllTopicsComplete}
-                                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg ${
-                                        isAllTopicsComplete
+                                    className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded-xl transition-colors cursor-pointer border border-slate-700 flex items-center gap-1.5 disabled:opacity-50"
+                                    title="ดาวน์โหลดไฟล์สำรองเก็บไว้ในเครื่อง (ตัวเลือกเสริม)"
+                                >
+                                    <span>📁</span>
+                                    <span>สำเนาไฟล์ JSON</span>
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={!isAllTopicsComplete || isSavingToServer}
+                                    className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg ${
+                                        isAllTopicsComplete && !isSavingToServer
                                             ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/30 ring-1 ring-emerald-400 cursor-pointer'
                                             : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700 opacity-60'
                                     }`}
                                 >
-                                    <span>📥</span>
+                                    <span>{isSavingToServer ? '⏳' : '🚀'}</span>
                                     <span>
-                                        {isAllTopicsComplete
-                                            ? 'ดาวน์โหลดผลงาน JSON (Download JSON)'
-                                            : `ตอบคำถามให้ครบก่อน (${completedTopicsCount}/${totalTopicsCount})`}
+                                        {isSavingToServer
+                                            ? 'กำลังบันทึกเข้าระบบ...'
+                                            : isAllTopicsComplete
+                                                ? 'ส่งแบบทดสอบให้อาจารย์ตรวจ (บันทึกเข้าระบบทันที)'
+                                                : `ตอบคำถามให้ครบก่อน (${completedTopicsCount}/${totalTopicsCount})`}
                                     </span>
                                 </button>
                             </div>

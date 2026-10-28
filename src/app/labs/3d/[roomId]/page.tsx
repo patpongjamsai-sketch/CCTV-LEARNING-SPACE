@@ -86,7 +86,35 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
         room.unit_id,
       );
 
-      if (progression && !progression.unlocked) {
+      let isGateUnlocked = progression ? progression.unlocked : false;
+
+      // Check class_approvals and subjective_submissions if not yet unlocked in legacy progression
+      if (!isGateUnlocked) {
+        const unitSeq = roomNum - 100;
+        const [approvalRes, subjectiveRes] = await Promise.all([
+          supabase
+            .from('class_approvals')
+            .select('lab_unlocked, unit_unlocked')
+            .eq('class_id', classId)
+            .eq('unit_sequence', unitSeq)
+            .maybeSingle(),
+          supabase
+            .from('subjective_submissions')
+            .select('id, status')
+            .eq('student_id', authContext.userId)
+            .eq('unit_sequence', unitSeq)
+            .maybeSingle(),
+        ]);
+
+        const isTeacherApproved = Boolean(approvalRes?.data?.lab_unlocked || approvalRes?.data?.unit_unlocked);
+        const hasSubmittedSubjective = Boolean(subjectiveRes?.data);
+
+        if (isTeacherApproved || hasSubmittedSubjective) {
+          isGateUnlocked = true;
+        }
+      }
+
+      if (!isGateUnlocked) {
         return (
           <main className="portal-lab-page min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-slate-100 font-sans">
             <div className="max-w-md w-full bg-slate-900 border border-amber-500/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
