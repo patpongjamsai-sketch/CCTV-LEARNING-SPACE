@@ -289,7 +289,7 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
                                                             <span>ห้องแล็บ 3D ถูกล็อก</span>
                                                         </span>
                                                         <span className="text-[11px] text-slate-400">
-                                                            (ผ่าน {lessonProgress.completedCount}/10 บท หรือรอครูอนุมัติ)
+                                                            (ต้องทำแบบทดสอบอัตนัยวิเคราะห์ปัญหา หรือรอครูอนุมัติ)
                                                         </span>
                                                     </div>
                                                 )}

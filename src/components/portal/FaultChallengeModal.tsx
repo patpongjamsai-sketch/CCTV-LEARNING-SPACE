@@ -328,6 +328,21 @@ export function FaultChallengeModal({
         if (studentName) localStorage.setItem('cctv_student_name', studentName);
         if (studentCode) localStorage.setItem('cctv_student_code', studentCode);
 
+        // Sync with Supabase Database via API to unlock 3D Lab immediately
+        fetch('/api/learning/subjective', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                unitId,
+                questionId: qId,
+                answers: hasSubQuestions ? subAnswers : formData,
+                studentName,
+                studentCode,
+            }),
+        }).catch((err) => {
+            console.warn('API subjective submission sync warning:', err);
+        });
+
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('cctv_fault_submitted', { detail: record }));
             window.dispatchEvent(new CustomEvent('cctv_subjective_submitted', { detail: record }));

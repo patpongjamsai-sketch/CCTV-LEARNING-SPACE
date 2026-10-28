@@ -174,11 +174,31 @@ export function getUnitLessonProgress(unitId: string): {
 }
 
 /**
+ * Check if student completed Subjective Evidence-Based Diagnostic Assessment
+ */
+export function isSubjectiveCompleted(unitId: string): boolean {
+    if (typeof window === 'undefined') return false;
+    const directFault = localStorage.getItem(`cctv_fault_submission_${unitId}`);
+    if (directFault) return true;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(`cctv_subjective_submission_${unitId}`)) {
+                return true;
+            }
+        }
+    } catch {
+        // ignore
+    }
+    return false;
+}
+
+/**
  * Check if the 3D Virtual Lab is unlocked for a unit.
  * Rules:
  * - Unlocked if role is teacher/admin
  * - Unlocked if teacher explicitly enabled it in approvals
- * - Unlocked if student completed all 10 lessons + knowledge checks of that unit
+ * - Unlocked if student completed "แบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน" of that unit
  */
 export function isLabUnlocked(unitId: string, role?: string, studentCode?: string): {
     unlocked: boolean;
@@ -211,15 +231,14 @@ export function isLabUnlocked(unitId: string, role?: string, studentCode?: strin
         return { unlocked: true, reason: 'ครูผู้สอนอนุมัติให้เข้าห้องปฏิบัติการ 3D แล้ว' };
     }
 
-    // Check lesson completion
-    const lessonProgress = getUnitLessonProgress(unitId);
-    if (lessonProgress.passed) {
-        return { unlocked: true, reason: 'ผ่านการเรียนรู้และตอบคำถามครบ 10 บทเรียนแล้ว' };
+    // Check subjective evidence diagnostic completion
+    if (isSubjectiveCompleted(unitId)) {
+        return { unlocked: true, reason: 'ทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐานสำเร็จแล้ว พร้อมเข้าห้องปฏิบัติการ 3D' };
     }
 
     return {
         unlocked: false,
-        reason: `ต้องเรียนเนื้อหาและตอบคำถามระหว่างเรียนให้ครบทั้ง 10 บทก่อน (ปัจจุบันผ่าน ${lessonProgress.completedCount}/${lessonProgress.totalLessons} บท) หรือรอครูผู้สอนอนุมัติ`,
+        reason: 'ห้องปฏิบัติการนี้ยังไม่ปลดล็อก ผู้เรียนจำเป็นต้องทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐานประจำหน่วย หรือรอครูผู้สอนอนุมัติสิทธิ์',
     };
 }
 

@@ -441,7 +441,7 @@ export default function LabsDirectoryPage() {
                         </Link>
                       ) : (
                         <div className="flex items-center gap-2 text-amber-300 text-xs bg-slate-950/80 border border-amber-500/40 px-3.5 py-2 rounded-xl">
-                          <span>🔒 ต้องผ่านเนื้อหา 10 บท หรือรอครูอนุมัติสิทธิ์</span>
+                          <span>🔒 ต้องทำแบบทดสอบอัตนัยวิเคราะห์ปัญหา หรือรอครูอนุมัติ</span>
                         </div>
                       )}
                     </div>

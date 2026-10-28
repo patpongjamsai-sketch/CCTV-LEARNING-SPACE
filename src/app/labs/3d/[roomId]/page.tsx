@@ -95,8 +95,7 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
               </div>
               <h1 className="text-xl font-bold text-white">ห้องปฏิบัติการนี้ยังไม่ปลดล็อก</h1>
               <p className="text-xs text-slate-300 leading-relaxed">
-                ผู้เรียนจำเป็นต้องทำแบบทดสอบก่อนเรียน หรือผ่านหน่วยการเรียนรู้ก่อนหน้าตามลำดับ
-                หรือติดต่อครูผู้สอนเพื่อขอเปิดสิทธิ์ (Teacher Override)
+                ผู้เรียนจำเป็นต้องทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐานประจำหน่วย หรือรอครูผู้สอนอนุมัติสิทธิ์ จึงจะสามารถเข้าใช้งานห้องปฏิบัติการ 3D ได้
               </p>
               <div className="pt-2">
                 <a

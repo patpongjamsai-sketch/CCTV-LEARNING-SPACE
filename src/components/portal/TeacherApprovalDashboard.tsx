@@ -244,6 +244,24 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         }
     };
 
+    const fetchApprovalsFromApi = async (cid: string) => {
+        try {
+            const res = await fetch(`/api/teacher/approvals?classId=${encodeURIComponent(cid)}`, { cache: 'no-store' });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.approvals) {
+                    setApprovals((prev) => ({
+                        ...prev,
+                        ...data.approvals,
+                    }));
+                    saveTeacherApprovals(data.approvals);
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to fetch approvals from API:', err);
+        }
+    };
+
     // Rehydrate and reload state when events fire or active class changes
     useEffect(() => {
         const savedApprovals = getTeacherApprovals();
@@ -251,6 +269,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         setSubmissions(getSubjectiveSubmissions());
 
         fetchStudents(selectedClassUuid);
+        void fetchApprovalsFromApi(selectedGroupFilter || selectedClassUuid);
 
         const updateState = () => {
             setApprovals(getTeacherApprovals());
@@ -263,7 +282,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
             window.removeEventListener('cctv_approvals_updated', updateState);
             window.removeEventListener('cctv_subjective_updated', updateState);
         };
-    }, [selectedClassUuid]);
+    }, [selectedClassUuid, selectedGroupFilter]);
 
     // Live auto-polling effect every 20 seconds
     useEffect(() => {
@@ -378,7 +397,7 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
     };
 
     // Handler to toggle Unit Unlock
-    const toggleUnitUnlock = (unitId: string) => {
+    const toggleUnitUnlock = async (unitId: string) => {
         const current = !!approvals.unlockedUnits[unitId];
         const next = !current;
         const updated: TeacherApprovals = {
@@ -390,11 +409,25 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice(`อัปเดตสิทธิ์หน่วย ${unitId}: ${next ? '🔓 ปลดล็อกให้เรียนได้แล้ว' : '🔒 ล็อกหน่วยการเรียนรู้'}`);
+        try {
+            await fetch('/api/teacher/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'toggle_unit',
+                    classId: selectedGroupFilter || selectedClassUuid,
+                    unitId,
+                    value: next,
+                }),
+            });
+            showNotice(`อัปเดตสิทธิ์หน่วย ${unitId}: ${next ? '🔓 ปลดล็อกให้เรียนได้แล้ว (ส่งสิทธิ์ลงฐานข้อมูลแล้ว)' : '🔒 ล็อกหน่วยการเรียนรู้'}`);
+        } catch {
+            showNotice(`อัปเดตสิทธิ์หน่วย ${unitId}: ${next ? '🔓 ปลดล็อกให้เรียนได้แล้ว' : '🔒 ล็อกหน่วยการเรียนรู้'}`);
+        }
     };
 
     // Handler to toggle 3D Lab Unlock
-    const toggleLabUnlock = (unitId: string) => {
+    const toggleLabUnlock = async (unitId: string) => {
         const current = !!approvals.unlockedLabs[unitId];
         const next = !current;
         const updated: TeacherApprovals = {
@@ -406,11 +439,26 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice(`ห้องปฏิบัติการ 3D (Room ${parseInt(unitId.replace(/[^0-9]/g, '')) + 100}): ${next ? '🎮 ปลดล็อกห้องแล็บ 3D เรียบร้อย' : '🔒 ล็อกห้องแล็บตามเกณฑ์มาตรฐาน'}`);
+        const roomNum = parseInt(unitId.replace(/[^0-9]/g, '')) + 100;
+        try {
+            await fetch('/api/teacher/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'toggle_lab',
+                    classId: selectedGroupFilter || selectedClassUuid,
+                    unitId,
+                    value: next,
+                }),
+            });
+            showNotice(`ห้องปฏิบัติการ 3D (Room ${roomNum}): ${next ? '🎮 ปลดล็อกห้องแล็บ 3D และส่งสิทธิ์ให้นักเรียนในฐานข้อมูลเรียบร้อย' : '🔒 ล็อกห้องแล็บตามเกณฑ์มาตรฐาน'}`);
+        } catch {
+            showNotice(`ห้องปฏิบัติการ 3D (Room ${roomNum}): ${next ? '🎮 ปลดล็อกห้องแล็บ 3D เรียบร้อย' : '🔒 ล็อกห้องแล็บตามเกณฑ์มาตรฐาน'}`);
+        }
     };
 
     // Handler to toggle Assessment Unlock
-    const toggleAssessmentUnlock = (unitId: string) => {
+    const toggleAssessmentUnlock = async (unitId: string) => {
         const current = !!approvals.unlockedAssessments[unitId];
         const next = !current;
         const updated: TeacherApprovals = {
@@ -422,11 +470,25 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice(`แบบทดสอบอัตนัย (${unitId}): ${next ? '📝 ปลดล็อกให้ทำข้อสอบได้แล้ว' : '🔒 ล็อกแบบทดสอบตามเกณฑ์มาตรฐาน'}`);
+        try {
+            await fetch('/api/teacher/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'toggle_assessment',
+                    classId: selectedGroupFilter || selectedClassUuid,
+                    unitId,
+                    value: next,
+                }),
+            });
+            showNotice(`แบบทดสอบอัตนัย (${unitId}): ${next ? '📝 ปลดล็อกให้ทำข้อสอบได้แล้ว (ส่งสิทธิ์ลงฐานข้อมูลแล้ว)' : '🔒 ล็อกแบบทดสอบตามเกณฑ์มาตรฐาน'}`);
+        } catch {
+            showNotice(`แบบทดสอบอัตนัย (${unitId}): ${next ? '📝 ปลดล็อกให้ทำข้อสอบได้แล้ว' : '🔒 ล็อกแบบทดสอบตามเกณฑ์มาตรฐาน'}`);
+        }
     };
 
     // Handler to mark unit as Passed (Teacher Override)
-    const toggleUnitPassed = (unitId: string) => {
+    const toggleUnitPassed = async (unitId: string) => {
         const current = !!approvals.passedUnits[unitId];
         const next = !current;
         const updated: TeacherApprovals = {
@@ -438,11 +500,25 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice(`อนุมัติผลหน่วย ${unitId}: ${next ? '✓ ครูอนุมัติให้ผ่านหน่วยการเรียนรู้แล้ว' : 'ยกเลิกการอนุมัติผ่าน'}`);
+        try {
+            await fetch('/api/teacher/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'toggle_passed',
+                    classId: selectedGroupFilter || selectedClassUuid,
+                    unitId,
+                    value: next,
+                }),
+            });
+            showNotice(`อนุมัติผลหน่วย ${unitId}: ${next ? '✓ ครูอนุมัติให้ผ่านหน่วยการเรียนรู้แล้ว (บันทึกลงฐานข้อมูลแล้ว)' : 'ยกเลิกการอนุมัติผ่าน'}`);
+        } catch {
+            showNotice(`อนุมัติผลหน่วย ${unitId}: ${next ? '✓ ครูอนุมัติให้ผ่านหน่วยการเรียนรู้แล้ว' : 'ยกเลิกการอนุมัติผ่าน'}`);
+        }
     };
 
     // Unlock All Units & Labs
-    const handleUnlockAll = () => {
+    const handleUnlockAll = async () => {
         const allUnlocked: Record<string, boolean> = {};
         allUnitsContent.forEach((u) => {
             allUnlocked[u.unit.id] = true;
@@ -455,11 +531,23 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice('🚀 ปลดล็อกทุกหน่วยการเรียนรู้, ห้องแล็บ 3D, และแบบทดสอบครบทั้ง 8 หน่วยแล้ว', 'success');
+        try {
+            await fetch('/api/teacher/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'unlock_all',
+                    classId: selectedGroupFilter || selectedClassUuid,
+                }),
+            });
+            showNotice('🚀 ปลดล็อกทุกหน่วยการเรียนรู้และห้องแล็บ 3D ทั้งหมดเรียบร้อยแล้ว (อัปเดตลงฐานข้อมูล Supabase แล้ว)', 'success');
+        } catch {
+            showNotice('🚀 ปลดล็อกทุกหน่วยการเรียนรู้, ห้องแล็บ 3D, และแบบทดสอบครบทั้ง 8 หน่วยแล้ว', 'success');
+        }
     };
 
     // Reset to Strict Mode
-    const handleResetStrict = () => {
+    const handleResetStrict = async () => {
         const strictUnits: Record<string, boolean> = { U01: true, U02: false, U03: false, U04: false, U05: false, U06: false, U07: false, U08: false };
         const lockedAll: Record<string, boolean> = { U01: false, U02: false, U03: false, U04: false, U05: false, U06: false, U07: false, U08: false };
         const updated: TeacherApprovals = {
@@ -471,7 +559,19 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
         };
         setApprovals(updated);
         saveTeacherApprovals(updated);
-        showNotice('🔒 รีเซ็ตระบบกลับสู่เกณฑ์มาตรฐาน (ต้องเรียนผ่าน 1.เนื้อหา -> 2.ห้องแล็บ 3D -> 3.แบบทดสอบ)', 'info');
+        try {
+            await fetch('/api/teacher/approvals', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'reset_strict',
+                    classId: selectedGroupFilter || selectedClassUuid,
+                }),
+            });
+            showNotice('🔒 รีเซ็ตระบบกลับสู่เกณฑ์มาตรฐาน (อัปเดตลงฐานข้อมูล Supabase แล้ว)', 'info');
+        } catch {
+            showNotice('🔒 รีเซ็ตระบบกลับสู่เกณฑ์มาตรฐาน', 'info');
+        }
     };
 
     // Grade subjective submission
@@ -873,9 +973,9 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                 <div className="space-y-6">
                     <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="text-xs text-slate-300">
-                            <strong>กระบวนการเรียนรู้ 3 ขั้นตอน:</strong>
+                            <strong>ขั้นตอนการจัดการเรียนรู้และอนุมัติสิทธิ์:</strong>
                             <span className="text-slate-400 ml-2">
-                                (1) เรียนเนื้อหา 10 บท + ตอบคำถามระหว่างเรียน → (2) ปฏิบัติการห้อง labs 3D → (3) แบบทดสอบอัตนัยวิเคราะห์ปัญหาด้วยหลักฐาน
+                                (1) อนุมัติสิทธิ์ห้องปฏิบัติการ 3D (Room 101 - 108) → (2) อนุมัติแบบทดสอบอัตนัยวิเคราะห์ปัญหาด้วยหลักฐาน → (3) ตรวจประเมินและอนุมัติผ่านหน่วย
                             </span>
                         </div>
                         <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
@@ -941,33 +1041,15 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                         </button>
                                     </div>
 
-                                    {/* 3 Discrete Steps Controls */}
+                                    {/* 2 Discrete Steps Controls */}
                                     <div className="space-y-2 pt-1 border-t border-slate-800/80">
-                                        {/* Step 1: Lessons + In-lesson questions */}
-                                        <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
-                                            <div className="flex items-center gap-2">
-                                                <span>📚</span>
-                                                <div>
-                                                    <strong className="text-slate-200 block">
-                                                        1. เนื้อหา 10 บท + คำถามระหว่างเรียน
-                                                    </strong>
-                                                    <span className="text-[11px] text-slate-400">
-                                                        {bundle.lessons.length} บทเรียน · {bundle.unit.theoryMinutes} นาที
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <span className="text-emerald-400 font-mono font-semibold">
-                                                {isUnitOpen ? 'พร้อมเรียน 10 บท' : 'รอเปิดหน่วย'}
-                                            </span>
-                                        </div>
-
-                                        {/* Step 2: 3D Lab Simulation */}
+                                        {/* Step 1: 3D Lab Simulation */}
                                         <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
                                             <div className="flex items-center gap-2">
                                                 <span>🎮</span>
                                                 <div>
                                                     <strong className="text-slate-200 block">
-                                                        2. ปฏิบัติการห้อง labs 3D (Room {roomNum})
+                                                        1. ปฏิบัติการห้อง labs 3D (Room {roomNum})
                                                     </strong>
                                                     <span className="text-[11px] text-slate-400">
                                                         {bundle.lab.titleTh}
@@ -987,13 +1069,13 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                             </button>
                                         </div>
 
-                                        {/* Step 3: Assessments (Objective + Subjective) */}
+                                        {/* Step 2: Assessments (Subjective) */}
                                         <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
                                             <div className="flex items-center gap-2">
                                                 <span>📝</span>
                                                 <div>
                                                     <strong className="text-slate-200 block">
-                                                        3. แบบทดสอบอัตนัยประจำหน่วย
+                                                        2. แบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน
                                                     </strong>
                                                     <span className="text-[11px] text-slate-400">
                                                         วิเคราะห์ปัญหาด้วยหลักฐาน 6 ขั้นตอน
@@ -1435,10 +1517,9 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                     <th className="p-3">รหัสผู้เรียน</th>
                                     <th className="p-3">ชื่อ - สกุล</th>
                                     <th className="p-3">กลุ่ม</th>
-                                    <th className="p-3">1. เนื้อหา</th>
-                                    <th className="p-3">2. ภารกิจ 3D (Sim)</th>
-                                    <th className="p-3">3. ห้องแล็บ & หลักฐาน</th>
-                                    <th className="p-3">4. แบบทดสอบ</th>
+                                    <th className="p-3">1. ภารกิจ 3D (Sim)</th>
+                                    <th className="p-3">2. ห้องแล็บ & หลักฐาน</th>
+                                    <th className="p-3">3. แบบทดสอบอัตนัย</th>
                                     <th className="p-3">ผลการอนุมัติ</th>
                                     <th className="p-3 text-right">การจัดการ</th>
                                 </tr>
@@ -1496,19 +1577,6 @@ export function TeacherApprovalDashboard({ classId = 'default-class' }: TeacherA
                                                         <span className="text-slate-500 text-[10px]">-</span>
                                                     )}
                                                 </div>
-                                            </td>
-                                            <td className="p-3">
-                                                <span
-                                                    className={`px-2 py-0.5 rounded text-[11px] font-mono ${
-                                                        currentUnitData.progressPercent >= 100
-                                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                                            : currentUnitData.progressPercent > 0
-                                                            ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                                                            : 'bg-slate-800 text-slate-400'
-                                                    }`}
-                                                >
-                                                    {currentUnitData.progressPercent}%
-                                                </span>
                                             </td>
                                             <td className="p-3">
                                                 {currentUnitData.latestMission ? (
