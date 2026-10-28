@@ -97,10 +97,16 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
               <p className="text-xs text-slate-300 leading-relaxed">
                 ผู้เรียนจำเป็นต้องทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐานประจำหน่วย หรือรอครูผู้สอนอนุมัติสิทธิ์ จึงจะสามารถเข้าใช้งานห้องปฏิบัติการ 3D ได้
               </p>
-              <div className="pt-2">
+              <div className="pt-3 space-y-2">
+                <a
+                  href={`/assessments#${room.unit_id}`}
+                  className="inline-flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20 cursor-pointer"
+                >
+                  <span>📝 ทำแบบทดสอบอัตนัยเพื่อปลดล็อกห้อง 3D ทันที →</span>
+                </a>
                 <a
                   href="/labs"
-                  className="inline-block w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition-colors"
+                  className="inline-block w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition-colors"
                 >
                   ← กลับสู่หน้ารวมห้องปฏิบัติการ
                 </a>

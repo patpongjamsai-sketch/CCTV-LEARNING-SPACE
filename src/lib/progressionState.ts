@@ -258,11 +258,11 @@ export function isLabPassed(unitId: string): boolean {
 }
 
 /**
- * Check if the Assessment (ปรนัย + อัตนัย) is unlocked for a unit.
+ * Check if the Assessment (แบบทดสอบอัตนัย + ปรนัย) is unlocked for a unit.
  * Rules:
  * - Unlocked if role is teacher/admin
  * - Unlocked if teacher explicitly enabled it in approvals
- * - Unlocked if student has completed the 3D Lab of that unit
+ * - Unlocked if the unit is unlocked (so student can take the Evidence-Based Diagnostic to unlock 3D Lab)
  */
 export function isAssessmentUnlocked(unitId: string, role?: string, studentCode?: string): {
     unlocked: boolean;
@@ -284,14 +284,14 @@ export function isAssessmentUnlocked(unitId: string, role?: string, studentCode?
         return { unlocked: true, reason: 'ครูผู้สอนอนุมัติให้ทำแบบทดสอบแล้ว' };
     }
 
-    // Check lab completion requirement
-    if (isLabPassed(unitId)) {
-        return { unlocked: true, reason: 'ผ่านการปฏิบัติการห้อง 3D Lab แล้ว พร้อมทำแบบทดสอบ' };
+    // If unit itself is unlocked, student can take the assessment to diagnose and unlock 3D lab
+    if (isUnitUnlocked(unitId, role)) {
+        return { unlocked: true, reason: 'พร้อมทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน เพื่อปลดล็อกห้องปฏิบัติการ 3D' };
     }
 
     return {
         unlocked: false,
-        reason: 'ต้องผ่านการทดสอบในห้องปฏิบัติการ 3D Lab ของหน่วยนี้ก่อน จึงจะสามารถทำแบบทดสอบได้ หรือรอครูผู้สอนอนุมัติ',
+        reason: 'หน่วยการเรียนรู้นี้ยังไม่เปิด กรุณาศึกษาตามลำดับ หรือรอครูผู้สอนอนุมัติการเปิดหน่วย',
     };
 }
 

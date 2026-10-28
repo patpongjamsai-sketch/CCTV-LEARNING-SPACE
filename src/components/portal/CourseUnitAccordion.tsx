@@ -288,9 +288,12 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
                                                             <span>🔒</span>
                                                             <span>ห้องแล็บ 3D ถูกล็อก</span>
                                                         </span>
-                                                        <span className="text-[11px] text-slate-400">
-                                                            (ต้องทำแบบทดสอบอัตนัยวิเคราะห์ปัญหา หรือรอครูอนุมัติ)
-                                                        </span>
+                                                        <a
+                                                            href={`/assessments#${bundle.unit.id}`}
+                                                            className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-2 flex items-center gap-1"
+                                                        >
+                                                            <span>ทำแบบทดสอบเพื่อปลดล็อก →</span>
+                                                        </a>
                                                     </div>
                                                 )}
                                             </div>

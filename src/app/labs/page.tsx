@@ -440,8 +440,16 @@ export default function LabsDirectoryPage() {
                           <span>→</span>
                         </Link>
                       ) : (
-                        <div className="flex items-center gap-2 text-amber-300 text-xs bg-slate-950/80 border border-amber-500/40 px-3.5 py-2 rounded-xl">
-                          <span>🔒 ต้องทำแบบทดสอบอัตนัยวิเคราะห์ปัญหา หรือรอครูอนุมัติ</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-amber-300 text-xs bg-slate-950/80 border border-amber-500/40 px-3.5 py-2 rounded-xl">
+                            🔒 ต้องทำแบบทดสอบอัตนัย หรือรอครูอนุมัติ
+                          </span>
+                          <Link
+                            href={`/assessments#${room.unitId}`}
+                            className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-amber-500/20 flex items-center gap-1"
+                          >
+                            <span>📝 ทำแบบทดสอบเพื่อปลดล็อก →</span>
+                          </Link>
                         </div>
                       )}
                     </div>

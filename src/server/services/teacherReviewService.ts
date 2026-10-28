@@ -33,8 +33,9 @@ export async function getPendingReviewsService(
 
   try {
     const sql = getServerDatabase();
+    const isAll = classId === 'ALL';
 
-    const [labRows, quizRows] = await Promise.all([
+    const [labRows, quizRows, subjectiveRows] = await Promise.all([
       sql`
         select
           ls.id,
@@ -55,7 +56,7 @@ export async function getPendingReviewsService(
         join public.profiles as p on p.id = ls.student_id
         join public.units as u on u.id = ls.unit_id
         left join public.evidence_files as ef on ef.lab_submission_id = ls.id
-        where ls.class_id = ${classId}
+        where (${isAll} or ls.class_id = ${classId})
           and ls.status in ('submitted', 'reviewing')
         group by ls.id, p.id, u.id
         order by ls.submitted_at asc
@@ -80,14 +81,35 @@ export async function getPendingReviewsService(
         join public.profiles as p on p.id = qa.student_id
         join public.quizzes as q on q.id = qa.quiz_id
         join public.units as u on u.id = q.unit_id
-        where qa.class_id = ${classId}
+        where (${isAll} or qa.class_id = ${classId})
           and qa.status = 'submitted'
           and q.quiz_type != 'pre'
         order by qa.submitted_at asc
       `,
+      sql`
+        select
+          ss.id,
+          ss.class_id,
+          ss.student_id,
+          ss.unit_sequence,
+          ss.question_id,
+          ss.answers,
+          ss.status,
+          ss.submitted_at,
+          p.student_code,
+          p.display_name,
+          u.id as unit_id,
+          u.title as unit_title
+        from public.subjective_submissions as ss
+        join public.profiles as p on p.id = ss.student_id
+        left join public.units as u on u.sequence_no = ss.unit_sequence
+        where (${isAll} or ss.class_id = ${classId} or ss.class_id is null)
+          and ss.status = 'submitted'
+        order by ss.submitted_at asc
+      `,
     ]);
 
-    const labItems: PendingReviewItem[] = labRows.map((r: any) => ({
+    const labItems: PendingReviewItem[] = (labRows || []).map((r: any) => ({
       id: r.id,
       kind: 'lab',
       classId: r.class_id,
@@ -105,7 +127,7 @@ export async function getPendingReviewsService(
       evidenceCount: Number(r.evidence_count || 0),
     }));
 
-    const quizItems: PendingReviewItem[] = quizRows.map((r: any) => ({
+    const quizItems: PendingReviewItem[] = (quizRows || []).map((r: any) => ({
       id: r.id,
       kind: 'quiz',
       classId: r.class_id,
@@ -123,7 +145,25 @@ export async function getPendingReviewsService(
       clientAnswers: r.client_answers,
     }));
 
-    return [...labItems, ...quizItems].sort((a, b) => {
+    const subjectiveItems: PendingReviewItem[] = (subjectiveRows || []).map((r: any) => ({
+      id: r.id,
+      kind: 'quiz',
+      classId: r.class_id || classId,
+      unitId: r.unit_id || '33333333-3333-4333-8333-333333333333',
+      unitSequenceNo: Number(r.unit_sequence),
+      unitTitle: r.unit_title || `หน่วยการเรียนรู้ที่ ${r.unit_sequence}`,
+      studentId: r.student_id,
+      studentCode: r.student_code || '',
+      displayName: r.display_name || '',
+      attemptNo: 1,
+      title: `แบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน (${r.question_id})`,
+      submittedAt: r.submitted_at,
+      status: r.status,
+      rawScore: null,
+      clientAnswers: r.answers,
+    }));
+
+    return [...labItems, ...quizItems, ...subjectiveItems].sort((a, b) => {
       const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
       const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
       return timeA - timeB;
@@ -387,6 +427,54 @@ export async function reviewQuizAttemptService(
   }
 
   if (!attempt) {
+    try {
+      const sql = getServerDatabase();
+      const [subj] = await sql`
+        select id, class_id, student_id, unit_sequence, question_id, status
+        from public.subjective_submissions
+        where id = ${attemptId}
+      `;
+      if (subj) {
+        await sql`
+          update public.subjective_submissions
+          set
+            score = ${input.approvedScore},
+            feedback = ${input.feedback ?? null},
+            status = 'graded',
+            updated_at = now()
+          where id = ${attemptId}
+        `;
+
+        if (input.status === 'approved' || input.approvedScore >= 12) {
+          const unitRows = await sql`
+            select id from public.units where sequence_no = ${subj.unit_sequence} limit 1
+          `;
+          if (unitRows.length > 0 && unitRows[0] && subj.class_id) {
+            await sql`
+              update public.unit_progress
+              set approved_score = ${input.approvedScore},
+                  passed = true,
+                  status = 'completed',
+                  approved_by = ${actorId},
+                  approved_at = now(),
+                  last_activity_at = now()
+              where student_id = ${subj.student_id}
+                and class_id = ${subj.class_id}
+                and unit_id = ${unitRows[0].id}
+            `;
+          }
+        }
+
+        return {
+          success: true,
+          attemptId,
+          status: input.status,
+          approvedScore: input.approvedScore,
+        };
+      }
+    } catch {
+      // ignore
+    }
     throw new Error('Not found: Quiz attempt not found in this class');
   }
 
