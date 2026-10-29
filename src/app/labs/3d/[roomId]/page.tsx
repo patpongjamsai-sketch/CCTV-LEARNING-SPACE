@@ -91,7 +91,7 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
       // Check class_approvals and subjective_submissions if not yet unlocked in legacy progression
       if (!isGateUnlocked) {
         const unitSeq = roomNum - 100;
-        const [approvalRes, subjectiveRes] = await Promise.all([
+        const [approvalRes, subjectiveRes, anyClassApprovalRes] = await Promise.all([
           supabase
             .from('class_approvals')
             .select('lab_unlocked, unit_unlocked')
@@ -104,12 +104,22 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
             .eq('student_id', authContext.userId)
             .eq('unit_sequence', unitSeq)
             .maybeSingle(),
+          supabase
+            .from('class_approvals')
+            .select('lab_unlocked, unit_unlocked')
+            .eq('unit_sequence', unitSeq)
+            .or('lab_unlocked.eq.true,unit_unlocked.eq.true')
+            .limit(1),
         ]);
 
-        const isTeacherApproved = Boolean(approvalRes?.data?.lab_unlocked || approvalRes?.data?.unit_unlocked);
+        const isTeacherApproved = Boolean(
+          approvalRes?.data?.lab_unlocked ||
+          approvalRes?.data?.unit_unlocked ||
+          (anyClassApprovalRes?.data && anyClassApprovalRes.data.length > 0)
+        );
         const hasSubmittedSubjective = Boolean(subjectiveRes?.data);
 
-        if (isTeacherApproved || hasSubmittedSubjective) {
+        if (isTeacherApproved || hasSubmittedSubjective || roomNum === 101) {
           isGateUnlocked = true;
         }
       }
@@ -158,6 +168,7 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
         missionId="00000000-0000-0000-0000-000000000000"
         roomTitle={room?.title || defaultTitle}
         returnUrl={returnUrl}
+        isServerUnlocked={true}
       />
     );
   } catch {
@@ -175,6 +186,7 @@ export default async function LabPage({ params, searchParams }: LabPageProps) {
         missionId="44444444-4444-4444-8444-444444444444"
         roomTitle={defaultTitle}
         returnUrl={returnUrl}
+        isServerUnlocked={true}
       />
     );
   }

@@ -113,8 +113,11 @@ export function saveTeacherApprovals(approvals: TeacherApprovals): void {
 export function isUnitUnlocked(unitId: string, role?: string): boolean {
     if (role === 'teacher' || role === 'admin') return true;
     const approvals = getTeacherApprovals();
-    // Check direct unit unlock
-    if (approvals.unlockedUnits[unitId]) return true;
+    // Check direct unit unlock or lab unlock or assessment unlock from teacher
+    if (approvals.unlockedUnits[unitId] || approvals.unlockedLabs[unitId] || approvals.unlockedAssessments[unitId]) return true;
+
+    // If student completed subjective assessment for this unit, the unit is open
+    if (isSubjectiveCompleted(unitId)) return true;
 
     // Unit 1 is accessible by default unless explicitly set to false
     if (unitId === 'U01' && approvals.unlockedUnits[unitId] !== false) return true;
@@ -211,29 +214,34 @@ export function isLabUnlocked(unitId: string, role?: string, studentCode?: strin
         return { unlocked: true, reason: 'สิทธิ์ผู้สอน/ผู้ดูแลระบบ (Teacher Override)' };
     }
 
-    // Check if the Unit itself is unlocked first
-    if (!isUnitUnlocked(unitId, role)) {
-        return {
-            unlocked: false,
-            reason: 'หน่วยการเรียนรู้นี้ยังไม่เปิด กรุณาศึกษาตามลำดับ หรือรอครูผู้สอนอนุมัติการเปิดหน่วย',
-        };
-    }
-
     const approvals = getTeacherApprovals();
 
-    // Check student-specific override
+    // 1. Check class-level teacher lab or unit approval (Highest Priority)
+    if (approvals.unlockedLabs[unitId] || approvals.unlockedUnits[unitId]) {
+        return { unlocked: true, reason: 'ครูผู้สอนอนุมัติให้เข้าห้องปฏิบัติการ 3D แล้ว' };
+    }
+
+    // 2. Check student-specific override
     if (studentCode && approvals.studentOverrides[studentCode]?.[unitId]?.labUnlocked) {
         return { unlocked: true, reason: 'ครูผู้สอนอนุมัติการเข้าห้องแล็บเป็นรายบุคคล' };
     }
 
-    // Check class-level teacher lab approval
-    if (approvals.unlockedLabs[unitId]) {
-        return { unlocked: true, reason: 'ครูผู้สอนอนุมัติให้เข้าห้องปฏิบัติการ 3D แล้ว' };
-    }
-
-    // Check subjective evidence diagnostic completion
+    // 3. Check subjective evidence diagnostic completion
     if (isSubjectiveCompleted(unitId)) {
         return { unlocked: true, reason: 'ทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐานสำเร็จแล้ว พร้อมเข้าห้องปฏิบัติการ 3D' };
+    }
+
+    // 4. Unit 1 is always unlocked by default
+    if (unitId === 'U01') {
+        return { unlocked: true, reason: 'ห้องปฏิบัติการหน่วยที่ 1 พร้อมเรียนรู้' };
+    }
+
+    // 5. Check if the Unit itself is unlocked by progression
+    if (!isUnitUnlocked(unitId, role)) {
+        return {
+            unlocked: false,
+            reason: 'ห้องปฏิบัติการนี้ยังไม่ปลดล็อก ผู้เรียนจำเป็นต้องทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐานประจำหน่วย หรือรอครูผู้สอนอนุมัติสิทธิ์',
+        };
     }
 
     return {
@@ -279,9 +287,14 @@ export function isAssessmentUnlocked(unitId: string, role?: string, studentCode?
         return { unlocked: true, reason: 'ครูผู้สอนอนุมัติการทำแบบทดสอบเป็นรายบุคคล' };
     }
 
-    // Check class-level teacher assessment approval
-    if (approvals.unlockedAssessments[unitId]) {
+    // Check class-level teacher assessment approval or lab/unit unlock
+    if (approvals.unlockedAssessments[unitId] || approvals.unlockedUnits[unitId] || approvals.unlockedLabs[unitId]) {
         return { unlocked: true, reason: 'ครูผู้สอนอนุมัติให้ทำแบบทดสอบแล้ว' };
+    }
+
+    // Unit 1 is always unlocked for assessment
+    if (unitId === 'U01') {
+        return { unlocked: true, reason: 'พร้อมทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน เพื่อปลดล็อกห้องปฏิบัติการ 3D' };
     }
 
     // If unit itself is unlocked, student can take the assessment to diagnose and unlock 3D lab
@@ -289,10 +302,62 @@ export function isAssessmentUnlocked(unitId: string, role?: string, studentCode?
         return { unlocked: true, reason: 'พร้อมทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน เพื่อปลดล็อกห้องปฏิบัติการ 3D' };
     }
 
+    // Diagnostic subjective assessment is the self-unlock mechanism: always open for learners
     return {
-        unlocked: false,
-        reason: 'หน่วยการเรียนรู้นี้ยังไม่เปิด กรุณาศึกษาตามลำดับ หรือรอครูผู้สอนอนุมัติการเปิดหน่วย',
+        unlocked: true,
+        reason: 'พร้อมทำแบบทดสอบอัตนัย: วิเคราะห์ปัญหาด้วยหลักฐาน เพื่อปลดล็อกห้องปฏิบัติการ 3D',
     };
+}
+
+/**
+ * Sync teacher approvals from database API into client localStorage
+ */
+export async function syncTeacherApprovalsFromApi(classId?: string): Promise<TeacherApprovals> {
+    if (typeof window === 'undefined') return DEFAULT_TEACHER_APPROVALS;
+    try {
+        const query = classId ? `?classId=${encodeURIComponent(classId)}` : '';
+        const res = await fetch(`/api/teacher/approvals${query}`, { cache: 'no-store' });
+        if (!res.ok) return getTeacherApprovals();
+        const data = await res.json();
+        if (data?.approvals) {
+            const current = getTeacherApprovals();
+            const merged: TeacherApprovals = {
+                ...current,
+                unlockedUnits: { ...current.unlockedUnits, ...(data.approvals.unlockedUnits || {}) },
+                unlockedLabs: { ...current.unlockedLabs, ...(data.approvals.unlockedLabs || {}) },
+                unlockedAssessments: { ...current.unlockedAssessments, ...(data.approvals.unlockedAssessments || {}) },
+                passedUnits: { ...current.passedUnits, ...(data.approvals.passedUnits || {}) },
+            };
+            saveTeacherApprovals(merged);
+            return merged;
+        }
+    } catch {
+        // ignore network error
+    }
+    return getTeacherApprovals();
+}
+
+/**
+ * Sync subjective submissions from database API into client localStorage
+ */
+export async function syncSubjectiveSubmissionsFromApi(unitId?: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+        const query = unitId ? `?unitId=${encodeURIComponent(unitId)}` : '';
+        const res = await fetch(`/api/learning/subjective${query}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.submission) {
+            const uId = unitId || `U${String(data.submission.unitSequence).padStart(2, '0')}`;
+            localStorage.setItem(`cctv_fault_submission_${uId}`, JSON.stringify(data.submission));
+            if (data.submission.questionId) {
+                localStorage.setItem(`cctv_subjective_submission_${uId}_${data.submission.questionId}`, JSON.stringify(data.submission));
+            }
+            window.dispatchEvent(new CustomEvent('cctv_approvals_updated'));
+        }
+    } catch {
+        // ignore network error
+    }
 }
 
 /**

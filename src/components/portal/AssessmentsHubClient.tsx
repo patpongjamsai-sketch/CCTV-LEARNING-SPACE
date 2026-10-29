@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import type { UnitContentBundle } from '../../content/courses/21909-2020';
 import { FaultChallengeModal } from './FaultChallengeModal';
 import { ReflectionModal } from './ReflectionModal';
-import { isAssessmentUnlocked } from '../../lib/progressionState';
+import { isAssessmentUnlocked, syncTeacherApprovalsFromApi } from '../../lib/progressionState';
 import { getUnitSubjectiveQuestions, type SubjectiveQuestion } from '../../data/unitSubjectiveQuestions';
 
 export type AssessmentsHubClientProps = {
@@ -125,6 +125,7 @@ export function AssessmentsHubClient({ bundles }: AssessmentsHubClientProps) {
         const handleFaultEvent = () => reloadSavedStates();
         const handleReflEvent = () => reloadSavedStates();
 
+        void syncTeacherApprovalsFromApi();
         window.addEventListener('cctv_fault_submitted', handleFaultEvent);
         window.addEventListener('cctv_subjective_submitted', handleFaultEvent);
         window.addEventListener('cctv_reflection_saved', handleReflEvent);

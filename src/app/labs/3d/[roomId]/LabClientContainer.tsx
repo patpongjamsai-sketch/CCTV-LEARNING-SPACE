@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { toFinalizeResponse, type FinalizeResponse } from './finalizeResult';
-import { isLabUnlocked } from '../../../../lib/progressionState';
+import {
+  isLabUnlocked,
+  syncTeacherApprovalsFromApi,
+  syncSubjectiveSubmissionsFromApi,
+} from '../../../../lib/progressionState';
 import { VirtualJoystick } from '../../../../components/3d/VirtualJoystick';
 
 const Cctv3DLabApp = dynamic(
@@ -33,6 +37,7 @@ export type LabClientContainerProps = {
   missionId: string;
   roomTitle: string;
   returnUrl?: string | null;
+  isServerUnlocked?: boolean;
 };
 
 export function LabClientContainer({
@@ -43,21 +48,32 @@ export function LabClientContainer({
   missionId,
   roomTitle,
   returnUrl,
+  isServerUnlocked,
 }: LabClientContainerProps) {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [result, setResult] = useState<FinalizeResponse | null>(null);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
-  const [unlockedState, setUnlockedState] = useState(() =>
-    isLabUnlocked(unitId, undefined, learner.studentCode || learner.id),
-  );
+  const [unlockedState, setUnlockedState] = useState(() => {
+    if (isServerUnlocked) {
+      return { unlocked: true, reason: 'ผ่านการตรวจสอบสิทธิ์จากระบบแล้ว' };
+    }
+    return isLabUnlocked(unitId, undefined, learner.studentCode || learner.id);
+  });
 
   useEffect(() => {
+    if (isServerUnlocked) {
+      setUnlockedState({ unlocked: true, reason: 'ผ่านการตรวจสอบสิทธิ์จากระบบแล้ว' });
+      return;
+    }
+    void syncTeacherApprovalsFromApi(classId);
+    void syncSubjectiveSubmissionsFromApi(unitId);
+
     const handleUpdate = () => {
       setUnlockedState(isLabUnlocked(unitId, undefined, learner.studentCode || learner.id));
     };
     window.addEventListener('cctv_approvals_updated', handleUpdate);
     return () => window.removeEventListener('cctv_approvals_updated', handleUpdate);
-  }, [unitId, learner.studentCode, learner.id]);
+  }, [unitId, learner.studentCode, learner.id, classId, isServerUnlocked]);
 
   const handleSessionStart = async () => {
     const clientSessionId = crypto.randomUUID();

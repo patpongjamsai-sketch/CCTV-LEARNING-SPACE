@@ -8,6 +8,8 @@ import {
     isAssessmentUnlocked,
     getUnitLessonProgress,
     isUnitFullyPassed,
+    syncTeacherApprovalsFromApi,
+    syncSubjectiveSubmissionsFromApi,
 } from '../../lib/progressionState';
 
 export type CourseUnitAccordionProps = {
@@ -29,6 +31,8 @@ export function CourseUnitAccordion({ bundles }: CourseUnitAccordionProps) {
     const [renderTick, setRenderTick] = useState(0);
 
     useEffect(() => {
+        void syncTeacherApprovalsFromApi();
+        void syncSubjectiveSubmissionsFromApi();
         const handleUpdate = () => setRenderTick((t) => t + 1);
         window.addEventListener('cctv_approvals_updated', handleUpdate);
         window.addEventListener('cctv_exam_completed', handleUpdate);

@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { isLabUnlocked } from '../../lib/progressionState';
+import {
+  isLabUnlocked,
+  syncTeacherApprovalsFromApi,
+  syncSubjectiveSubmissionsFromApi,
+} from '../../lib/progressionState';
 import { PortalGlobalNav } from '../../components/portal/PortalGlobalNav';
 
 interface SubLabAction {
@@ -246,6 +250,8 @@ export default function LabsDirectoryPage() {
 
   useEffect(() => {
     setMounted(true);
+    void syncTeacherApprovalsFromApi();
+    void syncSubjectiveSubmissionsFromApi();
     const handleUpdate = () => setRenderTick((t) => t + 1);
     window.addEventListener('cctv_approvals_updated', handleUpdate);
     return () => window.removeEventListener('cctv_approvals_updated', handleUpdate);

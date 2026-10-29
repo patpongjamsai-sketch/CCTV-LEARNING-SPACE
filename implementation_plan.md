@@ -1,55 +1,60 @@
-# แผนการแก้ไขปัญหา: ระบบค้างที่หน้าต่าง "ลงทะเบียนเข้าห้องเรียน ปวช.1"
+# แผนการแก้ไขปัญหา: ปลดล็อกห้องปฏิบัติการ U02 (Room 102) ไม่ผ่าน แม้ทำแบบทดสอบอัตนัยหรือครูกดปลดล็อกแล้ว
 
 ## 1. การวิเคราะห์สาเหตุของปัญหา (Root Cause Analysis)
 
-จากข้อความแจ้งเตือนของผู้ใช้:
-> *ลงทะเบียนเข้าห้องเรียน ปวช.1*
-> *วิชากล้องวงจรปิดบนระบบเครือข่าย (21909-2020)*
-> *ยินดีต้อนรับสู่ระบบฝึกปฏิบัติการ 3D กรุณาเลือกรหัสกลุ่มเรียนของคุณ พร้อมระบุรหัสนักศึกษาและชื่อ-นามสกุล...*
-> *กดเลือกห้องแล้วระบบค้างอยู่หน้านี้ช่วยตรวจสอบให้ผมหน่อย*
+จากข้อความของผู้ใช้:
+> *ต้องทำแบบทดสอบอัตนัย หรือรอครูอนุมัติ ของ U02 ครบแล้ว ครูก็สั่งปลดล็อคแล้ว แต่ยังไม่สามารถเข้าได้*
 
-จากการตรวจสอบโค้ดใน `StudentClassJoinModal.tsx`, `classService.ts`, และ `/api/classes/join` พบสาเหตุหลัก 3 ประการดังนี้:
+เมื่อตรวจสอบพบสาเหตุที่ทำให้ห้องปฏิบัติการ U02 (Room 102) และหน้ารวมแล็บ `/labs` ยังคงแสดงข้อความ:
+`🔒 ต้องทำแบบทดสอบอัตนัย หรือรอครูอนุมัติ` และหน้าต่าง 3D Lab แสดง `🔒 ห้องปฏิบัติการ 3D ยังไม่เปิดให้เข้าใช้งาน` มีสาเหตุหลักดังนี้:
 
-### สาเหตุที่ 1: การออกแบบ UI/UX ของ Modal ไม่แสดงปุ่มยืนยันและไม่มีแถบเลื่อน (Cut-off without Scrolling)
-* **กล่อง Modal สูงเกินขนาดหน้าจอ:** กล่อง Modal ใน `StudentClassJoinModal.tsx` มีเนื้อหาหลายส่วน ซึ่งมีความสูงรวมกว่า 700px
-* **ขาด `overflow-y-auto` และ `max-h`:** ตัวกล่องไม่ได้กำหนด `max-h-[90vh]` หรือ `overflow-y-auto` ส่งผลให้บนหน้าจอโน้ตบุ๊กทั่วไป หรือแท็บเล็ต/มือถือ ส่วนช่องกรอกข้อมูลและปุ่ม "ยืนยันการเข้าห้องเรียนกลุ่ม..." ถูกดันตกขอบจอด้านล่าง และผู้ใช้เลื่อนลงไปกดไม่ได้
-* **ความเข้าใจผิดในการกดเลือกห้อง:** เมื่อผู้ใช้กดที่การ์ดห้องเรียน (เช่น ปวช.1 กลุ่ม 1) ตัวปุ่มทำหน้าที่เพียงเลือก Radio state (`selectedGroup`) เท่านั้น ไม่ได้พาเข้าห้องเรียนทันที ผู้เรียนจึงเข้าใจว่าระบบ "ค้าง" อยู่ที่หน้านี้
+### สาเหตุที่ 1: ลำดับการตรวจสอบสิทธิ์ (Precedence Check Order) ใน `progressionState.ts` บล็อกการปลดล็อก
+* ในฟังก์ชัน `isLabUnlocked(unitId)` ใน `src/lib/progressionState.ts`:
+  ```ts
+  // โค้ดเดิม: ตรวจสอบว่า Unit ปลดล็อกตามลำดับ 1->2 หรือไม่ ก่อนที่จะตรวจสิทธิ์จากครูหรือแบบทดสอบอัตนัย
+  if (!isUnitUnlocked(unitId, role)) {
+      return { unlocked: false, reason: 'หน่วยการเรียนรู้นี้ยังไม่เปิด...' };
+  }
+  // สิทธิ์จากครู (unlockedLabs) และแบบทดสอบอัตนัย (isSubjectiveCompleted) อยู่ด้านล่างบรรทัดนี้!
+  if (approvals.unlockedLabs[unitId]) return { unlocked: true };
+  if (isSubjectiveCompleted(unitId)) return { unlocked: true };
+  ```
+* เมื่อตรวจสอบ `isUnitUnlocked('U02')`: ระบบจะเช็กว่าหน่วยก่อนหน้า (U01) ผ่านสมบูรณ์ทุกขั้นตอนในเครื่องหรือไม่ หาก U01 ยังไม่ถูกบันทึกว่า Passed ใน LocalStorage ฟังก์ชัน `isUnitUnlocked('U02')` จะส่งกลับ `false` ทันที
+* ส่งผลให้เงื่อนไข `!isUnitUnlocked` ตัดการทำงานทันที และ **ไม่เคยลงไปอ่านค่าที่ครูกดปลดล็อก (`approvals.unlockedLabs`) หรือผลสอบอัตนัย (`isSubjectiveCompleted`) เลย**
 
-### สาเหตุที่ 2: ระบบ Fallback ใน Backend ละเมิด Row Level Security (RLS)
-* ใน `src/server/services/classService.ts` ฟังก์ชัน `joinClassService`: เดิมตัว Fallback ใช้ `createServerSupabaseClient()` (สิทธิ์นักเรียน)
-* ตาราง `public.class_members` มีนโยบาย RLS ที่อนุญาตให้อ่านเท่านั้นสำหรับนักเรียนทั่วไป ไม่มีสิทธิ์ `INSERT` หรือ `UPDATE`
-* หากการเชื่อมต่อตรงผ่านพอร์ต 6543 ล่าช้าหรือเกิด Timeout ระบบจะสลับไปที่ Fallback และพบข้อผิดพลาด `42501 (new row violates row-level security policy for table "class_members")` ทำให้การบันทึกห้องเรียนล้มเหลว
+### สาเหตุที่ 2: สิทธิ์การปลดล็อกของครูและนักเรียนไม่ถูกซิงค์ข้ามเบราว์เซอร์ (Client LocalStorage Isolation)
+* เมื่อครูกดปลดล็อกในหน้า `/teacher` สิทธิ์จะถูกบันทึกลงฐานข้อมูล Supabase (`public.class_approvals`) และ LocalStorage ของเครื่องครู
+* แต่เบราว์เซอร์ของนักเรียน (หรือผู้ใช้ทั่วไปที่เปิดหน้า `/labs` หรือ `/labs/3d/room-102`) อ่านสิทธิ์จาก `localStorage` ในเครื่องตนเองเท่านั้น และ **ไม่เคยมีฟังก์ชันดึงค่าสิทธิ์ล่าสุดจาก `/api/teacher/approvals`** มารวมในเครื่องนักเรียน
+* ทำให้นักเรียนเห็นว่ายังคงล็อกอยู่เสมอ
 
-### สาเหตุที่ 3: ขาดการตอบสนองเชิงโต้ตอบ (Interactive Feedback & Timeout)
-* ใน `StudentClassJoinModal.tsx` การเรียก API ไม่มี Timeout Guard หากเกิดความล่าช้าของเครือข่าย ปุ่มจะค้างสถานะ "กำลังลงทะเบียนเข้าห้องเรียน..."
-* ขาดการตรวจจับรหัสนักศึกษาอัตโนมัติ (Auto-lookup) จากฐานข้อมูลรายชื่อนักศึกษา 40 คน
-
----
-
-## 2. การดำเนินการแก้ไขที่เสร็จสิ้นแล้ว (Completed Changes)
-
-### ส่วนที่ 1: ปรับปรุง `StudentClassJoinModal.tsx` (UI & UX)
-1. **เพิ่ม Responsive Scrolling:**
-   - กำหนด `max-h-[92vh] overflow-y-auto` บนตัวการ์ด และ `overflow-y-auto` บน Backdrop Overlay เพื่อให้เลื่อนดูเนื้อหาและปุ่มยืนยันได้อย่างสมบูรณ์บนทุกขนาดหน้าจอ
-2. **ปรับปรุงการโต้ตอบเมื่อเลือกห้องเรียน:**
-   - เมื่อผู้เรียนคลิกเลือกกลุ่มเรียน (PV1, PV2, PV3) มี Badge แจ้งชัดเจน `"✓ เลือกกลุ่มนี้แล้ว"` พร้อมเลื่อนโฟกัสไปยังช่องกรอกรหัสนักศึกษาโดยอัตโนมัติ
-3. **ระบบ Auto-fill จากรหัสนักศึกษา:**
-   - เมื่อพิมพ์รหัสนักศึกษาครบ 11 หลัก ระบบจะค้นหาชื่อ-นามสกุลและกลุ่มเรียนให้อัตโนมัติ (หากมีในระบบ) หรือสามารถกรอกรหัสทดสอบ เช่น `TEST001` และชื่อใดๆ ได้อย่างอิสระ
-4. **เพิ่ม Timeout Guard & Success Screen:**
-   - เพิ่ม AbortController ป้องกันการค้างเกิน 12 วินาที
-   - เมื่อลงทะเบียนสำเร็จ แสดงหน้าจอติ๊กถูกสีเขียว *"✅ ลงทะเบียนเข้าห้องเรียนสำเร็จ! กำลังนำคุณเข้าสู่แดชบอร์ดบทเรียน 3D..."*
-
-### ส่วนที่ 2: ปรับปรุง `src/server/services/classService.ts` (Backend Reliability)
-1. **แก้ไข Fallback ให้ใช้ `createAdminSupabaseClient()`:**
-   - เปลี่ยนมาใช้ Admin Client (Service Role) ใน Fallback เพื่อ Upsert `public.class_members` และอัปเดต `public.profiles` ได้ 100% โดยไม่ติดสิทธิ์ RLS
-2. **ป้องกัน Null Course Constraint:**
-   - ใช้ `coalesce` ให้กับ `course_id` ป้องกันกรณีที่รหัสรายวิชาในฐานข้อมูลไม่ตรง
+### สาเหตุที่ 3: `LabClientContainer` ล็อกซ้ำซ้อน ทั้งที่ฝั่ง Server อนุญาตแล้ว
+* ใน Server Component (`src/app/labs/3d/[roomId]/page.tsx`) มีการเช็กสิทธิ์ผ่านฐานข้อมูลเรียบร้อยแล้ว
+* แต่เมื่อส่งต่อไปยัง Client Component (`LabClientContainer.tsx`): ตัว Container กลับนำค่า `isLabUnlocked` มาเช็กซ้ำอีกรอบใน Client LocalStorage และแสดงหน้าจอทับ (Overlay Gate) บล็อกผู้เรียนไว้
 
 ---
 
-## 3. ผลการทดสอบและยืนยันความถูกต้อง (Verification Status)
-* **Unit & Integration Tests:**
-  - สร้างไฟล์ทดสอบ [`src/tests/classJoin.test.ts`](file:///e:/งานปี 2026/แผนการสอน หน่วยการสอน วิชาสอน คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/tests/classJoin.test.ts) (5 ผ่าน 5)
-  - สร้างไฟล์ทดสอบ [`src/tests/studentClassJoinModal.test.tsx`](file:///e:/งานปี 2026/แผนการสอน หน่วยการสอน วิชาสอน คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/tests/studentClassJoinModal.test.tsx) (2 ผ่าน 2)
-* **Full Test Suite:**
-  - รัน `npm test` ผ่านครบถ้วน **58 Test Files, 264 Tests** ไม่มีข้อผิดพลาด
+## 2. แนวทางการแก้ไข (Proposed Fixes)
+
+### ส่วนที่ 1: ปรับปรุง `src/lib/progressionState.ts`
+1. **สลับลำดับการตรวจสอบ (Priority Order):**
+   - ให้สิทธิ์ที่ครูสั่งปลดล็อก (`unlockedLabs[unitId]` หรือ `unlockedUnits[unitId]`) มีผลสูงสุดทันที
+   - ให้ผลการส่งแบบทดสอบอัตนัย (`isSubjectiveCompleted[unitId]`) ปลดล็อกห้องแล็บทันทีโดยไม่ต้องรอเกณฑ์อื่น
+   - ปรับให้ `isUnitUnlocked` คืนค่า `true` หากครูกดปลดล็อกแล็บหรือส่งแบบทดสอบอัตนัยแล้ว
+2. **เพิ่มฟังก์ชันซิงค์สิทธิ์อัตโนมัติจากเซิร์ฟเวอร์:**
+   - เพิ่มฟังก์ชัน `syncTeacherApprovalsFromApi(classId)` และ `syncSubjectiveSubmissionsFromApi(unitId)` เพื่อดึงสิทธิ์ที่ครูปลดล็อกไว้จาก Supabase มาอัปเดตลงเครื่องนักเรียนอัตโนมัติ
+
+### ส่วนที่ 2: ปรับปรุง `src/app/labs/page.tsx`
+* เพิ่มการเรียก `syncTeacherApprovalsFromApi()` ใน `useEffect` เพื่อให้หน้ารวมแล็บ 8 หน่วย อัปเดตสถานะปุ่มปลดล็อกให้ตรงกับฐานข้อมูลจริงของครูผู้สอนทันที
+
+### ส่วนที่ 3: ปรับปรุง `src/app/labs/3d/[roomId]/page.tsx` & `LabClientContainer.tsx`
+* ใน `page.tsx`: ปรับการตรวจสอบสิทธิ์ให้ครอบคลุมทั้งสิทธิ์ระดับ Class และระดับ System-wide พร้อมส่ง prop `isServerUnlocked={isGateUnlocked}` ไปยัง Container
+* ใน `LabClientContainer.tsx`: หาก `isServerUnlocked === true` ให้ถือว่าปลดล็อกสมบูรณ์และเปิดให้เข้าใช้งาน 3D Lab ทันที ไม่ถูกล็อกซ้ำซ้อน
+
+---
+
+## 3. แผนการทดสอบและยืนยันผล (Verification Plan)
+1. เขียน Unit Test ตรวจสอบว่า `isLabUnlocked('U02')` ส่งกลับ `unlocked: true` เมื่อ:
+   - ครูกดปลดล็อกแล็บ U02
+   - ครูกดปลดล็อกหน่วย U02
+   - นักเรียนส่งแบบทดสอบอัตนัย U02
+2. รัน `npm test` เพื่อให้แน่ใจว่าชุดทดสอบทั้งหมดผ่านครบถ้วน
