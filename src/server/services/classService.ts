@@ -684,7 +684,10 @@ export async function joinClassService(
         id, course_id, code, title, academic_year, semester, status
       ) values (
         ${targetClass.id},
-        (select id from public.courses where code = '21909-2020' limit 1),
+        coalesce(
+          (select id from public.courses where code = '21909-2020' limit 1),
+          (select id from public.courses limit 1)
+        ),
         ${targetClass.code},
         ${targetClass.title},
         2569,
@@ -726,10 +729,10 @@ export async function joinClassService(
     if (err instanceof Error && err.message.includes('คุณได้ลงทะเบียนอยู่ในกลุ่ม')) {
       throw err;
     }
-    // Fallback using Supabase client
+    // Fallback using Supabase Admin Client (Service Role bypasses RLS)
     try {
-      const supabase = await createServerSupabaseClient();
-      const { data: member } = await supabase
+      const adminSupabase = createAdminSupabaseClient();
+      const { data: member } = await adminSupabase
         .from('class_members')
         .select('class_id, active')
         .eq('profile_id', actorId)
@@ -737,22 +740,49 @@ export async function joinClassService(
         .maybeSingle();
 
       if (member && member.class_id !== targetClass.id) {
-        throw new Error('คุณได้ลงทะเบียนในกลุ่มอื่นแล้ว ไม่สามารถย้ายกลุ่มได้');
+        throw new Error('คุณได้ลงทะเบียนอยู่ในกลุ่มอื่นแล้ว ไม่สามารถย้ายกลุ่มได้ หากต้องการย้ายกลุ่มกรุณาติดต่อครูผู้สอน');
       }
 
-      await supabase
+      // Ensure class exists in public.classes
+      const { data: courseData } = await adminSupabase
+        .from('courses')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+      if (courseData?.id) {
+        await adminSupabase.from('classes').upsert(
+          {
+            id: targetClass.id,
+            course_id: courseData.id,
+            code: targetClass.code,
+            title: targetClass.title,
+            academic_year: 2569,
+            semester: 2,
+            status: 'active',
+          },
+          { onConflict: 'id' },
+        );
+      }
+
+      await adminSupabase
         .from('profiles')
         .update({ student_code: safeStudentCode, display_name: safeDisplayName })
         .eq('id', actorId);
 
-      await supabase
+      const { error: upsertErr } = await adminSupabase
         .from('class_members')
-        .upsert({
-          class_id: targetClass.id,
-          profile_id: actorId,
-          member_role: 'student',
-          active: true,
-        });
+        .upsert(
+          {
+            class_id: targetClass.id,
+            profile_id: actorId,
+            member_role: 'student',
+            active: true,
+          },
+          { onConflict: 'class_id,profile_id' },
+        );
+
+      if (upsertErr) throw upsertErr;
 
       return {
         success: true,
@@ -761,9 +791,10 @@ export async function joinClassService(
         classTitle: targetClass.title,
       };
     } catch (fallbackErr) {
-      if (fallbackErr instanceof Error && fallbackErr.message.includes('คุณได้ลงทะเบียนในกลุ่มอื่น')) {
+      if (fallbackErr instanceof Error && fallbackErr.message.includes('คุณได้ลงทะเบียนอยู่ในกลุ่ม')) {
         throw fallbackErr;
       }
+      console.error('joinClassService admin fallback error:', fallbackErr);
     }
     throw err;
   }

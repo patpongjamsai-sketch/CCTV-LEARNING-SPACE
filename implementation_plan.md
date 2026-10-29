@@ -1,69 +1,55 @@
-# แผนงานปรับปรุงระบบ (Implementation Plan)
-## การแก้ไขจุดบกพร่อง 7 จุดในมุมมองนักเรียนและครูผู้สอน
+# แผนการแก้ไขปัญหา: ระบบค้างที่หน้าต่าง "ลงทะเบียนเข้าห้องเรียน ปวช.1"
 
-### 1. เป้าหมาย
-แก้ไขปัญหาทั้ง 7 ประเด็นอย่างเป็นรูปธรรม เพื่อให้ทั้งนักเรียนและครูสามารถใช้งานระบบได้อย่างราบรื่น ปลอดภัย และสอดคล้องกับพฤติกรรมการใช้งานจริงทั้งบนคอมพิวเตอร์และสมาร์ตโฟน
+## 1. การวิเคราะห์สาเหตุของปัญหา (Root Cause Analysis)
 
----
+จากข้อความแจ้งเตือนของผู้ใช้:
+> *ลงทะเบียนเข้าห้องเรียน ปวช.1*
+> *วิชากล้องวงจรปิดบนระบบเครือข่าย (21909-2020)*
+> *ยินดีต้อนรับสู่ระบบฝึกปฏิบัติการ 3D กรุณาเลือกรหัสกลุ่มเรียนของคุณ พร้อมระบุรหัสนักศึกษาและชื่อ-นามสกุล...*
+> *กดเลือกห้องแล้วระบบค้างอยู่หน้านี้ช่วยตรวจสอบให้ผมหน่อย*
 
-### 2. รายละเอียดการดำเนินงานแยกตาม 7 ประเด็น
+จากการตรวจสอบโค้ดใน `StudentClassJoinModal.tsx`, `classService.ts`, และ `/api/classes/join` พบสาเหตุหลัก 3 ประการดังนี้:
 
-#### ฝั่งผู้เรียน (Student Side)
-1. **ประเด็น 1.1: รูปภาพหลักฐานหลุดหาย & ระบบบีบอัดรูปภาพอัตโนมัติ**
-   - **ไฟล์:** `src/components/portal/FaultChallengeModal.tsx`
-   - **การแก้ไข:**
-     - เพิ่มฟังก์ชัน `compressImage(file, maxWidth=1280, quality=0.72)` โดยใช้ HTML Canvas ย่อรูปก่อนอ่าน Base64
-     - ผนวกรูปภาพและชื่อไฟล์หลักฐาน (`evidenceFilePreview`, `evidenceFileName`) เข้าใน Payload ของ API `/api/learning/subjective` แม้จะเป็นแบบมีข้อย่อย (`hasSubQuestions = true`)
+### สาเหตุที่ 1: การออกแบบ UI/UX ของ Modal ไม่แสดงปุ่มยืนยันและไม่มีแถบเลื่อน (Cut-off without Scrolling)
+* **กล่อง Modal สูงเกินขนาดหน้าจอ:** กล่อง Modal ใน `StudentClassJoinModal.tsx` มีเนื้อหาหลายส่วน ซึ่งมีความสูงรวมกว่า 700px
+* **ขาด `overflow-y-auto` และ `max-h`:** ตัวกล่องไม่ได้กำหนด `max-h-[90vh]` หรือ `overflow-y-auto` ส่งผลให้บนหน้าจอโน้ตบุ๊กทั่วไป หรือแท็บเล็ต/มือถือ ส่วนช่องกรอกข้อมูลและปุ่ม "ยืนยันการเข้าห้องเรียนกลุ่ม..." ถูกดันตกขอบจอด้านล่าง และผู้ใช้เลื่อนลงไปกดไม่ได้
+* **ความเข้าใจผิดในการกดเลือกห้อง:** เมื่อผู้ใช้กดที่การ์ดห้องเรียน (เช่น ปวช.1 กลุ่ม 1) ตัวปุ่มทำหน้าที่เพียงเลือก Radio state (`selectedGroup`) เท่านั้น ไม่ได้พาเข้าห้องเรียนทันที ผู้เรียนจึงเข้าใจว่าระบบ "ค้าง" อยู่ที่หน้านี้
 
-2. **ประเด็น 1.2: ปรับเปลี่ยน Action การส่งงานเพื่อลดความสับสนบนมือถือ**
-   - **ไฟล์:** `src/components/portal/FaultChallengeModal.tsx`
-   - **การแก้ไข:**
-     - ปรับปุ่มหลักเป็น **"🚀 ส่งแบบทดสอบให้อาจารย์ตรวจ (บันทึกเข้าระบบทันที)"**
-     - แสดงแถบแจ้งเตือนเมื่อส่งสำเร็จ: *"✓ บันทึกผลงานขึ้นฐานข้อมูลเรียบร้อยแล้ว ครูผู้สอนได้รับข้อมูลและรูปภาพหลักฐานแล้ว สามารถเข้าห้องปฏิบัติการ 3D ได้ทันที"*
-     - ปรับปุ่มดาวน์โหลด JSON เป็นปุ่มสำรองเล็กๆ: *"📁 บันทึกสำเนาลงเครื่อง (JSON Backup)"* โดยไม่บังคับดาวน์โหลด
+### สาเหตุที่ 2: ระบบ Fallback ใน Backend ละเมิด Row Level Security (RLS)
+* ใน `src/server/services/classService.ts` ฟังก์ชัน `joinClassService`: เดิมตัว Fallback ใช้ `createServerSupabaseClient()` (สิทธิ์นักเรียน)
+* ตาราง `public.class_members` มีนโยบาย RLS ที่อนุญาตให้อ่านเท่านั้นสำหรับนักเรียนทั่วไป ไม่มีสิทธิ์ `INSERT` หรือ `UPDATE`
+* หากการเชื่อมต่อตรงผ่านพอร์ต 6543 ล่าช้าหรือเกิด Timeout ระบบจะสลับไปที่ Fallback และพบข้อผิดพลาด `42501 (new row violates row-level security policy for table "class_members")` ทำให้การบันทึกห้องเรียนล้มเหลว
 
-3. **ประเด็น 1.3: กล่องแสดงผลคะแนนและ Feedback จากครูผู้สอน**
-   - **ไฟล์:** `src/components/portal/FaultChallengeModal.tsx`, `AssessmentsHubClient.tsx`, `/api/learning/subjective/route.ts`
-   - **การแก้ไข:**
-     - ปรับ API `/api/learning/subjective` ให้รองรับ `GET` เพื่อดึงผลตรวจล่าสุดของนักเรียน
-     - หากสถานะเป็น `revision_required` ให้แสดงการ์ดสีส้ม-แดงเตือนชัดเจน: *"⚠️ ครูผู้สอนส่งข้อคิดเห็นให้ปรับปรุง: [ข้อความจากครู] คะแนน: [X/20]"* พร้อมปุ่ม `[✏️ ปรับปรุงคำตอบและส่งตรวจใหม่]`
-     - หากสถานะเป็น `graded`/`approved` แสดงการ์ดสีเขียวแจ้งคะแนนและข้อคิดเห็นของครู
-
-4. **ประเด็น 1.4: ปุ่มควบคุมเสมือน (Virtual Joystick) สำหรับสมาร์ตโฟน/แท็บเล็ตในห้อง 3D**
-   - **ไฟล์:** `src/components/3d/VirtualJoystick.tsx` (สร้างใหม่) และ `src/app/labs/3d/[roomId]/LabClientContainer.tsx`
-   - **การแก้ไข:**
-     - ตรวจจับว่าผู้ใช้อยู่บนอุปกรณ์ Touch / Mobile หรือไม่
-     - แสดง Virtual Joystick แบบสัมผัสที่มุมซ้ายล่าง เพื่อจำลองคีย์บอร์ด `W, A, S, D` ให้เดินสำรวจในห้อง 3D ได้อย่างคล่องตัวบนมือถือ
+### สาเหตุที่ 3: ขาดการตอบสนองเชิงโต้ตอบ (Interactive Feedback & Timeout)
+* ใน `StudentClassJoinModal.tsx` การเรียก API ไม่มี Timeout Guard หากเกิดความล่าช้าของเครือข่าย ปุ่มจะค้างสถานะ "กำลังลงทะเบียนเข้าห้องเรียน..."
+* ขาดการตรวจจับรหัสนักศึกษาอัตโนมัติ (Auto-lookup) จากฐานข้อมูลรายชื่อนักศึกษา 40 คน
 
 ---
 
-#### ฝั่งครูผู้สอน (Teacher Side)
-5. **ประเด็น 2.2: ปรับสเกลคะแนนให้ตรงตามเกณฑ์รูบริก (Rubric Alignment)**
-   - **ไฟล์:** `src/components/portal/PendingReviewInbox.tsx`, `src/server/services/teacherReviewService.ts`
-   - **การแก้ไข:**
-     - เมื่อตรวจข้อสอบอัตนัย (Subjective Exam) ปรับคะแนนเต็มเป็น **20 คะแนน** (เกณฑ์ผ่าน 12 คะแนน หรือ 60%) และแสดง Rubric เกณฑ์การให้คะแนนอย่างชัดเจน
-     - เมื่อตรวจปฏิบัติการแล็บ (Lab Submission) คะแนนเต็ม **100 คะแนน** (เกณฑ์ผ่าน 60 คะแนน)
+## 2. การดำเนินการแก้ไขที่เสร็จสิ้นแล้ว (Completed Changes)
 
-6. **ประเด็น 2.3: ฟังก์ชันตรวจด่วนและอนุมัติยกห้อง (Batch Approve & Quick Pass)**
-   - **ไฟล์:** `src/components/portal/PendingReviewInbox.tsx`, `src/app/api/classes/[classId]/reviews/batch/route.ts` (API ใหม่), `src/server/services/teacherReviewService.ts`
-   - **การแก้ไข:**
-     - เพิ่มปุ่ม `[⚡ อนุมัติผ่านทั้งหมดในคิวนี้ (Batch Approve All)]` พร้อมป๊อปอัปยืนยัน
-     - เพิ่มปุ่มลัด `[⚡ ผ่านทันที (Quick Pass)]` ที่การ์ดแต่ละใบ เพื่อให้ครูกดให้ผ่านได้ในคลิกเดียวโดยไม่ต้องเปิดโมดอล
-     - สร้าง Server API `/api/classes/[classId]/reviews/batch` บันทึกผลตรวจพร้อมกันใน Transaction
+### ส่วนที่ 1: ปรับปรุง `StudentClassJoinModal.tsx` (UI & UX)
+1. **เพิ่ม Responsive Scrolling:**
+   - กำหนด `max-h-[92vh] overflow-y-auto` บนตัวการ์ด และ `overflow-y-auto` บน Backdrop Overlay เพื่อให้เลื่อนดูเนื้อหาและปุ่มยืนยันได้อย่างสมบูรณ์บนทุกขนาดหน้าจอ
+2. **ปรับปรุงการโต้ตอบเมื่อเลือกห้องเรียน:**
+   - เมื่อผู้เรียนคลิกเลือกกลุ่มเรียน (PV1, PV2, PV3) มี Badge แจ้งชัดเจน `"✓ เลือกกลุ่มนี้แล้ว"` พร้อมเลื่อนโฟกัสไปยังช่องกรอกรหัสนักศึกษาโดยอัตโนมัติ
+3. **ระบบ Auto-fill จากรหัสนักศึกษา:**
+   - เมื่อพิมพ์รหัสนักศึกษาครบ 11 หลัก ระบบจะค้นหาชื่อ-นามสกุลและกลุ่มเรียนให้อัตโนมัติ (หากมีในระบบ) หรือสามารถกรอกรหัสทดสอบ เช่น `TEST001` และชื่อใดๆ ได้อย่างอิสระ
+4. **เพิ่ม Timeout Guard & Success Screen:**
+   - เพิ่ม AbortController ป้องกันการค้างเกิน 12 วินาที
+   - เมื่อลงทะเบียนสำเร็จ แสดงหน้าจอติ๊กถูกสีเขียว *"✅ ลงทะเบียนเข้าห้องเรียนสำเร็จ! กำลังนำคุณเข้าสู่แดชบอร์ดบทเรียน 3D..."*
 
-7. **ประเด็น 2.4: ซิงก์สิทธิ์เข้าห้อง 3D ฝั่ง Server Database ให้เชื่อมกับ `class_approvals` และ `subjective_submissions`**
-   - **ไฟล์:** `src/app/labs/3d/[roomId]/page.tsx`, `src/server/services/progressionService.ts`
-   - **การแก้ไข:**
-     - ปรับ `LabPage` ให้ตรวจสอบสิทธิ์จากทั้ง 3 ช่องทาง:
-       1. มีการส่งงานใน `public.subjective_submissions` ประจำหน่วยนั้นแล้ว
-       2. ครูเปิดสิทธิ์ผ่าน `public.class_approvals` (`lab_unlocked = true` หรือ `unit_unlocked = true`)
-       3. ผ่านเกณฑ์เดิมใน PostgreSQL (`progression.unlocked`)
-     - รับประกันว่านักเรียนที่ส่งข้อสอบแล้ว หรือครูอนุมัติผ่านเว็บ จะเข้าห้อง 3D ได้ 100% ทันที
+### ส่วนที่ 2: ปรับปรุง `src/server/services/classService.ts` (Backend Reliability)
+1. **แก้ไข Fallback ให้ใช้ `createAdminSupabaseClient()`:**
+   - เปลี่ยนมาใช้ Admin Client (Service Role) ใน Fallback เพื่อ Upsert `public.class_members` และอัปเดต `public.profiles` ได้ 100% โดยไม่ติดสิทธิ์ RLS
+2. **ป้องกัน Null Course Constraint:**
+   - ใช้ `coalesce` ให้กับ `course_id` ป้องกันกรณีที่รหัสรายวิชาในฐานข้อมูลไม่ตรง
 
 ---
 
-### 3. แผนการตรวจสอบและทดสอบ (Verification Plan)
-1. รัน Unit & Integration Tests: `npm test` เพื่อให้มั่นใจว่าเทสต์เดิมทั้ง 257 ตัวยังผ่านครบ
-2. ตรวจสอบ TypeScript Type Safety: `npx tsc --noEmit`
-3. ทดสอบจำลองการส่งรูปภาพบนมือถือ (Base64 ขนาดเล็ก ไม่เกิน 250KB)
-4. ทดสอบปุ่ม Quick Pass และ Batch Approve ใน PendingReviewInbox
+## 3. ผลการทดสอบและยืนยันความถูกต้อง (Verification Status)
+* **Unit & Integration Tests:**
+  - สร้างไฟล์ทดสอบ [`src/tests/classJoin.test.ts`](file:///e:/งานปี 2026/แผนการสอน หน่วยการสอน วิชาสอน คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/tests/classJoin.test.ts) (5 ผ่าน 5)
+  - สร้างไฟล์ทดสอบ [`src/tests/studentClassJoinModal.test.tsx`](file:///e:/งานปี 2026/แผนการสอน หน่วยการสอน วิชาสอน คะแนน/ภาคเรียน2-69/กล้องวงจรปิด/cctv-technician-3d-training-center/src/tests/studentClassJoinModal.test.tsx) (2 ผ่าน 2)
+* **Full Test Suite:**
+  - รัน `npm test` ผ่านครบถ้วน **58 Test Files, 264 Tests** ไม่มีข้อผิดพลาด
